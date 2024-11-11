@@ -1,0 +1,22 @@
+name: "liss"
+channels:
+  - conda-forge
+dependencies:
+  - python>=3.9,<=3.10
+  - pip
+  - jupyterlab
+  - jupyterlab_execute_time
+  - ffmpeg
+  - pillow
+  - gdptools==0.2.9
+  - contextily
+  - xugrid
+  - bmipy
+  - git
+  - pip:
+      - bmi-python
+      - git+https://github.com/modflowpy/flopy.git
+      - git+https://github.com/Deltares/xmipy.git
+      - git+https://github.com/MODFLOW-USGS/modflowapi.git
+
+  
