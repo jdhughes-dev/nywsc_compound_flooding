@@ -4,10 +4,10 @@ BEGIN options
 END options
 
 BEGIN dimensions
-  MAXBOUND  63
+  MAXBOUND  544
 END dimensions
 
 BEGIN period  1
-    OPEN/CLOSE  'external/drn.dat'
+    OPEN/CLOSE  'external/chd_surface.dat'
 END period  1
 
