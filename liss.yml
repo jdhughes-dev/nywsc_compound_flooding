@@ -1,6 +1,7 @@
 name: "liss"
 channels:
   - conda-forge
+  - nodefaults
 dependencies:
   - python>=3.9,<=3.10
   - pip
@@ -18,5 +19,6 @@ dependencies:
       - git+https://github.com/modflowpy/flopy.git
       - git+https://github.com/Deltares/xmipy.git
       - git+https://github.com/MODFLOW-USGS/modflowapi.git
+      - pyswmm
 
   
