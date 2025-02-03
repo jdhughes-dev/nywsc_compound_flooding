@@ -188,3 +188,6 @@ trash_*
 
 Thumbs.db
 
+swmm/greenport/*.out
+swmm/greenport/*.rpt
+

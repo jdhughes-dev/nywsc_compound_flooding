@@ -1,0 +1,33 @@
+# WEL: Well package file created on 3/27/2023 by ModelMuse version 5.1.1.20.
+BEGIN OPTIONS
+    AUXILIARY IFACE
+    BOUNDNAMES
+    SAVE_FLOWS
+    AUTO_FLOW_REDUCE  1.000000000000E-006
+    print_flows
+END OPTIONS
+
+BEGIN DIMENSIONS
+  MAXBOUND    17
+END DIMENSIONS
+
+BEGIN PERIOD      1
+     1    25    32  1.000000000000E-002      0 'j1'  # Data Set 6: Layer Row Column Q IFACE boundname Intersected by j1 with formula: 0.01
+     1    25    31  1.000000000000E-002      0 'j2'  # Data Set 6: Layer Row Column Q IFACE boundname Intersected by j2 with formula: 0.01
+     1    26    31  1.000000000000E-002      0 'j3'  # Data Set 6: Layer Row Column Q IFACE boundname Intersected by j3 with formula: 0.01
+     1    27    31  1.000000000000E-002      0 'j4'  # Data Set 6: Layer Row Column Q IFACE boundname Intersected by j4 with formula: 0.01
+     1    29    31  1.000000000000E-002      0 'j6'  # Data Set 6: Layer Row Column Q IFACE boundname Intersected by j6 with formula: 0.01
+     1    31    32  1.000000000000E-002      0 'j7'  # Data Set 6: Layer Row Column Q IFACE boundname Intersected by j7 with formula: 0.01
+     1    30    28  1.000000000000E-002      0 'j8'  # Data Set 6: Layer Row Column Q IFACE boundname Intersected by j8 with formula: 0.01
+     1    32    28  1.000000000000E-002      0 'j9'  # Data Set 6: Layer Row Column Q IFACE boundname Intersected by j9 with formula: 0.01
+     1    35    27  1.000000000000E-002      0 'j10'  # Data Set 6: Layer Row Column Q IFACE boundname Intersected by j10 with formula: 0.01
+     1    26    20  1.000000000000E-002      0 'j11'  # Data Set 6: Layer Row Column Q IFACE boundname Intersected by j11 with formula: 0.01
+     1    29    36  1.000000000000E-002      0 'j12'  # Data Set 6: Layer Row Column Q IFACE boundname Intersected by j12 with formula: 0.01
+     1    26    34  1.000000000000E-002      0 'j13'  # Data Set 6: Layer Row Column Q IFACE boundname Intersected by j13 with formula: 0.01
+     1    30    25  1.000000000000E-002      0 'j14'  # Data Set 6: Layer Row Column Q IFACE boundname Intersected by j14 with formula: 0.01
+     1    29    33  1.000000000000E-002      0 'j15'  # Data Set 6: Layer Row Column Q IFACE boundname Intersected by j15 with formula: 0.01
+     1    27    32  1.000000000000E-002      0 'j16'  # Data Set 6: Layer Row Column Q IFACE boundname Intersected by j16 with formula: 0.01
+     1    27    29  1.000000000000E-002      0 'j17'  # Data Set 6: Layer Row Column Q IFACE boundname Intersected by j17 with formula: 0.01
+END PERIOD
+
+# data not needed for subsequent stress period since api is replacing
