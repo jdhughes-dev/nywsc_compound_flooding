@@ -7,6 +7,8 @@ import contextily as cx
 
 mpl.rcParams['animation.embed_limit'] = 2**128
 
+_verbose = False
+
 _platform = platform.system() 
 _DLL_PATH = pl.Path(os.getenv('CONDA_PREFIX'))
 if _platform == "Windows":
@@ -58,6 +60,27 @@ boxy = (
 def set_title_string(date_time):
     s = str(date_time)[:13].replace("T", " ")
     return f"{s}:00:00"
+
+def get_modflow_grid_name():
+    return "greenport_chd"
+
+def print_path():
+    if _verbose:
+        print(os.environ["PATH"])
+
+def print_value(v):
+    if _verbose:
+        print(v)
+
+def silent():
+    return not _verbose
+
+def verbosity():
+    if _verbose:
+        verbosity_level = 1
+    else:
+        verbosity_level = 0
+    return verbosity_level
 
 def _get_control_file_data(control_path):
     if control_path is None:

@@ -5,7 +5,7 @@ BEGIN options
 END options
 
 BEGIN dimensions
-  MAXBOUND  2352
+  MAXBOUND  2205
 END dimensions
 
 BEGIN period  1

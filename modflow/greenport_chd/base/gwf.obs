@@ -1,0 +1,9 @@
+BEGIN OPTIONS
+END OPTIONS
+
+BEGIN CONTINUOUS FILEOUT gwf.obs.csv
+  'hd_s16783' head     1    23    24
+  'hd_s53331' head     1    14    44
+  'hd_s72782' head     1    15    44
+END CONTINUOUS
+
