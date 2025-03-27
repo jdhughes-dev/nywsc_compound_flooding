@@ -1,3 +1,8 @@
+QUANTITY=discharge_salinity_temperature_sorsin
+FILENAME=Greenport Sewer.pli
+FILETYPE=9
+METHOD=1
+OPERAND=O
 
 QUANTITY=windx
 FILENAME=2010_meteo.amu
