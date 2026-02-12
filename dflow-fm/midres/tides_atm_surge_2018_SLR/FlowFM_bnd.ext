@@ -1,0 +1,11 @@
+
+[boundary]
+quantity=waterlevelbnd
+locationFile=Boundary01.pli
+forcingFile=WaterLevel.bc
+returnTime=0.0000000e+000
+
+[Boundary]
+quantity=waterlevelbnd
+locationFile=Boundary01.pli
+forcingFile=WaterLevel2018_surge.bc
