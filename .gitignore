@@ -195,3 +195,7 @@ swmm/greenport/*.rpt
 
 dflow-fm/coarse/tides/FlowFM_map.nc
 dflow-fm/coarse/tides/FlowFM_map.nc
+
+*.lst
+*.tif
+*.list
