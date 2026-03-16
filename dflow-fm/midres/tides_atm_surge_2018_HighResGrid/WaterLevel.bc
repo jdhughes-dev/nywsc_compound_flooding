@@ -7,7 +7,7 @@ Quantity                        = waterlevelbnd amplitude
 Unit                            = m
 Quantity                        = waterlevelbnd phase
 Unit                            = deg
-A0        0.5                    0
+A0        0                    0
 2N2       0.0170487761497498   -42.0523414611816
 EPSILON2  0.00381487399339676  -1.16606879234314
 J1        0.00407178938388824  171.776168823242
@@ -46,7 +46,7 @@ Quantity                        = waterlevelbnd amplitude
 Unit                            = m
 Quantity                        = waterlevelbnd phase
 Unit                            = deg
-A0        0.5                    0
+A0        0                    0
 2N2       0.0170487761497498   -42.0523414611816
 EPSILON2  0.00381487399339676  -1.16606879234314
 J1        0.00407178938388824  171.776168823242
@@ -85,7 +85,7 @@ Quantity                        = waterlevelbnd amplitude
 Unit                            = m
 Quantity                        = waterlevelbnd phase
 Unit                            = deg
-A0        0.5                    0
+A0        0                    0
 2N2       0.0164107918739319   -42.1449012756348
 EPSILON2  0.00368553221225739  -2.41041135787964
 J1        0.00391343742609024  172.627532958984
@@ -124,7 +124,7 @@ Quantity                        = waterlevelbnd amplitude
 Unit                            = m
 Quantity                        = waterlevelbnd phase
 Unit                            = deg
-A0        0.5                    0
+A0        0                    0
 2N2       0.0156058430671692   -42.2272109985352
 EPSILON2  0.00353893280029297  -3.56249022483826
 J1        0.00379588723182678  172.951599121094
@@ -160,7 +160,7 @@ Quantity                        = waterlevelbnd amplitude
 Unit                            = m
 Quantity                        = waterlevelbnd phase
 Unit                            = deg
-A0        0.5                    0
+A0        0                    0
 2N2       0.0150219535827637   -42.6005020141602
 EPSILON2  0.00342542320489883  -4.68428945541382
 J1        0.00372961223125458  173.449645996094
@@ -196,7 +196,7 @@ Quantity                        = waterlevelbnd amplitude
 Unit                            = m
 Quantity                        = waterlevelbnd phase
 Unit                            = deg
-A0        0.5                    0
+A0        0                    0
 2N2       0.0145502960681915   -42.624153137207
 EPSILON2  0.00333968818187714  -5.37622785568237
 J1        0.00363223999738693  173.69758605957
@@ -231,7 +231,7 @@ Quantity                        = waterlevelbnd amplitude
 Unit                            = m
 Quantity                        = waterlevelbnd phase
 Unit                            = deg
-A0        0.5                    0
+A0        0                    0
 2N2       0.0143147444725037   -42.6159019470215
 EPSILON2  0.00329550892114639  -5.93166542053223
 J1        0.00352339744567871  174.616958618164
@@ -265,7 +265,7 @@ Quantity                        = waterlevelbnd amplitude
 Unit                            = m
 Quantity                        = waterlevelbnd phase
 Unit                            = deg
-A0        0.5                    0
+A0        0                    0
 2N2       0.0142799055576324   -42.5340347290039
 EPSILON2  0.0032918119430542   -5.91019201278687
 J1        0.00340894669294357  175.582809448242
@@ -299,7 +299,7 @@ Quantity                        = waterlevelbnd amplitude
 Unit                            = m
 Quantity                        = waterlevelbnd phase
 Unit                            = deg
-A0        0.5                    0
+A0        0                    0
 2N2       0.0142383015155792   -41.9058723449707
 EPSILON2  0.00330162853002548  -5.64784574508667
 J1        0.00326950252056122  177.821365356445
@@ -336,7 +336,7 @@ Quantity                        = waterlevelbnd amplitude
 Unit                            = m
 Quantity                        = waterlevelbnd phase
 Unit                            = deg
-A0        0.5                    0
+A0        0                    0
 2N2       0.0143590557575226   -40.9903106689453
 EPSILON2  0.00335787296295166  -4.19552183151245
 J1        0.00316171377897263  -178.182723999023
@@ -373,7 +373,7 @@ Quantity                        = waterlevelbnd amplitude
 Unit                            = m
 Quantity                        = waterlevelbnd phase
 Unit                            = deg
-A0        0.5                    0
+A0        0                    0
 2N2       0.0144540691375732   -39.8693084716797
 EPSILON2  0.00340356767177582  -2.68278837203979
 J1        0.00311152338981628  -174.018325805664
@@ -411,7 +411,7 @@ Quantity                        = waterlevelbnd amplitude
 Unit                            = m
 Quantity                        = waterlevelbnd phase
 Unit                            = deg
-A0        0.5                    0
+A0        0                    0
 2N2       0.0147645115852356   -37.4931411743164
 EPSILON2  0.00349074125289917  0.444281965494156
 J1        0.00306723684072495  -166.813201904297
@@ -451,7 +451,7 @@ Quantity                        = waterlevelbnd amplitude
 Unit                            = m
 Quantity                        = waterlevelbnd phase
 Unit                            = deg
-A0        0.5                    0
+A0        0                    0
 2N2       0.0149835383892059   -35.4081535339355
 EPSILON2  0.00361184298992157  2.60372495651245
 J1        0.00318811357021332  -159.959716796875
@@ -491,7 +491,7 @@ Quantity                        = waterlevelbnd amplitude
 Unit                            = m
 Quantity                        = waterlevelbnd phase
 Unit                            = deg
-A0        0.5                    0
+A0        0                    0
 2N2       0.0148878073692322   -34.7559852600098
 EPSILON2  0.00372105211019516  2.87494897842407
 J1        0.00326223015785217  -158.659866333008

@@ -10,7 +10,7 @@ AutoStart                         = 0                                       # Au
 PathsRelativeToParent             = 1                                       # Default: 0. Whether or not (1/0) to resolve file names (e.g. inside the *.ext file) relative to their direct parent, instead of to the toplevel MDU working dir
 
 [geometry]
-NetFile                           = PJgrid_extension2_net.nc                # Unstructured grid file *_net.nc
+NetFile                           = LIS_HighRES_012026_net.nc               # Unstructured grid file *_net.nc
 BathymetryFile                    =                                         # Bathymetry points file *.xyb
 DryPointsFile                     =                                         # Dry points file *.xyz (third column dummy z values), or dry areas polygon file *.pol (third column 1/-1: inside/outside)         
 GridEnclosureFile                 =                                         # Enclosure polygon file *.pol (third column 1/-1: inside/outside)
@@ -78,9 +78,9 @@ Maxvelocitydiff                   = 0                                       # Up
 Epshu                             = 0.0001                                  # Threshold water depth for wet and dry cells
 
 [physics]
-UnifFrictType                     = 1                                       # Uniform friction type (0: Chezy, 1: Manning, 2: White-Colebrook)
-UnifFrictCoef                     = 0.023                                   # Uniform friction coefficient (0: no friction)
-UnifFrictCoef1D                   = 0.023                                   # Uniform friction coefficient in 1D links (0: no friction)
+UnifFrictType                     = 0                                       # Uniform friction type (0: Chezy, 1: Manning, 2: White-Colebrook)
+UnifFrictCoef                     = 60                                   # Uniform friction coefficient (0: no friction)
+UnifFrictCoef1D                   = 60                                   # Uniform friction coefficient in 1D links (0: no friction)
 UnifFrictCoefLin                  = 0                                       # Uniform linear friction coefficient for ocean models (0: no friction)
 Umodlin                           = 0                                       # Linear friction umod, for ifrctyp=4,5,6
 Vicouv                            = 0.1                                     # Uniform horizontal eddy viscosity
@@ -129,7 +129,7 @@ Rouwav                            = FR84                                    # Fr
 Gammax                            = 1                                       # Maximum wave height/water depth ratio
          
 [time]         
-RefDate                           = 20180920                                # Reference date [YYYY-MM-DD HH:MM:SS]
+RefDate                           = 20180915                                # Reference date [YYYY-MM-DD HH:MM:SS]
 Tzone                             = 0                                       # Time zone assigned to input time series
 DtUser                            = 300                                     # Time interval for external forcing update [Dd HH:MM:SS.ZZZ]
 DtNodal                           = 21600                                   # Time interval (s) for updating nodal factors in astronomical boundary conditions [Dd HH:MM:SS.ZZZ]         
@@ -137,7 +137,7 @@ DtMax                             = 30                                      # Ma
 DtInit                            = 1                                       # Initial computation timestep
 Tunit                             = S                                       # Time unit for start/stop times (H, M or S)
 TStart                            = 0                                       # Start time w.r.t. RefDate (in TUnit)
-TStop                             = 864000                                 # Stop  time w.r.t. RefDate (in TUnit)
+TStop                             = 2592000                                 # Stop  time w.r.t. RefDate (in TUnit)
          
 [restart]         
 RestartFile                       =                                         # Restart netcdf-file, either *_rst.nc or *_map.nc
