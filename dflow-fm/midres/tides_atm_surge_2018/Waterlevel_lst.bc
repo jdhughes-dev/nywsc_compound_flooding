@@ -7,7 +7,7 @@ Quantity                        = waterlevelbnd amplitude
 Unit                            = m 
 Quantity                        = waterlevelbnd phase 
 Unit                            = deg 
-A0  -0.4 0 
+A0  -0.1 0 
 
 [forcing] 
 Name                            = Boundary01_0002
@@ -18,7 +18,7 @@ Quantity                        = waterlevelbnd amplitude
 Unit                            = m 
 Quantity                        = waterlevelbnd phase 
 Unit                            = deg 
-A0  -0.4 0 
+A0  -0.1 0 
 2N2        0.017048776149749756   178.44765854  
 K1         0.08778142929077148   98.09882812  
 K2         0.033670030534267426   221.60465488  
@@ -47,7 +47,7 @@ Quantity                        = waterlevelbnd amplitude
 Unit                            = m 
 Quantity                        = waterlevelbnd phase 
 Unit                            = deg 
-A0  -0.4 0 
+A0  -0.1 0 
 2N2        0.016410792246460915   178.35509872  
 K1         0.08649975806474686   98.58985596  
 K2         0.032043494284152985   221.06251869  
@@ -75,7 +75,7 @@ Quantity                        = waterlevelbnd amplitude
 Unit                            = m 
 Quantity                        = waterlevelbnd phase 
 Unit                            = deg 
-A0  -0.4 0 
+A0  -0.1 0 
 2N2        0.01560584269464016   178.272789  
 K1         0.08576826006174088   99.11315613  
 K2         0.030041325837373734   220.58171139  
@@ -102,7 +102,7 @@ Quantity                        = waterlevelbnd amplitude
 Unit                            = m 
 Quantity                        = waterlevelbnd phase 
 Unit                            = deg 
-A0  -0.4 0 
+A0  -0.1 0 
 2N2        0.015021953731775284   177.89949799  
 K1         0.08476206660270691   99.44994812  
 K2         0.02856815978884697   219.86394653  
@@ -128,7 +128,7 @@ Quantity                        = waterlevelbnd amplitude
 Unit                            = m 
 Quantity                        = waterlevelbnd phase 
 Unit                            = deg 
-A0  -0.4 0 
+A0  -0.1 0 
 2N2        0.014550295658409595   177.87584686  
 K1         0.08433359116315842   99.85921936  
 K2         0.027462348341941833   219.77498016  
@@ -154,7 +154,7 @@ Quantity                        = waterlevelbnd amplitude
 Unit                            = m 
 Quantity                        = waterlevelbnd phase 
 Unit                            = deg 
-A0  -0.4 0 
+A0  -0.1 0 
 2N2        0.014314744621515274   177.88409805  
 K1         0.0839269831776619   100.16599731  
 K2         0.026945810765028   219.93589363  
@@ -180,7 +180,7 @@ Quantity                        = waterlevelbnd amplitude
 Unit                            = m 
 Quantity                        = waterlevelbnd phase 
 Unit                            = deg 
-A0  -0.4 0 
+A0  -0.1 0 
 2N2        0.014279905706644058   177.96596527  
 K1         0.08332443237304688   100.04855042  
 K2         0.02693340741097927   220.21860371  
@@ -206,7 +206,7 @@ Quantity                        = waterlevelbnd amplitude
 Unit                            = m 
 Quantity                        = waterlevelbnd phase 
 Unit                            = deg 
-A0  -0.4 0 
+A0  -0.1 0 
 2N2        0.014238301664590836   178.59412766  
 K1         0.0820155143737793   99.68674927  
 K2         0.02704824134707451   221.08703766  
@@ -232,7 +232,7 @@ Quantity                        = waterlevelbnd amplitude
 Unit                            = m 
 Quantity                        = waterlevelbnd phase 
 Unit                            = deg 
-A0  -0.4 0 
+A0  -0.1 0 
 2N2        0.014359056018292904   179.50968933  
 K1         0.07880669832229614   99.16642456  
 K2         0.02774379774928093   222.43297539  
@@ -260,7 +260,7 @@ Quantity                        = waterlevelbnd amplitude
 Unit                            = m 
 Quantity                        = waterlevelbnd phase 
 Unit                            = deg 
-A0  -0.4 0 
+A0  -0.1 0 
 2N2        0.014454069547355175   180.63069153  
 K1         0.07591933757066727   99.05643921  
 K2         0.0282834954559803   224.0170475  
@@ -288,7 +288,7 @@ Quantity                        = waterlevelbnd amplitude
 Unit                            = m 
 Quantity                        = waterlevelbnd phase 
 Unit                            = deg 
-A0  -0.4 0 
+A0  -0.1 0 
 2N2        0.014764511957764626   183.00685883  
 K1         0.07127497345209122   99.5678833  
 K2         0.029350601136684418   227.15753517  
@@ -318,7 +318,7 @@ Quantity                        = waterlevelbnd amplitude
 Unit                            = m 
 Quantity                        = waterlevelbnd phase 
 Unit                            = deg 
-A0  -0.4 0 
+A0  -0.1 0 
 2N2        0.014983538538217545   185.09184647  
 K1         0.06810455769300461   101.10114746  
 K2         0.03044416755437851   228.92509995  
@@ -348,7 +348,7 @@ Quantity                        = waterlevelbnd amplitude
 Unit                            = m 
 Quantity                        = waterlevelbnd phase 
 Unit                            = deg 
-A0  -0.4 0 
+A0  -0.1 0 
 2N2        0.014887806959450245   185.74401474  
 K1         0.06667035818099976   101.90736084  
 K2         0.031093137338757515   228.56114349  
