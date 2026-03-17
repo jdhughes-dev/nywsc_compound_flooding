@@ -5,7 +5,7 @@ fileType=extForce
 [Boundary]
 quantity=waterlevelbnd
 locationFile=Boundary01.pli
-forcingFile=WaterLevel.bc
+forcingFile=WaterLevel_lst.bc
 
 [Boundary]
 quantity=waterlevelbnd

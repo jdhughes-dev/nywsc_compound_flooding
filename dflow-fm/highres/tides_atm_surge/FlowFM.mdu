@@ -83,9 +83,9 @@ Maxvelocitydiff                   = 0                                           
 Epshu                             = 0.0001                                                              # Threshold water depth for wet and dry cells
 
 [physics]
-UnifFrictType                     = 1                                                                   # Uniform friction type (0: Chezy, 1: Manning, 2: White-Colebrook)
-UnifFrictCoef                     = 0.023                                                               # Uniform friction coefficient (0: no friction)
-UnifFrictCoef1D                   = 0.023                                                               # Uniform friction coefficient in 1D links (0: no friction)
+UnifFrictType                     = 0                                                                   # Uniform friction type (0: Chezy, 1: Manning, 2: White-Colebrook)
+UnifFrictCoef                     = 50                                                               # Uniform friction coefficient (0: no friction)
+UnifFrictCoef1D                   = 50                                                               # Uniform friction coefficient in 1D links (0: no friction)
 UnifFrictCoefLin                  = 0                                                                   # Uniform linear friction coefficient for ocean models (0: no friction)
 Umodlin                           = 0                                                                   # Linear friction umod, for ifrctyp=4,5,6
 Vicouv                            = 0.1                                                                 # Uniform horizontal eddy viscosity

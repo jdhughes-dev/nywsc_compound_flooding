@@ -10,7 +10,7 @@ AutoStart                         = 0                                           
 PathsRelativeToParent             = 1                                                                   # Default: 0. Whether or not (1/0) to resolve file names (e.g. inside the *.ext file) relative to their direct parent, instead of to the toplevel MDU working dir
 
 [geometry]
-NetFile                           = LIS_MedRES_012026_net.nc                                            # Unstructured grid file *_net.nc
+NetFile                           = LIS_LowRES_012026_net.nc                                            # Unstructured grid file *_net.nc
 DryPointsFile                     =                                                                     # Dry points file *.xyz (third column dummy z values), or dry areas polygon file *.pol (third column 1/-1: inside/outside)
 GridEnclosureFile                 =                                                                     # Enclosure polygon file *.pol (third column 1/-1: inside/outside)
 WaterLevIniFile                   =                                                                     # Initial water levels sample file *.xyz

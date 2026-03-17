@@ -78,9 +78,9 @@ Maxvelocitydiff                   = 0                                       # Up
 Epshu                             = 0.0001                                  # Threshold water depth for wet and dry cells
 
 [physics]
-UnifFrictType                     = 0                                      # Uniform friction type (0: Chezy, 1: Manning, 2: White-Colebrook)
+UnifFrictType                     = 0                                       # Uniform friction type (0: Chezy, 1: Manning, 2: White-Colebrook)
 UnifFrictCoef                     = 50                                   # Uniform friction coefficient (0: no friction)
-UnifFrictCoef1D                   = 0.023                                   # Uniform friction coefficient in 1D links (0: no friction)
+UnifFrictCoef1D                   = 50                                   # Uniform friction coefficient in 1D links (0: no friction)
 UnifFrictCoefLin                  = 0                                       # Uniform linear friction coefficient for ocean models (0: no friction)
 Umodlin                           = 0                                       # Linear friction umod, for ifrctyp=4,5,6
 Vicouv                            = 0.1                                     # Uniform horizontal eddy viscosity
@@ -119,8 +119,8 @@ ICdtyp                            = 2                                       # Wi
 Cdbreakpoints                     = 0.00063 0.00723                         # Wind drag coefficient break points
 Windspeedbreakpoints              = 0 100                                   # Wind speed break points
 Rhoair                            = 1.2                                     # Air density
-PavBnd                            = 0                                       # Average air pressure on open boundaries (only applied if > 0)
-PavIni                            = 0                                       # Average air pressure for initial water level correction (only applied if > 0)
+PavBnd                            = 101800                                       # Average air pressure on open boundaries (only applied if > 0)
+PavIni                            = 101800                                       # Average air pressure for initial water level correction (only applied if > 0)
          
 [waves]         
 Wavemodelnr                       = 0                                       # Wave model nr. (0: none, 1: fetch/depth limited Hurdle-Stive, 2: Young-Verhagen, 3: SWAN)
@@ -137,14 +137,14 @@ DtMax                             = 30                                      # Ma
 DtInit                            = 1                                       # Initial computation timestep
 Tunit                             = S                                       # Time unit for start/stop times (H, M or S)
 TStart                            = 0                                       # Start time w.r.t. RefDate (in TUnit)
-TStop                             = 864000                                	# Stop  time w.r.t. RefDate (in TUnit)
+TStop                             = 864000                                 # Stop  time w.r.t. RefDate (in TUnit)
          
 [restart]         
 RestartFile                       =                                         # Restart netcdf-file, either *_rst.nc or *_map.nc
 RestartDateTime                   = 20231105                                # Restart date and time when restarting from *_map.nc [YYYY-MM-DD HH:MM:SS]
          
 [external forcing]
-ExtForceFile                      =                                         # Old format for external forcings file *.ext, link with tim/cmp-format boundary conditions specification         
+ExtForceFile                      = FlowFM.ext                              # Old format for external forcings file *.ext, link with tim/cmp-format boundary conditions specification         
 ExtForceFileNew                   = FlowFM_bnd.ext                          # New format for external forcings file *.ext, link with bc-format boundary conditions specification         
 QExt                              = 1                                       # enables MODFLOW coupling
          

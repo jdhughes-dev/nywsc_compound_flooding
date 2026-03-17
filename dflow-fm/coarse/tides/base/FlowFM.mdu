@@ -10,7 +10,7 @@ AutoStart                         = 0                                       # Au
 PathsRelativeToParent             = 1                                       # Default: 0. Whether or not (1/0) to resolve file names (e.g. inside the *.ext file) relative to their direct parent, instead of to the toplevel MDU working dir
 
 [geometry]
-NetFile                           = LIS_modflow_bathy2_net.nc               # Unstructured grid file *_net.nc
+NetFile                           = LIS_LowRES_012026_net.nc               # Unstructured grid file *_net.nc
 BathymetryFile                    =                                         # Bathymetry points file *.xyb
 DryPointsFile                     =                                         # Dry points file *.xyz (third column dummy z values), or dry areas polygon file *.pol (third column 1/-1: inside/outside)         
 GridEnclosureFile                 =                                         # Enclosure polygon file *.pol (third column 1/-1: inside/outside)
@@ -78,9 +78,9 @@ Maxvelocitydiff                   = 0                                       # Up
 Epshu                             = 0.0001                                  # Threshold water depth for wet and dry cells
 
 [physics]
-UnifFrictType                     = 1                                       # Uniform friction type (0: Chezy, 1: Manning, 2: White-Colebrook)
-UnifFrictCoef                     = 0.023                                   # Uniform friction coefficient (0: no friction)
-UnifFrictCoef1D                   = 0.023                                   # Uniform friction coefficient in 1D links (0: no friction)
+UnifFrictType                     = 0                                       # Uniform friction type (0: Chezy, 1: Manning, 2: White-Colebrook)
+UnifFrictCoef                     = 50                                   # Uniform friction coefficient (0: no friction)
+UnifFrictCoef1D                   = 50                                   # Uniform friction coefficient in 1D links (0: no friction)
 UnifFrictCoefLin                  = 0                                       # Uniform linear friction coefficient for ocean models (0: no friction)
 Umodlin                           = 0                                       # Linear friction umod, for ifrctyp=4,5,6
 Vicouv                            = 0.1                                     # Uniform horizontal eddy viscosity
