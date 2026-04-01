@@ -153,6 +153,7 @@ RestartDateTime                   =                                             
 [external forcing]
 ExtForceFile                      =                                                                     # Old format for external forcings file *.ext, link with tim/cmp-format boundary conditions specification
 ExtForceFileNew                   = FlowFM_bnd.ext                                                      # New format for external forcings file *.ext, link with bc-format boundary conditions specification
+QExt                              = 1                                                                   # enables MODFLOW coupling
 
 [trachytopes]
 TrtRou                            = N                                                                   # Include alluvial and vegetation roughness (trachytopes) (Y: yes, N: no)
