@@ -199,3 +199,11 @@ dflow-fm/coarse/tides/FlowFM_map.nc
 *.lst
 *.tif
 *.list
+
+dflowfm_dll.2026.01/
+
+FlowFM.cache
+FlowFM_his.nc
+FlowFM_map.nc
+FlowFM.dia
+FlowFM_Cdwcoeff.tek

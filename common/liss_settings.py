@@ -5,6 +5,23 @@ import os
 import matplotlib as mpl
 import contextily as cx
 
+SCRIPT_PATH = pl.Path(__file__).resolve().parent
+DFLOW_PATH = SCRIPT_PATH.parent / "dflow-fm"
+
+DFLOW_RESOLUTION_DICT = {
+    "gp": {
+        "coarse": DFLOW_PATH / "coarse/tides_atm_surge",
+        "medium": DFLOW_PATH / "midres/tides_atm_surge",
+        "high": DFLOW_PATH / "highres/tides_atm_surge",
+    },
+    "pj": {
+        "coarse": DFLOW_PATH / "coarse/tides_atm_surge_2018",
+        "medium": DFLOW_PATH / "midres/tides_atm_surge_2018",
+        "high": DFLOW_PATH / "highres/tides_atm_surge_2018",
+    },
+}
+
+
 mpl.rcParams['animation.embed_limit'] = 2**128
 
 _verbose = False
@@ -81,6 +98,14 @@ def verbosity():
     else:
         verbosity_level = 0
     return verbosity_level
+
+
+
+def get_dflow_control_path(domain="gp", resolution="coarse"):
+    domain = domain.lower()
+    resolution = resolution.lower()
+    return DFLOW_RESOLUTION_DICT[domain][resolution] / "FlowFM.mdu"
+
 
 def _get_control_file_data(control_path):
     if control_path is None:
