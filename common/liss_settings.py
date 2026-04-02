@@ -1,9 +1,9 @@
+import os
 import pathlib as pl
 import platform
-import os
 
-import matplotlib as mpl
 import contextily as cx
+import matplotlib as mpl
 
 SCRIPT_PATH = pl.Path(__file__).resolve().parent
 DFLOW_PATH = SCRIPT_PATH.parent / "dflow-fm"
@@ -22,12 +22,12 @@ DFLOW_RESOLUTION_DICT = {
 }
 
 
-mpl.rcParams['animation.embed_limit'] = 2**128
+mpl.rcParams["animation.embed_limit"] = 2**128
 
 _verbose = False
 
-_platform = platform.system() 
-_DLL_PATH = pl.Path(os.getenv('CONDA_PREFIX'))
+_platform = platform.system()
+_DLL_PATH = pl.Path(os.getenv("CONDA_PREFIX"))
 if _platform == "Windows":
     _DLL_PATH = _DLL_PATH / "Scripts"
 else:
@@ -48,15 +48,15 @@ fig_ext = ".png"
 transparent = True
 
 extentmax = (
-    538104.4596371914, 
-    821308.8698173981, 
-    4388618.624104167, 
+    538104.4596371914,
+    821308.8698173981,
+    4388618.624104167,
     4601276.154973503,
 )
 extent = (
-    716653.4849867643, 
-    725332.3893581643, 
-    4549340.078317634, 
+    716653.4849867643,
+    725332.3893581643,
+    4549340.078317634,
     4558903.549061629,
 )
 boxx = (
@@ -74,23 +74,35 @@ boxy = (
     4549340.078317634,
 )
 
+
 def set_title_string(date_time):
     s = str(date_time)[:13].replace("T", " ")
     return f"{s}:00:00"
 
-def get_modflow_grid_name():
-    return "PJmf6"
+
+def get_modflow_grid_name(domain="gp", boundary_condition="chd"):
+    domain = domain.lower()
+    boundary_condition = boundary_condition.lower()
+    if domain not in ("gp", "pj"):
+        assert False, "domain must be 'gp' or 'pj'"
+    if boundary_condition not in ("chd", "ghb"):
+        assert False, "boundary condition must be 'chd' or 'ghb'"
+    return f"{domain}_{boundary_condition}"
+
 
 def print_path():
     if _verbose:
         print(os.environ["PATH"])
 
+
 def print_value(v):
     if _verbose:
         print(v)
 
+
 def silent():
     return not _verbose
+
 
 def verbosity():
     if _verbose:
@@ -100,10 +112,13 @@ def verbosity():
     return verbosity_level
 
 
-
 def get_dflow_control_path(domain="gp", resolution="coarse"):
     domain = domain.lower()
     resolution = resolution.lower()
+    if domain not in ("gp", "pj"):
+        assert False, "domain must be 'gp' or 'pj'"
+    if resolution not in ("coarse", "medium", "high"):
+        assert False, "resolution must be 'coarse', 'medium', or 'high'"
     return DFLOW_RESOLUTION_DICT[domain][resolution] / "FlowFM.mdu"
 
 
@@ -114,18 +129,21 @@ def _get_control_file_data(control_path):
         lines = f.readlines()
     return lines
 
+
 def _get_data(control_path, tag="NetFile"):
     value = None
     for line in _get_control_file_data(control_path):
         if line.startswith(tag):
             value = line.split(sep="=")[1].split(sep="#")[0].strip()
     return value
-    
+
+
 def get_dflow_grid_name(control_path=None):
     grid_file = _get_data(control_path)
     if grid_file is not None:
         grid_file = pl.Path(grid_file).stem
     return grid_file
+
 
 def get_dflow_dtuser(control_path=None):
     dtuser = _get_data(control_path, tag="DtUser")
@@ -133,17 +151,20 @@ def get_dflow_dtuser(control_path=None):
         dtuser = float(dtuser)
     return dtuser
 
+
 def get_sfincs_grid_name(control_path=None):
     grid_file = _get_data(control_path, tag="qtrfile")
     if grid_file is not None:
         grid_file = pl.Path(grid_file).stem
     return grid_file
 
+
 def get_sfincs_dtuser(control_path=None):
     dtuser = _get_data(control_path, tag="dtmapout")
     if dtuser is not None:
         dtuser = float(dtuser)
     return dtuser
+
 
 def get_modflow_coupling_tag(mf_couple_freq_hours):
     if mf_couple_freq_hours > 24.0:
@@ -155,7 +176,5 @@ def get_modflow_coupling_tag(mf_couple_freq_hours):
     else:
         tag = f"{mf_couple_freq_hours * 60.0:05.2f}M"
     return tag
-    
-    mf_couple_freq_hours = 0.25    
-    
-    
+
+    mf_couple_freq_hours = 0.25
