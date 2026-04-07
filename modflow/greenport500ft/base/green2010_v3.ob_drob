@@ -1,8 +1,0 @@
-# OBS: Observation Utility file created on 3/27/2023 by ModelMuse version 5.1.1.20.
-BEGIN OPTIONS
-    DIGITS     10
-END OPTIONS
-
-BEGIN CONTINUOUS FILEOUT green2010_v3.drob_out_drn.csv
-  'drn_culvert' drn Moores_Drain
-END CONTINUOUS

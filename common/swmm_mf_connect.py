@@ -2,9 +2,7 @@ import itertools
 
 import flopy
 import geopandas as gpd
-import pandas as pd
 import pyswmm
-
 from liss_settings import get_modflow_grid_name
 
 
@@ -31,7 +29,8 @@ def intersect_points_grid(
     ----------
     domain : str
         Model domain name. Greenport (gp) or Port Jefferson (PJ). Default is gp.
-    boundary_condition
+    boundary_condition: str
+        MODFLOW boundaty condition. Constant head (chd) or general head boundary (ghb). Default is chd.
     sim_ws : str
         The workspace directory containing the MODFLOW 6 simulation files. If None, the function will
         attempt to load from the current working directory.
@@ -65,14 +64,14 @@ def intersect_points_grid(
     mf_grid_name = get_modflow_grid_name(
         domain=domain,
         boundary_condition=boundary_condition,
-        )
+    )
 
     if sim_ws is None:
         sim_ws = f"../modflow/{mf_grid_name}/base"
     if pts_pth is None:
-        pts_pth = f"../swmm/{domain}/Manhole_elevations.zip!Manhole_elevations/Manhole_elevation.shp"
+        pts_pth = f"../swmm/{domain}/gis/{domain}_invert_elevations.shp"
     if swmm_pth is None:
-        swmm_pth = f"../swmm/{domain}/Sewer_GP_V4.inp"
+        swmm_pth = f"../swmm/{domain}/{domain}_sewer.inp"
 
     mf_sim = flopy.mf6.MFSimulation.load(sim_ws=sim_ws, load_only=[], verbosity_level=0)
     gwf = gwf = mf_sim.get_model("gwf")
@@ -84,30 +83,6 @@ def intersect_points_grid(
     ]
     # we could update this to be in other layers
     grid_poly["bot01"] = mg.botm[1].ravel()
-
-    # ----------------------------------------------------------------
-    bnds = pd.Dataframe()
-    bnds["idom"] = mg.idomain[0].flatten()
-    bnds["top"] = mg.top.flatten()
-    for i, arr in enumerate(mg.botm):
-        bnds[f"bot{i + 1:02d}"] = arr.flatten()
-    # import the shapefile with x + y provided by VP
-    path = "../swmm/PJ/PJ_Sewer_GIS/Junctions.shp"
-    junctions_shp = gpd.read_file(path)
-    junctions_shp = junctions_shp.to_crs(epsg=4456)
-    junctions_shp.to_file("../swmm/PJ/PJ_Sewer_GIS/Juntions_4456.shp")
-
-    with pyswmm.Simulation(str(swmm_pth)) as swmm_sim:
-        # some shapefile junctions might not be in SWMM?
-        junction_name = [n.nodeid for n in pyswmm.Nodes(swmm_sim)]
-        junction_elev = [n.invert_elevation for n in pyswmm.Nodes(swmm_sim)]
-        # confirm with the .inp file that this is correct
-        junction_df = pd.DataFrame(
-            {"Name": junction_name, "elev_navd88": junction_elev}
-        )
-    junction_df = junctions_shp.merge(junction_df, on="Name")
-
-    # --------------
 
     pts = gpd.read_file(pts_pth).to_crs(grid_poly.crs)
 
