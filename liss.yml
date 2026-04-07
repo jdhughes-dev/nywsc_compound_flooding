@@ -12,6 +12,7 @@ dependencies:
   - gdptools==0.2.9
   - contextily
   - xugrid
+  - gdal
   - bmipy
   - git
   - pip:

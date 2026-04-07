@@ -81,6 +81,8 @@ def set_title_string(date_time):
 
 
 def get_modflow_grid_name(domain="gp", boundary_condition="chd"):
+    """ Get the modflow grid name
+    """
     domain = domain.lower()
     boundary_condition = boundary_condition.lower()
     if domain not in ("gp", "pj"):
