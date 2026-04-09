@@ -1,0 +1,17 @@
+k,i,j,per,q,boundname,cellid,reason,routine
+0,145,77,0,-12690.9,usgs_s_2081,"(0, 145, 77)",in inactive cell,mfsetup.wells.setup_wel_data
+0,176,17,0,-0,usgs_s_2060,"(0, 176, 17)",in inactive cell,mfsetup.wells.setup_wel_data
+4,98,3,0,-29944.3,usgs_s_2051,"(4, 98, 3)",in inactive cell,mfsetup.wells.setup_wel_data
+6,145,79,0,-77912.3,usgs_s_2080,"(6, 145, 79)",in inactive cell,mfsetup.wells.setup_wel_data
+7,118,8,0,-4813.9,usgs_s_2097,"(7, 118, 8)",in inactive cell,mfsetup.wells.setup_wel_data
+8,176,17,0,-4588.4,usgs_s_2092,"(8, 176, 17)",in inactive cell,mfsetup.wells.setup_wel_data
+8,180,64,0,-86450.3,usgs_s_2112,"(8, 180, 64)",in inactive cell,mfsetup.wells.setup_wel_data
+10,98,3,0,-33249.8,usgs_s_2094,"(10, 98, 3)",in inactive cell,mfsetup.wells.setup_wel_data
+10,118,8,0,-78717.9,usgs_s_2095,"(10, 118, 8)",in inactive cell,mfsetup.wells.setup_wel_data
+10,145,77,0,-26675.5,usgs_s_2142,"(10, 145, 77)",in inactive cell,mfsetup.wells.setup_wel_data
+11,98,3,0,-4060.95,usgs_s_2220,"(11, 98, 3)",in inactive cell,mfsetup.wells.setup_wel_data
+11,100,3,1,-0,usgs_s_2264,"(11, 100, 3)",in inactive cell,mfsetup.wells.setup_wel_data
+12,98,3,0,-49549.6,usgs_s_2076,"(12, 98, 3)",in inactive cell,mfsetup.wells.setup_wel_data
+13,67,1,0,-32178.4,usgs_s_2466,"(13, 67, 1)",in inactive cell,mfsetup.wells.setup_wel_data
+13,166,2,0,-58357.4,usgs_s_2198,"(13, 166, 2)",in inactive cell,mfsetup.wells.setup_wel_data
+14,64,0,0,-30853.8,usgs_s_2470,"(14, 64, 0)",in inactive cell,mfsetup.wells.setup_wel_data

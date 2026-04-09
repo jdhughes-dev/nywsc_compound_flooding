@@ -1,4 +1,5 @@
-Step 1 : Run "..\modflow\notebooks\export_boundary_shapefiles_PJ.ipynb" notebook. This notebook generates the shapefile with the modflow model cells that we want to be coupled. It also reprojects the cells to match the crs of dflow-fm. For the PJ model, most perimeter CHDs are not included, except the ones on the coast.
+Step 1 : Run "..\modflow\notebooks\export_boundary_shapefiles_PJ.ipynb" notebook. 
+This notebook generates the shapefile with the modflow model cells that we want to be coupled. It also reprojects the cells to match the crs of dflow-fm. For the PJ model, most perimeter CHDs are not included, except the ones on the coast.
 
 Step 2: Run ".\step1a_calculate_dflow2mfghb_factors.ipynb" notebook
 

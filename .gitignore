@@ -192,10 +192,13 @@ modflow/port_jeff/*
 
 swmm/greenport/*.out
 swmm/greenport/*.rpt
+swmm/PJ/*
+_RETIRED*.*
+Notes_BNB.txt*
 
 dflow-fm/coarse/tides/FlowFM_map.nc
 dflow-fm/coarse/tides/FlowFM_map.nc
-
+hd_obs.csv
 *.lst
 *.tif
 *.list
