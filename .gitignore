@@ -192,7 +192,7 @@ modflow/port_jeff/*
 
 swmm/greenport/*.out
 swmm/greenport/*.rpt
-swmm/PJ/*
+swmm/pj/SWMM_Latest/*
 _RETIRED*.*
 Notes_BNB.txt*
 
