@@ -192,16 +192,15 @@ modflow/port_jeff/*
 
 swmm/greenport/*.out
 swmm/greenport/*.rpt
-swmm/pj/SWMM_Latest/*
-_RETIRED*.*
-Notes_BNB.txt*
 
 dflow-fm/coarse/tides/FlowFM_map.nc
 dflow-fm/coarse/tides/FlowFM_map.nc
-hd_obs.csv
+
 *.lst
 *.tif
 *.list
+
+.DS_Store
 
 dflowfm_dll.2026.01/
 

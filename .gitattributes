@@ -1,0 +1,16 @@
+# Force LF for all text files
+* text eol=lf
+
+# Explicitly mark specific file types as text to ensure they get normalized
+*.sh text eol=lf
+*.py text eol=lf
+*.txt text eol=lf
+*.ipynb text eol=lf
+
+# Optional: Ensure binaries are not touched
+*.pdf binary
+*.png binary
+*.jpg binary
+*.pkl binary
+*.npz binary
+*.nc binary
