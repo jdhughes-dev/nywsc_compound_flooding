@@ -13,8 +13,8 @@ def intersect_points_grid(
     swmm_pth=None,
     pts_pth=None,
     pts_name_col="Name",
-    grid_poly=None,
     n_junctions=1000,
+    set_layers=True,
     crs="epsg:4456",
 ):
     """
@@ -30,20 +30,21 @@ def intersect_points_grid(
     domain : str
         Model domain name. Greenport (gp) or Port Jefferson (PJ). Default is gp.
     boundary_condition: str
-        MODFLOW boundaty condition. Constant head (chd) or general head boundary (ghb). Default is chd.
+        MODFLOW boundary condition. Constant head (chd) or general head boundary (ghb). Default is chd.
     sim_ws : str
         The workspace directory containing the MODFLOW 6 simulation files. If None, the function will
         attempt to load from the current working directory.
     swmm_pth : str
-        The file path to the SWMM input file. If None, a default path is used.
+        The file path to the SWMM input file (.inp). If None, a default path is used.
     pts_pth : str
         The file path to the shapefile containing point data. If None, a default path is used.
-    grid_poly : GeoDataFrame
-        A GeoDataFrame representing the grid polygon to intersect with the points.
     n_junctions : int
         The desired number of junctions to sample from the point data. Default is 12.
+    set_layers : bool
+        Flag for setting junction layers based model layers and elevations, 
+        otherwise just add to layer 1. Default is True.
     crs : str, optional
-        The coordinate reference system (CRS) to assign to the GeoDataFrame. Default is 'epsg:4456'.
+        The coordinate reference system (CRS) to assign to the GeoDataFrame. Default is "epsg:4456".
 
     Returns:
     -------
@@ -69,24 +70,27 @@ def intersect_points_grid(
     if sim_ws is None:
         sim_ws = f"../modflow/{mf_grid_name}/base"
     if pts_pth is None:
-        pts_pth = f"../swmm/{domain}/gis/{domain}_invert_elevations.shp"
+        pts_pth = f"../swmm/{domain}/gis/{domain}_junctions.shp"
     if swmm_pth is None:
         swmm_pth = f"../swmm/{domain}/{domain}_sewer.inp"
 
+    
+    # load MODFLOW
     mf_sim = flopy.mf6.MFSimulation.load(sim_ws=sim_ws, load_only=[], verbosity_level=0)
     gwf = gwf = mf_sim.get_model("gwf")
     mg = gwf.modelgrid
+    # made grid polygons and add DIS information
     grid_poly = mg.geo_dataframe.set_crs(crs)
+    grid_poly["row"] = [x[0] for x in itertools.product(range(mg.nrow), range(mg.ncol))]
+    grid_poly["col"]=  [x[1] for x in itertools.product(range(mg.nrow), range(mg.ncol))]
+    grid_poly["idom"] = mg.idomain[0].flatten()
+    grid_poly["top"] = mg.top.flatten()
+    for i,arr in enumerate(mg.botm):
+        grid_poly[f"bot{i+1:02d}"] = arr.flatten()
 
-    grid_poly["cid"] = [
-        (r, c) for r, c in itertools.product(range(mg.nrow), range(mg.ncol))
-    ]
-    # we could update this to be in other layers
-    grid_poly["bot01"] = mg.botm[1].ravel()
-
+    # load the horizontal location info for junctions
     pts = gpd.read_file(pts_pth).to_crs(grid_poly.crs)
-
-    # pull in the junctions listed in SWMM
+    # pull in the junctions listed in SWMM for vertical info
     m_to_ft = 3.28084
     with pyswmm.Simulation(str(swmm_pth)) as swmm_sim:
         # some shapefile junctions might not be in SWMM?
@@ -98,6 +102,7 @@ def intersect_points_grid(
             if n.nodeid in possible_junctions["Name"].tolist()
         ]
 
+    # select junctions randomly, or take all if n_junctions is large enough
     if n_junctions > len(possible_junctions):
         print("# of junctions selected greater than # of point features")
         n_junctions = len(possible_junctions)
@@ -105,17 +110,49 @@ def intersect_points_grid(
 
     selected_junctions = possible_junctions.sample(
         n_junctions, random_state=0
-    )  # ['Name'].values
-
-    # slice the pts to grab desired junctions, join with model grid
-    mf6_swmm_connect = (
-        selected_junctions[["Name", "invert_elev_ft", "geometry"]]
-        .sjoin(grid_poly)[["Name", "cid", "bot01", "invert_elev_ft"]]
-        .set_index("Name")
     )
 
+    # join desired junctions with model grid
+    mf6_swmm_connect = (
+        selected_junctions[["Name", "invert_elev_ft", "geometry"]]
+        .sjoin(grid_poly)
+        .set_index("Name")
+    )
+    # place each SWMM junction in the right model layer
+    if set_layers:
+        mf6_swmm_connect["lay"] = 9999
+        # if any of the layers are above the top, just place in layer 1
+        mf6_swmm_connect.loc[
+            mf6_swmm_connect["invert_elev_ft"]>mf6_swmm_connect["top"], "lay"
+        ] = 0
+        
+        divs = ["top"] + [f"bot{i+1:02d}" for i in range(mg.nlay)]
+        for i in range(len(divs)-1):
+            ul = divs[i] # upper layer
+            ll = divs[i+1] # lower layer
+            condition = (
+                (mf6_swmm_connect["invert_elev_ft"]<mf6_swmm_connect[ul]) &
+                (mf6_swmm_connect["invert_elev_ft"]>mf6_swmm_connect[ll]) &
+                (mf6_swmm_connect["idom"]>0)
+            )
+            mf6_swmm_connect.loc[condition, "lay"] = int(i)
+        # error if any layers are not set within model domain
+        missing = "\n".join(mf6_swmm_connect[mf6_swmm_connect['lay']==9999].index.tolist())
+        err_msg = f"junctions outside model domain:\n{missing}"
+        assert mf6_swmm_connect["lay"].max() != 9999, err_msg
+    else:
+        # set all junctions to layer 1
+        mf6_swmm_connect["lay"] = int(0)
+    
+    # final bits for export
+    mf6_swmm_connect["cid"] = list(
+        zip(
+            mf6_swmm_connect["lay"],
+            mf6_swmm_connect["row"],
+            mf6_swmm_connect["col"]
+        )    
+    )
     mf6_cells = mf6_swmm_connect["cid"].to_dict()
-    # swmm_nodes = mf6_swmm_connect['swmm_node'].to_dict()
     swmm_inverts = mf6_swmm_connect["invert_elev_ft"].to_dict()
 
     return (
