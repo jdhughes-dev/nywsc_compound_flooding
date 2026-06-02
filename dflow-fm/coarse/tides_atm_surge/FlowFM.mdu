@@ -143,8 +143,8 @@ DtNodal                           = 21600                                       
 DtMax                             = 30                                                                  # Maximal computation timestep
 DtInit                            = 1                                                                   # Initial computation timestep
 Tunit                             = S                                                                   # Time unit for start/stop times (H, M or S)
-StartDateTime                     = 20100301000000                                                      # Computation start datetime [yyyymmddhhmmss]
-StopDateTime                      = 20100330000000                                                      # Computation stop datetime [yyyymmddhhmmss]
+StartDateTime                     = 20100101120000                                                      # Computation start datetime [yyyymmddhhmmss]
+StopDateTime                      = 20100331120000                                                      # Computation stop datetime [yyyymmddhhmmss]
 
 [restart]
 RestartFile                       =                                                                     # Restart netcdf-file, either *_rst.nc or *_map.nc
@@ -183,7 +183,7 @@ HisFile                           =                                             
 HisInterval                       = 300                                                                 # History output times, given as 'interval' 'start period' 'end period'
 XLSInterval                       =                                                                     # Interval between XLS history [Dd HH:MM:SS.ZZZ]
 MapFile                           =                                                                     # Map file output file *_map.nc in NetCDF format
-MapInterval                       = 1200                                                                # Map file output times, given as 'interval' 'start period' 'end period'
+MapInterval                       = 900                                                                 # Map file output times, given as 'interval' 'start period' 'end period'
 RstInterval                       = 0                                                                   # Restart file output times, given as 'interval' 'start period' 'end period'
 S1incinterval                     =                                                                     # Interval (m) in incremental file for water levels s1
 MapFormat                         = 4                                                                   # Map file format (1: NetCDF, 2: Tecplot, 3: NetCFD and Tecplot)
