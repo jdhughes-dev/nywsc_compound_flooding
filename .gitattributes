@@ -14,3 +14,6 @@
 *.pkl binary
 *.npz binary
 *.nc binary
+*.hds binary
+*.cbc binary
+*.grb binary
