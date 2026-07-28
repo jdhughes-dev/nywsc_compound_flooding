@@ -201,6 +201,7 @@ dflow-fm/coarse/tides/FlowFM_map.nc
 *.list
 
 .DS_Store
+._*
 
 dflowfm_dll.2026.01/
 
