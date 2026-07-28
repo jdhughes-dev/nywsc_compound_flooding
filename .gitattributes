@@ -17,3 +17,23 @@
 *.hds binary
 *.cbc binary
 *.grb binary
+*.ucn binary
+
+# D-Flow FM / SWMM binary outputs
+*.cache binary
+*.out binary
+
+# Executables and libraries
+*.exe binary
+*.dll binary
+
+# Archives and office documents
+*.zip binary
+*.pptx binary
+
+# Shapefile binary components (leave *.prj/*.cpg as text)
+*.shp binary
+*.shx binary
+*.dbf binary
+*.sbn binary
+*.sbx binary
