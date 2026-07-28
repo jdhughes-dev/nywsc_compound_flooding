@@ -36,8 +36,8 @@ operand=O
 [SourceSink]
 id=AlternateSewer
 numCoordinates=1
-xCoordinates=716268.14
-yCoordinates=4545699.10
+xCoordinates=721753.58
+yCoordinates=4553725.98
 discharge=Sewer_sourcesink.bc
 area=1.0000000e+000
 tracersewageDelta=Sewer_sourcesink.bc
