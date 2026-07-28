@@ -1,0 +1,11 @@
+[General]
+fileVersion = 2.00
+fileType    = iniField
+
+[Initial]
+quantity            = initialtracersewage
+dataFile            = tracer_init.pol
+dataFileType        = polygon
+interpolationMethod = constant
+value               = 0.0
+operand             = O
