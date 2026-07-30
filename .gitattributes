@@ -7,6 +7,14 @@
 *.txt text eol=lf
 *.ipynb text eol=lf
 
+# Store notebooks without their outputs. The working copy keeps its rendered
+# figures; only what git records is stripped. The filter itself lives in
+# .git/config, which is not tracked, so each clone must run once:
+#     python tools/nbstrip.py --install
+# Until that is run, notebooks are committed unchanged (git ignores an
+# unconfigured filter), so this line is safe for anyone who has not set it up.
+*.ipynb filter=nbstrip
+
 # Optional: Ensure binaries are not touched
 *.pdf binary
 *.png binary
