@@ -27,19 +27,30 @@ mpl.rcParams["animation.embed_limit"] = 2**128
 _verbose = False
 
 _platform = platform.system()
-_DLL_PATH = pl.Path(os.getenv("CONDA_PREFIX"))
-if _platform == "Windows":
-    _DLL_PATH = _DLL_PATH / "Scripts"
-else:
-    _DLL_PATH = _DLL_PATH / "lib"
-# _DLL_PATH = pl.Path("../modflow/mf6dll")
 if _platform == "Linux":
     _ext = ".so"
 elif _platform == "Darwin":
     _ext = ".dylib"
 else:
     _ext = ".dll"
-libmf6 = (_DLL_PATH / f"libmf6{_ext}").resolve()
+
+# The MODFLOW API library is not a conda package -- environment.yml pins flopy,
+# modflowapi and xmipy, but the binary itself ships in the repo under
+# modflow/mf6dll. Prefer a copy installed into the environment (e.g. by
+# `get-modflow`) when one is actually there, and otherwise fall back to the repo
+# copy that is versioned alongside the models.
+#
+# The repo path is anchored to THIS file rather than the cwd: notebooks live in
+# several directories, and D-Flow FM's initialize() moves the working directory
+# out from under any relative path.
+_ENV_DLL_PATH = pl.Path(os.getenv("CONDA_PREFIX", ""))
+_ENV_DLL_PATH = _ENV_DLL_PATH / ("Scripts" if _platform == "Windows" else "lib")
+_REPO_DLL_PATH = (pl.Path(__file__).resolve().parent.parent / "modflow" / "mf6dll")
+
+libmf6 = (_ENV_DLL_PATH / f"libmf6{_ext}").resolve()
+if not libmf6.is_file():
+    libmf6 = (_REPO_DLL_PATH / f"libmf6{_ext}").resolve()
+libmf6_source = "conda env" if libmf6.parent == _ENV_DLL_PATH.resolve() else "repo"
 
 cx_provider = cx.providers.USGS.USTopo
 mf6_model_crs = "EPSG:4456"
