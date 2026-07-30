@@ -196,6 +196,10 @@ swmm/greenport/*.rpt
 swmm/gp/*.out
 swmm/gp/*.rpt
 
+# scenario results written by step2_run_coupled_models (dflow_tracer.nc alone is
+# ~1.3 GB per coarse scenario); regenerate by re-running the scenario
+results/
+
 dflow-fm/coarse/tides/FlowFM_map.nc
 dflow-fm/coarse/tides/FlowFM_map.nc
 

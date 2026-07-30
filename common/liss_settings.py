@@ -6,7 +6,8 @@ import contextily as cx
 import matplotlib as mpl
 
 SCRIPT_PATH = pl.Path(__file__).resolve().parent
-DFLOW_PATH = SCRIPT_PATH.parent / "dflow-fm"
+REPO_PATH = SCRIPT_PATH.parent
+DFLOW_PATH = REPO_PATH / "dflow-fm"
 
 DFLOW_RESOLUTION_DICT = {
     "gp": {
@@ -45,7 +46,7 @@ else:
 # out from under any relative path.
 _ENV_DLL_PATH = pl.Path(os.getenv("CONDA_PREFIX", ""))
 _ENV_DLL_PATH = _ENV_DLL_PATH / ("Scripts" if _platform == "Windows" else "lib")
-_REPO_DLL_PATH = (pl.Path(__file__).resolve().parent.parent / "modflow" / "mf6dll")
+_REPO_DLL_PATH = REPO_PATH / "modflow" / "mf6dll"
 
 libmf6 = (_ENV_DLL_PATH / f"libmf6{_ext}").resolve()
 if not libmf6.is_file():
@@ -190,4 +191,69 @@ def get_modflow_coupling_tag(mf_couple_freq_hours):
         tag = f"{mf_couple_freq_hours * 60.0:05.2f}M"
     return tag
 
-    mf_couple_freq_hours = 0.25
+
+# ---------------------------------------------------------------------------
+# Scenario naming and layout
+#
+# A scenario is one (D-Flow FM discretization, MODFLOW<->D-Flow coupling
+# frequency, number of SWMM<->MODFLOW connections) combination. step2 writes
+# using these helpers and the step3 notebooks read using them, so the two can
+# never drift apart. Every path is anchored to the repo rather than the cwd --
+# D-Flow FM's initialize() moves the working directory, and the notebooks live
+# in several different directories.
+# ---------------------------------------------------------------------------
+
+
+def get_scenario_name(
+    domain="gp", resolution="coarse", mf_couple_freq_hours=8.0, n_connections=244
+):
+    """Scenario id, e.g. 'gp_coarse_08.00H_n244'.
+
+    n_connections is the number of SWMM<->MODFLOW connections actually resolved
+    by swmm_mf_connect.intersect_points_grid(), NOT the number requested.
+    """
+    tag = get_modflow_coupling_tag(mf_couple_freq_hours)
+    return f"{domain}_{resolution}_{tag}_n{n_connections:03d}"
+
+
+def get_results_path(
+    domain="gp", resolution="coarse", mf_couple_freq_hours=8.0, n_connections=244
+):
+    """Scenario results directory written by step2 and read by step3."""
+    scenario = get_scenario_name(domain, resolution, mf_couple_freq_hours, n_connections)
+    return REPO_PATH / "results" / domain / scenario
+
+
+def get_modflow_run_path(
+    domain="gp",
+    boundary_condition="chd",
+    resolution="coarse",
+    mf_couple_freq_hours=8.0,
+    n_connections=244,
+):
+    """Scenario MODFLOW run directory (holds gwf.hds, gwf.cbc, the obs csvs)."""
+    scenario = get_scenario_name(domain, resolution, mf_couple_freq_hours, n_connections)
+    grid_name = get_modflow_grid_name(domain=domain, boundary_condition=boundary_condition)
+    return REPO_PATH / "modflow" / grid_name / f"run_{scenario}"
+
+
+def get_dflow_run_path(
+    domain="gp", resolution="coarse", mf_couple_freq_hours=8.0, n_connections=244
+):
+    """Scenario D-Flow FM run directory (a sibling of the base scenario dir)."""
+    scenario = get_scenario_name(domain, resolution, mf_couple_freq_hours, n_connections)
+    base = get_dflow_control_path(domain, resolution).parent
+    return base.parent / f"run_{scenario}"
+
+
+def get_dflow_map_path(
+    domain="gp", resolution="coarse", mf_couple_freq_hours=8.0, n_connections=244
+):
+    """Full D-Flow FM map file for a scenario.
+
+    This is the untrimmed output and can be many GB. For the sewage tracer
+    prefer results/<domain>/<scenario>/dflow_tracer.nc, which step2 writes with
+    only mesh2d_sewage + mesh2d_waterdepth and the UGRID geometry.
+    """
+    run = get_dflow_run_path(domain, resolution, mf_couple_freq_hours, n_connections)
+    return run / "output" / "FlowFM_map.nc"
