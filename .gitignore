@@ -200,6 +200,9 @@ swmm/gp/*.rpt
 # ~1.3 GB per coarse scenario); regenerate by re-running the scenario
 results/
 
+# ad-hoc backups made before regenerating an input; git already has the original
+*.bak
+
 dflow-fm/coarse/tides/FlowFM_map.nc
 dflow-fm/coarse/tides/FlowFM_map.nc
 
