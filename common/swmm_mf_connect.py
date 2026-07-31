@@ -93,14 +93,24 @@ def intersect_points_grid(
     # pull in the junctions listed in SWMM for vertical info
     m_to_ft = 3.28084
     with pyswmm.Simulation(str(swmm_pth)) as swmm_sim:
-        # some shapefile junctions might not be in SWMM?
-        swmm_junctions = [n.nodeid for n in pyswmm.Nodes(swmm_sim)]
-        possible_junctions = pts.loc[pts[pts_name_col].isin(swmm_junctions)].copy()
-        possible_junctions["invert_elev_ft"] = [
-            n.invert_elevation * m_to_ft
-            for n in pyswmm.Nodes(swmm_sim)
-            if n.nodeid in possible_junctions["Name"].tolist()
-        ]
+        # Key the inverts BY NAME. The previous version built a list by iterating
+        # pyswmm.Nodes (SWMM's node order) and assigned it positionally to a frame
+        # in shapefile order, so unless the two orders happened to agree every
+        # invert landed on the wrong junction -- only 2 of 244 matched here. That
+        # corrupted both the exchange driving head AND the model layer each
+        # junction is placed in, since set_layers keys on invert_elev_ft.
+        inverts_by_name = {
+            n.nodeid: n.invert_elevation * m_to_ft for n in pyswmm.Nodes(swmm_sim)
+        }
+    # some shapefile junctions might not be in SWMM?
+    swmm_junctions = list(inverts_by_name)
+    possible_junctions = pts.loc[pts[pts_name_col].isin(swmm_junctions)].copy()
+    possible_junctions["invert_elev_ft"] = possible_junctions[pts_name_col].map(
+        inverts_by_name
+    )
+    assert possible_junctions["invert_elev_ft"].notna().all(), (
+        "some shapefile junctions have no SWMM invert after the name join"
+    )
 
     # select junctions randomly, or take all if n_junctions is large enough
     if n_junctions > len(possible_junctions):
