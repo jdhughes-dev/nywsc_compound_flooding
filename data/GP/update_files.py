@@ -82,9 +82,10 @@ def tim_to_bc(ws=None, n_junctions=n_junctions, source_id=source_id, ref_time=re
                 # col3 is the sewage tracer concentration (kg/m3); default if absent
                 tracer.append(t[2] if len(t) > 2 else "1000.0")
 
-        # Name encodes the swmm discretization (n junctions) and the coupling tag,
-        # with an extra underscore between them: e.g. "AlternateSewer_n500__01.00D".
-        name = f"{source_id}_n{n_junctions:03d}__{coupling_tag}"
+        # The [Forcing] block "name" must match the [SourceSink] id in
+        # FlowFM_bnd.ext (D-Flow FM matches the source by name), so it is just
+        # source_id. The n-junctions label + coupling tag go in the FILENAME only.
+        name = source_id
         bc_path = ws / f"Sewer_sourcesink_n{n_junctions:03d}__{coupling_tag}.bc"
         write_bc(bc_path, name, times, discharge, tracer, ref_time=ref_time)
         print(f"  wrote '{bc_path}'")
