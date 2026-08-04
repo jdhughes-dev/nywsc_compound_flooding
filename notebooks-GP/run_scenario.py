@@ -55,7 +55,6 @@ OVERRIDES = {
     "n_junctions": "junctions",
     "pipe_leakance": "leakance",
     "smoke_test_days": "smoke_days",
-    "tracer_coupling": "tracer_coupling",
     "scenario_suffix": "scenario_suffix",
 }
 
@@ -161,14 +160,6 @@ def main():
              "'_smoke<N>d'; omit for the full run",
     )
     p.add_argument(
-        "--tracer-coupling",
-        default="bc",
-        choices=("bc", "live"),
-        help="'bc' reads Sewer_sourcesink.bc and regenerates it at the end (the "
-             "iterated scheme); 'live' writes the SWMM outfall straight into "
-             "D-Flow FM each user timestep and regenerates nothing",
-    )
-    p.add_argument(
         "--scenario-suffix",
         default="",
         help="append to the scenario id so a variant run lands beside an existing "
@@ -199,7 +190,11 @@ def main():
         raise SystemExit(f"notebook not found: {nb_path}")
 
     sys.path.insert(0, str((here / "../common").resolve()))
-    from liss_settings import get_results_path, get_modflow_coupling_tag
+    from liss_settings import (
+        get_results_path,
+        get_modflow_coupling_tag,
+        get_dflow_control_path,
+    )
     from swmm_mf_connect import intersect_points_grid
 
     # ---- preflight ---------------------------------------------------------
@@ -224,33 +219,21 @@ def main():
         scenario += args.scenario_suffix
         results_ws = results_ws.parent / scenario
 
-    # A run that is NOT the canonical scenario must not leave the authoritative .bc
-    # rewritten behind it. Smoke and suffixed runs both tag their results directory
-    # but the regenerated .bc is keyed only on resolution/connections/tag, so it
-    # would still be clobbered.
-    protect_bc = bool(args.smoke_days or args.scenario_suffix)
-
-    # The tracer forcing is scenario-specific and iterates: a previous run of this
-    # scenario supplies it, otherwise the resolution-agnostic seed does.  Absent
-    # both, the notebook asserts ~20 s in -- but only after the run dirs have been
-    # wiped, so check first.
-    tracer_dir = (here / f"../data/{args.domain.upper()}").resolve()
-    tracer_scen = tracer_dir / f"Sewer_sourcesink_{args.resolution}_n{n_connections:03d}__{tag}.bc"
-    tracer_seed = tracer_dir / f"Sewer_sourcesink_n{n_connections:03d}__{tag}.bc"
-    if tracer_scen.is_file():
-        tracer_src, tracer_why = tracer_scen, "previous run of this scenario"
-    elif tracer_seed.is_file():
-        tracer_src, tracer_why = tracer_seed, "seed - first run of this scenario"
-    else:
+    # The sewer forcing is written through the API every user time step, so no
+    # per-scenario series is read and none is produced.  The only file involved is
+    # the base model's own Sewer_sourcesink.bc, which travels with the run
+    # directory; the notebook asserts its tracersewageDelta is 1000 before running.
+    base_bc = (
+        get_dflow_control_path(args.domain, args.resolution).parent / "Sewer_sourcesink.bc"
+    ).resolve()
+    if not base_bc.is_file():
         raise SystemExit(
-            f"no tracer forcing for {args.resolution} / n{n_connections:03d} / {tag}:\n"
-            f"  scenario: {tracer_scen}\n"
-            f"  seed    : {tracer_seed}\n"
-            f"Regenerate the seed with data/{args.domain.upper()}/update_files.py first."
+            f"the base model has no Sewer_sourcesink.bc: {base_bc}\n"
+            "D-Flow FM will not initialize a [SourceSink] without a discharge key, "
+            "and the sewage tracer concentration comes from that file."
         )
 
-    # A completed scenario is ~18 files / ~8 GB.  Re-running overwrites it and
-    # rewrites the authoritative tracer .bc, so make clobbering deliberate.
+    # A completed scenario is ~18 files / ~8 GB, so make clobbering deliberate.
     existing = list(results_ws.glob("*")) if results_ws.is_dir() else []
     if existing and not args.force:
         raise SystemExit(
@@ -267,7 +250,7 @@ def main():
         print(f"coupling     : {args.coupling_hours} h  ({tag})")
         print(f"leakance     : {args.leakance} 1/d")
         print(f"smoke days   : {args.smoke_days if args.smoke_days else 'None (full run)'}")
-        print(f"tracer bc    : {tracer_src.name}  ({tracer_why})")
+        print(f"sewer forcing: {base_bc.name} (base model; tracersewageDelta only)")
         print(f"results dir  : {len(existing)} existing files")
         apply_overrides(notebook_source(nb_path),
                         {n: getattr(args, d) for n, d in OVERRIDES.items()})
@@ -282,22 +265,9 @@ def main():
     values = {name: getattr(args, dest) for name, dest in OVERRIDES.items()}
     src = apply_overrides(notebook_source(nb_path), values)
 
-    # A smoke test or a suffixed variant tags the scenario, the results dir and both
-    # run dirs, but NOT the regenerated tracer forcing: the notebook writes it to
-    # Sewer_sourcesink_<res>_n<NNN>__<tag>.bc regardless.  So a 2-day smoke run
-    # splices 2 days of SWMM output into the authoritative file, and a suffixed
-    # bc-mode run overwrites it outright -- in both cases the next run of the real
-    # scenario would silently start from the wrong series.  Snapshot it and put it
-    # back.
-    bc_snapshot = None
-    if protect_bc:
-        bc_snapshot = tracer_scen.read_bytes() if tracer_scen.is_file() else None
-    # Name the actual trigger, so the restore message cannot claim "smoke test" for
-    # a full suffixed run the way it did the first time this guard fired for real.
-    protect_why = (
-        f"smoke test ({args.smoke_days:g} d)" if args.smoke_days
-        else f"suffixed run '{args.scenario_suffix}'"
-    )
+    # No snapshot/restore of the sewer forcing is needed any more: the run neither
+    # reads a per-scenario series nor writes one, so a smoke test or a suffixed
+    # variant cannot leave anything behind for the next run to pick up.
 
     # ---- run ---------------------------------------------------------------
     t0 = time.perf_counter()
@@ -313,7 +283,7 @@ def main():
             print(f"coupling     : {args.coupling_hours} h  ({tag})")
             print(f"leakance     : {args.leakance} 1/d")
             print(f"smoke days   : {args.smoke_days if args.smoke_days else 'None (full run)'}")
-            print(f"tracer bc    : {tracer_src.name}  ({tracer_why})")
+            print(f"sewer forcing: {base_bc.name} (base model; tracersewageDelta only)")
             print("-" * 72)
 
             ns = {"__name__": "__main__", "__file__": str(nb_path)}
@@ -330,16 +300,6 @@ def main():
             traceback.print_exc()
             rc = 1
         finally:
-            if protect_bc:
-                if bc_snapshot is None:
-                    if tracer_scen.is_file():
-                        tracer_scen.unlink()
-                        print(f"{protect_why}: discarded {tracer_scen.name}, which did "
-                              "not exist before this run")
-                else:
-                    tracer_scen.write_bytes(bc_snapshot)
-                    print(f"{protect_why}: restored {tracer_scen.name} to its "
-                          "pre-run state")
             sys.stdout, sys.stderr = stdout, stderr
 
     print(f"\nlog: {log_path}")
