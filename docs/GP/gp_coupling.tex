@@ -159,10 +159,19 @@ simulators. \cite{jin2025gwocean} exploit the same property in coupling a
 hydrodynamic model to MODFLOW~6, adjusting the general-head boundary through the
 interface rather than by altering the code.
 
-What such an interface exposes, however, is not always sufficient on its own: a
+What such an interface exposes, however, is not always sufficient on its own. A
 quantity may be readable but not writable in a way the solution uses, and where
 within the model time step a value is written can determine whether it survives
-to be used at all.
+to be used at all. The Basic Model Interface defines initialization, advancement
+in time, and finalization; it does not define access to model state part way
+through a time step. That omission is not incidental, and it has been encountered
+before: the MODFLOW application programming interface extends the Basic Model
+Interface precisely because the ability to modify variables within a time step
+falls outside it \citep{hughes2022modflowapi}. Any coupling that must inject state
+between two operations of a single time step therefore depends on something beyond
+the standard, and a simulator exposing only the standard interface cannot support
+that class of coupling at all. Both simulators driven here provide such an
+extension, by different routes, and the coupling described below depends on it.
 
 The purpose of this paper is to describe an approach for coupling a coastal
 hydrodynamic model, a groundwater flow model, and a sewer network model in
@@ -228,6 +237,16 @@ FM as an external volume source; simulated groundwater heads are used to compute
 the sewer exchange; and SWMM is advanced. Because each exchange uses the state
 at the end of the preceding operation, the coupling is fully explicit and no
 iteration is performed within a coupling interval.
+
+Explicit coupling is a choice rather than a constraint of the interfaces. The
+MODFLOW application programming interface exposes the nonlinear solution within a
+time step, so an exchange can in principle be repeated and the coupled state
+brought to convergence before the models advance \citep{hughes2022modflowapi}. An
+implicit coupling of that kind would be far less sensitive to the exchange
+interval, which is the quantity the demonstration below measures. It is not
+attempted here: the explicit scheme is the simpler starting point, and quantifying
+how the explicit solution depends on the exchange interval is a prerequisite for
+judging what an implicit scheme would be worth.
 
 The coupling interval is the principal numerical control on the approach. The
 coastal boundary of the groundwater model is forced by a semidiurnal tide with a
@@ -412,6 +431,15 @@ separate initialization, computation, and finalization entry points of its
 interface rather than through the combined update, and writes the source term
 between the first and the second.
 
+This is the sub-time-step access described earlier, and the two simulators reach
+it differently. MODFLOW~6 extends the Basic Model Interface with functions that
+expose the time step and the solution within it \citep{hughes2022modflowapi}, and
+those functions are what the groundwater exchange is written through. D-Flow FM
+instead publishes its user time step as three separate entry points alongside the
+combined one. Neither route is part of the Basic Model Interface itself, so a
+coupling of this kind is portable only to the extent that each simulator provides
+some equivalent.
+
 \section*{Demonstration}
 
 The coupling is exercised on the Greenport sewer network described above. Three
@@ -454,10 +482,16 @@ Fine    & 41,091 & 300 & 89 \\
 % the coupling approach and what it costs; the character and bounds of the error
 % introduced by the exchange interval, and how frequently the exchange must occur;
 % and what the demonstration establishes about the requirements a library
-% interface must meet for this kind of coupling, including the model-time-step
-% window the SWMM outfall discharge transfer depends on. Forward-looking
-% paragraphs on applying the same pattern to other simulator combinations close
-% the section.
+% interface must meet for this kind of coupling -- that sub-time-step access is
+% needed, that the Basic Model Interface does not define it, and that both
+% simulators here supply it by different and non-portable routes.
+%
+% Forward-looking paragraphs close the section:
+%   - an implicit coupling, iterating the exchange to convergence within a time
+%     step through the MODFLOW API's access to the nonlinear solution, and what
+%     the measured interval sensitivity implies it would be worth
+%   - applying the same pattern to other simulator combinations, which requires
+%     only that each expose an equivalent sub-time-step entry point
 
 \section*{Acknowledgments}
 
