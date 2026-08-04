@@ -238,15 +238,25 @@ the sewer exchange; and SWMM is advanced. Because each exchange uses the state
 at the end of the preceding operation, the coupling is fully explicit and no
 iteration is performed within a coupling interval.
 
-Explicit coupling is a choice rather than a constraint of the interfaces. The
+The explicit scheme is imposed by what the interfaces expose, not chosen for
+convenience. An implicit coupling requires every participant to re-evaluate a time
+step against revised exchange terms, and only one of the three permits it: the
 MODFLOW application programming interface exposes the nonlinear solution within a
-time step, so an exchange can in principle be repeated and the coupled state
-brought to convergence before the models advance \citep{hughes2022modflowapi}. An
-implicit coupling of that kind would be far less sensitive to the exchange
-interval, which is the quantity the demonstration below measures. It is not
-attempted here: the explicit scheme is the simpler starting point, and quantifying
-how the explicit solution depends on the exchange interval is a prerequisite for
-judging what an implicit scheme would be worth.
+time step, so the groundwater solution can be iterated
+\citep{hughes2022modflowapi}. The hydrodynamic and sewer interfaces do not. Both
+publish entry points that bracket a time step and advance it, with no facility to
+re-solve the same step once an exchanged quantity has changed, so a coupled
+iteration has nothing to iterate on two of its three legs.
+
+The disparity in time step compounds the difficulty. The hydrodynamic model
+advances on a user time step of seconds to minutes, the groundwater model on the
+coupling interval, and the sewer model routes internally on a step of its own, so
+the models step at rates differing by up to two orders of magnitude. Even were
+re-evaluation available throughout, defining a converged coupled state across
+those scales, and deciding which model repeats how many of its own steps per
+outer iteration, is not a matter of simply looping the exchange. Quantifying how
+the explicit solution depends on the exchange interval, which the demonstration
+below does, is the useful thing that can be established without it.
 
 The coupling interval is the principal numerical control on the approach. The
 coastal boundary of the groundwater model is forced by a semidiurnal tide with a
@@ -487,9 +497,11 @@ Fine    & 41,091 & 300 & 89 \\
 % simulators here supply it by different and non-portable routes.
 %
 % Forward-looking paragraphs close the section:
-%   - an implicit coupling, iterating the exchange to convergence within a time
-%     step through the MODFLOW API's access to the nonlinear solution, and what
-%     the measured interval sensitivity implies it would be worth
+%   - what an implicit coupling would require that is not available today: the
+%     hydrodynamic and sewer interfaces advance a time step but cannot re-solve
+%     one, so two of the three legs have nothing to iterate on, and the models
+%     step at rates differing by up to two orders of magnitude. This is a request
+%     of the simulators, not a limitation of the approach.
 %   - applying the same pattern to other simulator combinations, which requires
 %     only that each expose an equivalent sub-time-step entry point
 
