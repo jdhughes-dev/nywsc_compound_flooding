@@ -140,6 +140,60 @@ def extract_tracer(map_path, tracer_out, force):
     print("  reopened as UGRID OK")
 
 
+def extract_source_sink(dflow_working, results_ws, force):
+    """Copy the source-sink records out of FlowFM_his.nc into a small file.
+
+    D-Flow FM already records what the sewer source actually delivered --
+    prescribed and current discharge, cumulative volume, the per-his-interval
+    average, and the domain water-balance term. That is the authoritative record
+    of the tracer inflow, better than anything reconstructed afterwards, but it
+    lives in an 80+ MB his file that step2 does not copy into results/.
+
+    Keeping the whole his file per scenario would add ~1.7 GB across the sweep for
+    a handful of series, so only the source_sink variables are kept. Compressed
+    that is well under 1 MB against 82.9 MB for the full file.
+    """
+    import xarray as xr
+
+    out = results_ws / "source_sink_his.nc"
+    if out.is_file() and not force:
+        print(f"source sink: {out.name} already present "
+              f"({out.stat().st_size / 1e6:.2f} MB) - skipping")
+        return
+
+    his = dflow_working / "output" / "FlowFM_his.nc"
+    if not his.is_file():
+        print(f"source sink: no his file at {his} - skipping")
+        return
+
+    ds = xr.open_dataset(his)
+    keep = [v for v in ds.variables
+            if v.startswith("source_sink") or v == "water_balance_source_sink"]
+    if not keep:
+        print(f"source sink: no source_sink variables in {his.name} - skipping")
+        ds.close()
+        return
+
+    sub = ds[keep]
+    # Chunk sizes MUST be set explicitly. xarray otherwise inherits the his file's
+    # own chunk layout, which is tuned for that file's shape and is pathological for
+    # a (ntime, 1) slice: writing with inherited chunks gives 6.1 MB, and turning on
+    # zlib without fixing them makes it WORSE at 6.8 MB -- both far above the 1.2 MB
+    # of actual data. With a sane time chunk it comes out at 0.61 MB.
+    enc = {}
+    for v in sub.data_vars:
+        if sub[v].dtype.kind != "f" or not sub[v].shape:
+            continue
+        chunks = tuple(min(s, 4096) if i == 0 else s
+                       for i, s in enumerate(sub[v].shape))
+        enc[v] = {"zlib": True, "complevel": 4, "chunksizes": chunks}
+    sub.to_netcdf(out, encoding=enc)
+    ds.close()
+    print(f"source sink: wrote {out.name} "
+          f"({out.stat().st_size / 1e6:.2f} MB from {his.stat().st_size / 1e6:.1f} MB), "
+          f"{len(keep)} variables")
+
+
 def regenerate_bc(args, here, results_ws, dflow_working, n_connections, tag, force):
     """Rebuild the scenario sewer forcing from this run's SWMM output."""
     import pyswmm
@@ -244,6 +298,7 @@ def main():
                    help="redo both steps even if their outputs already exist")
     p.add_argument("--skip-tracer", action="store_true")
     p.add_argument("--skip-bc", action="store_true")
+    p.add_argument("--skip-source-sink", action="store_true")
     args = p.parse_args()
 
     here = pl.Path(__file__).resolve().parent
@@ -289,6 +344,8 @@ def main():
         extract_tracer(map_path, results_ws / "dflow_tracer.nc", args.force)
     if not args.skip_bc:
         regenerate_bc(args, here, results_ws, dflow_working, n_connections, tag, args.force)
+    if not args.skip_source_sink:
+        extract_source_sink(dflow_working, results_ws, args.force)
 
     print("-" * 72)
     files = sorted(results_ws.glob("*"))

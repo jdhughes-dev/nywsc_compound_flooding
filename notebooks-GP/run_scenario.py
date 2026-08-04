@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+﻿#!/usr/bin/env python
 """Run one step2 coupled scenario headlessly, streaming output to a log file.
 
 The notebook remains the single source of truth: this script converts
@@ -55,6 +55,8 @@ OVERRIDES = {
     "n_junctions": "junctions",
     "pipe_leakance": "leakance",
     "smoke_test_days": "smoke_days",
+    "tracer_coupling": "tracer_coupling",
+    "scenario_suffix": "scenario_suffix",
 }
 
 
@@ -159,6 +161,20 @@ def main():
              "'_smoke<N>d'; omit for the full run",
     )
     p.add_argument(
+        "--tracer-coupling",
+        default="bc",
+        choices=("bc", "live"),
+        help="'bc' reads Sewer_sourcesink.bc and regenerates it at the end (the "
+             "iterated scheme); 'live' writes the SWMM outfall straight into "
+             "D-Flow FM each user timestep and regenerates nothing",
+    )
+    p.add_argument(
+        "--scenario-suffix",
+        default="",
+        help="append to the scenario id so a variant run lands beside an existing "
+             "scenario instead of overwriting it (e.g. '_bcfull')",
+    )
+    p.add_argument(
         "--force",
         action="store_true",
         help="run even if the results directory already holds a completed scenario",
@@ -204,6 +220,15 @@ def main():
     if args.smoke_days:
         scenario += f"_smoke{args.smoke_days:g}d"
         results_ws = results_ws.parent / scenario
+    if args.scenario_suffix:
+        scenario += args.scenario_suffix
+        results_ws = results_ws.parent / scenario
+
+    # A run that is NOT the canonical scenario must not leave the authoritative .bc
+    # rewritten behind it. Smoke and suffixed runs both tag their results directory
+    # but the regenerated .bc is keyed only on resolution/connections/tag, so it
+    # would still be clobbered.
+    protect_bc = bool(args.smoke_days or args.scenario_suffix)
 
     # The tracer forcing is scenario-specific and iterates: a previous run of this
     # scenario supplies it, otherwise the resolution-agnostic seed does.  Absent
@@ -265,7 +290,7 @@ def main():
     # starting from the seed -- which is not how the other scenarios in the sweep
     # were run.  Snapshot it and put it back.
     smoke_bc_before = None
-    if args.smoke_days:
+    if protect_bc:
         smoke_bc_before = tracer_scen.read_bytes() if tracer_scen.is_file() else None
 
     # ---- run ---------------------------------------------------------------
@@ -299,7 +324,7 @@ def main():
             traceback.print_exc()
             rc = 1
         finally:
-            if args.smoke_days:
+            if protect_bc:
                 if smoke_bc_before is None:
                     if tracer_scen.is_file():
                         tracer_scen.unlink()
