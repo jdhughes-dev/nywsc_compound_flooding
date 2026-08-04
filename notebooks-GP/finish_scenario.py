@@ -294,6 +294,9 @@ def main():
     p.add_argument("--junctions", type=int, default=500)
     p.add_argument("--outfall", default="O3",
                    help="SWMM outfall driving the D-Flow tracer")
+    p.add_argument("--scenario-suffix", default="",
+                   help="append to the scenario id, matching run_scenario.py's "
+                        "--scenario-suffix, so a variant run can be finished too")
     p.add_argument("--force", action="store_true",
                    help="redo both steps even if their outputs already exist")
     p.add_argument("--skip-tracer", action="store_true")
@@ -321,6 +324,11 @@ def main():
         args.domain, args.resolution, args.coupling_hours, n_connections
     )
     scenario = results_ws.name
+    if args.scenario_suffix:
+        # Mirror step2: the suffix is appended to the scenario id, so it renames the
+        # results directory AND both run directories.
+        scenario += args.scenario_suffix
+        results_ws = results_ws.parent / scenario
 
     if not results_ws.is_dir():
         raise SystemExit(
@@ -343,7 +351,17 @@ def main():
     if not args.skip_tracer:
         extract_tracer(map_path, results_ws / "dflow_tracer.nc", args.force)
     if not args.skip_bc:
-        regenerate_bc(args, here, results_ws, dflow_working, n_connections, tag, args.force)
+        if args.scenario_suffix and not args.force:
+            # bc_out is keyed on resolution/connections/tag only -- it carries no
+            # suffix -- so finishing a variant would overwrite the authoritative
+            # series belonging to the real scenario.
+            print(f"bc: refusing to regenerate the unsuffixed "
+                  f"Sewer_sourcesink_{args.resolution}_n{n_connections:03d}__{tag}.bc "
+                  f"from a '{args.scenario_suffix}' run; pass --force to override, "
+                  "or --skip-bc to silence this")
+        else:
+            regenerate_bc(args, here, results_ws, dflow_working, n_connections, tag,
+                          args.force)
     if not args.skip_source_sink:
         extract_source_sink(dflow_working, results_ws, args.force)
 

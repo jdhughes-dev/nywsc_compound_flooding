@@ -282,16 +282,22 @@ def main():
     values = {name: getattr(args, dest) for name, dest in OVERRIDES.items()}
     src = apply_overrides(notebook_source(nb_path), values)
 
-    # A smoke test tags the scenario, the results dir and both run dirs, but NOT the
-    # regenerated tracer forcing: the notebook writes it to
+    # A smoke test or a suffixed variant tags the scenario, the results dir and both
+    # run dirs, but NOT the regenerated tracer forcing: the notebook writes it to
     # Sewer_sourcesink_<res>_n<NNN>__<tag>.bc regardless.  So a 2-day smoke run
-    # splices 2 days of SWMM output into the authoritative file, and the subsequent
-    # full run then picks that up as "previous run of this scenario" instead of
-    # starting from the seed -- which is not how the other scenarios in the sweep
-    # were run.  Snapshot it and put it back.
-    smoke_bc_before = None
+    # splices 2 days of SWMM output into the authoritative file, and a suffixed
+    # bc-mode run overwrites it outright -- in both cases the next run of the real
+    # scenario would silently start from the wrong series.  Snapshot it and put it
+    # back.
+    bc_snapshot = None
     if protect_bc:
-        smoke_bc_before = tracer_scen.read_bytes() if tracer_scen.is_file() else None
+        bc_snapshot = tracer_scen.read_bytes() if tracer_scen.is_file() else None
+    # Name the actual trigger, so the restore message cannot claim "smoke test" for
+    # a full suffixed run the way it did the first time this guard fired for real.
+    protect_why = (
+        f"smoke test ({args.smoke_days:g} d)" if args.smoke_days
+        else f"suffixed run '{args.scenario_suffix}'"
+    )
 
     # ---- run ---------------------------------------------------------------
     t0 = time.perf_counter()
@@ -325,14 +331,15 @@ def main():
             rc = 1
         finally:
             if protect_bc:
-                if smoke_bc_before is None:
+                if bc_snapshot is None:
                     if tracer_scen.is_file():
                         tracer_scen.unlink()
-                        print(f"smoke test: discarded {tracer_scen.name} so the full "
-                              "run still starts from the seed")
+                        print(f"{protect_why}: discarded {tracer_scen.name}, which did "
+                              "not exist before this run")
                 else:
-                    tracer_scen.write_bytes(smoke_bc_before)
-                    print(f"smoke test: restored {tracer_scen.name} to its pre-run state")
+                    tracer_scen.write_bytes(bc_snapshot)
+                    print(f"{protect_why}: restored {tracer_scen.name} to its "
+                          "pre-run state")
             sys.stdout, sys.stderr = stdout, stderr
 
     print(f"\nlog: {log_path}")
