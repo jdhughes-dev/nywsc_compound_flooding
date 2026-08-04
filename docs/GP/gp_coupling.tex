@@ -92,7 +92,10 @@ is described in which three such codes---a coastal hydrodynamic model, a
 groundwater flow model, and a sewer network model---are loaded as libraries into
 a single process and exchange state in memory at a fixed interval throughout a
 simulation, so that a self-consistent coupled solution is obtained from one
-simulation. Exchange formulations are given for each pair of models. Particular
+simulation. None of the codes is modified: each is used as distributed and driven
+through its published interface, so the coupling does not fork a source tree or
+reimplement one process inside another, and it survives a new release of any
+component. Exchange formulations are given for each pair of models. Particular
 attention is given to returning the sewer model outfall discharge to the
 hydrodynamic model as a sewage tracer source, which places the strongest
 requirement on the interface: the transfer has to occur between the external
@@ -126,17 +129,40 @@ governing equations, spatial discretization, model time step, and means of
 external control. Representing the coupled process therefore means making those
 codes exchange state while they run.
 
-Standardized control interfaces make that possible. Simulators that expose a
-library interface, such as the Basic Model Interface \citep{hutton2020bmi} or an
-application programming interface built for the same purpose
-\citep{hughes2022modflowapi}, can be loaded into a single process and advanced
-under external control, with state passed as arrays in memory. The exchange
-interval is then set by the numerics rather than by any intermediate file format,
-and a self-consistent coupled solution is obtained from one simulation. What such
-an interface exposes, however, is not always sufficient on its own: a quantity
-may be readable but not writable in a way the solution uses, and where within the
-model time step a value is written can determine whether it survives to be used
-at all.
+Coupling of this kind has generally been achieved in one of two ways. The first
+adds the second process to an existing code, which yields a tightly integrated
+solution but confines it to the domains the host code implements; the coupled
+surface water routing added to MODFLOW is an example \citep{hughes2014swr}. The
+second couples separate codes externally, and has been applied to urban drainage
+and groundwater through SWMM and MODFLOW \citep{zhang2020swmmmodflow,
+li2022urbansaturated, tajari2026compound}, to large-scale hydrology and
+groundwater \citep{guillaumot2022cwatm}, and to the coastal zone by coupling a
+hydrodynamic model to a groundwater model \citep{jin2025gwocean}.
+
+Standardized control interfaces make the second route practical without the cost
+that has historically accompanied it. Simulators that expose a library interface,
+such as the Basic Model Interface \citep{hutton2020bmi} or an application
+programming interface built for the same purpose \citep{hughes2022modflowapi},
+can be loaded into a single process and advanced under external control, with
+state passed as arrays in memory. The exchange interval is then set by the
+numerics rather than by any intermediate file format, and a self-consistent
+coupled solution is obtained from one simulation.
+
+The decisive property is that none of the coupled codes is modified. Each is used
+as distributed: the coupling lives entirely in the controlling program, which
+advances each simulator through its published interface and moves state between
+them. No source is forked, no process is reimplemented inside a host code, and
+each simulator continues to be developed, tested and released by the group that
+maintains it. A coupling built this way survives a new release of any component,
+and the same controlling program can be repointed at a different combination of
+simulators. \cite{jin2025gwocean} exploit the same property in coupling a
+hydrodynamic model to MODFLOW~6, adjusting the general-head boundary through the
+interface rather than by altering the code.
+
+What such an interface exposes, however, is not always sufficient on its own: a
+quantity may be readable but not writable in a way the solution uses, and where
+within the model time step a value is written can determine whether it survives
+to be used at all.
 
 The purpose of this paper is to describe an approach for coupling a coastal
 hydrodynamic model, a groundwater flow model, and a sewer network model in
@@ -179,8 +205,9 @@ The three simulators are advanced within a single process and exchange state
 through their respective library interfaces. MODFLOW~6 is controlled through
 its application programming interface \citep{hughes2022modflowapi}, and D-Flow
 FM through its Basic Model Interface implementation \citep{hutton2020bmi}.
-SWMM is controlled through the PySWMM interface \citep{mcdonnell2020pyswmm}.
-Model construction and post-processing use FloPy \citep{hughes2023flopy}.
+SWMM is controlled through the PySWMM interface \citep{mcdonnell2020pyswmm}. The
+MODFLOW~6 model is constructed with FloPy \citep{hughes2023flopy}. All three
+simulators are used as distributed, without modification.
 
 % VERSION STATEMENT -- must match whichever runs produce the reported results.
 % The completed 21-scenario sweep used MODFLOW 6 version 6.5.0; 6.7.0 is what is
