@@ -1,14 +1,18 @@
 % Environmental Modelling & Software submission.
 %
 % elsarticle option notes:
-%   preprint  single column, single spaced  <- used here
-%   review    single column, double spaced, line numbers (add for review copy)
+%   preprint    single column, single spaced  <- used here
+%   review      single column, double spaced, line numbers (add for review copy)
 %   3p,twocolumn  the printed double-column layout -- NOT wanted here
+%   authoryear  REQUIRED for (Author year) citations. elsarticle defaults to
+%               numbered mode, so without it \citep renders as [5] no matter which
+%               .bst is loaded, and elsarticle-harv silently produces a numbered
+%               reference list.
 %
 % EMS does not require a specific reference format at submission; any consistent
 % style is accepted and the journal style is applied at proof stage. The journal's
 % published in-text form is author-date, so elsarticle-harv is used.
-\documentclass[preprint,11pt]{elsarticle}
+\documentclass[preprint,authoryear,11pt]{elsarticle}
 
 \usepackage[T1]{fontenc}
 \usepackage{amsmath}
@@ -163,12 +167,13 @@ insensitive to the exchange interval.
 Three simulators are coupled. Coastal hydrodynamics and the transport of a
 conservative sewage tracer are simulated with D-Flow Flexible Mesh (D-Flow FM),
 which solves the depth-averaged shallow water equations on an unstructured grid
-\citep{deltares2024dflowfm}. Groundwater flow is simulated with MODFLOW~6
+using the scheme of \cite{kernkamp2011unstructured} and is documented in
+\cite{deltares2026dflowfm}. Groundwater flow is simulated with MODFLOW~6
 \citep{langevin2017modflow6}, using the Groundwater Flow (GWF) and Groundwater
 Transport (GWT) models with the Buoyancy (BUY) package so that density effects
 associated with the saltwater interface are represented. Flow in the sanitary
 sewer network is simulated with the Storm Water Management Model (SWMM)
-\citep{rossman2015swmm}.
+\citep{rossman2022swmm}.
 
 The three simulators are advanced within a single process and exchange state
 through their respective library interfaces. MODFLOW~6 is controlled through
@@ -176,6 +181,12 @@ its application programming interface \citep{hughes2022modflowapi}, and D-Flow
 FM through its Basic Model Interface implementation \citep{hutton2020bmi}.
 SWMM is controlled through the PySWMM interface \citep{mcdonnell2020pyswmm}.
 Model construction and post-processing use FloPy \citep{hughes2023flopy}.
+
+% VERSION STATEMENT -- must match whichever runs produce the reported results.
+% The completed 21-scenario sweep used MODFLOW 6 version 6.5.0; 6.7.0 is what is
+% configured now. Reconcile before submission.
+The versions used are D-Flow FM kernel 1.2.184, MODFLOW~6 version 6.7.0, and
+SWMM version 5.2.4 accessed through PySWMM 2.0.1.
 
 \section*{Coupling framework}
 

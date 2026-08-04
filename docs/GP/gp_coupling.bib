@@ -1,8 +1,8 @@
 % Bibliography for gp_coupling.tex
 %
-% NOTE: entry details (years, volumes, pages, DOIs) should be verified against the
-% publications before this document is circulated. They are recorded here from
-% memory to make the citation structure compile, not from a checked source.
+% Journal entries were taken from Crossref (api.crossref.org/works/<doi>), not
+% transcribed, so authors, years, volumes and pages match the registered metadata.
+% The two agency reports have no DOI and were checked against the issuing agency.
 %
 % Proper nouns and acronyms are brace-protected so the .bst does not lowercase
 % them. USGS reports are entered as book entries with the agency leading the
@@ -28,7 +28,7 @@
                McDonald, Richard R.},
   title     = {The {MODFLOW} Application Programming Interface for simulation
                control and software interoperability},
-  journal   = {Environmental Modelling and Software},
+  journal   = {Environmental Modelling {\&} Software},
   volume    = {148},
   pages     = {105257},
   year      = {2022},
@@ -37,19 +37,19 @@
 
 @article{hughes2023flopy,
   author    = {Hughes, Joseph D. and Langevin, Christian D. and
-               Paulinski, Scott R. and Larsen, Joshua D. and Brakenhoff, Davi{\'d}},
+               Paulinski, Scott R. and Larsen, Joshua D. and Brakenhoff, David},
   title     = {{FloPy} Workflows for Creating Structured and Unstructured
                {MODFLOW} Models},
   journal   = {Groundwater},
   volume    = {62},
   number    = {1},
   pages     = {124--139},
-  year      = {2024},
+  year      = {2023},
   doi       = {10.1111/gwat.13327}
 }
 
 @article{hutton2020bmi,
-  author    = {Hutton, Eric W. H. and Piper, Mark D. and Tucker, Gregory E.},
+  author    = {Hutton, Eric and Piper, Mark and Tucker, Gregory},
   title     = {The {Basic Model Interface} 2.0: A standard interface for coupling
                numerical models in the geosciences},
   journal   = {Journal of Open Source Software},
@@ -61,9 +61,9 @@
 }
 
 @article{mcdonnell2020pyswmm,
-  author    = {McDonnell, Bryant E. and Ratliff, Katherine and
-               Tryby, Michael E. and Wu, Jennifer Jia Xin and Mullapudi, Abhiram},
-  title     = {{PySWMM}: The Python Interface to Storm Water Management Model
+  author    = {McDonnell, Bryant and Ratliff, Katherine and Tryby, Michael and
+               Wu, Jennifer and Mullapudi, Abhiram},
+  title     = {{PySWMM}: The {Python} Interface to Stormwater Management Model
                ({SWMM})},
   journal   = {Journal of Open Source Software},
   volume    = {5},
@@ -73,19 +73,37 @@
   doi       = {10.21105/joss.02292}
 }
 
-@techreport{rossman2015swmm,
-  author      = {Rossman, Lewis A.},
-  title       = {Storm Water Management Model User's Manual Version 5.1},
-  institution = {{U.S. Environmental Protection Agency}},
-  type        = {{EPA/600/R-14/413b}},
-  address     = {Cincinnati, OH},
-  year        = {2015}
+@article{kernkamp2011unstructured,
+  author    = {Kernkamp, Herman W. J. and Van Dam, Arthur and
+               Stelling, Guus S. and de Goede, Erik D.},
+  title     = {Efficient scheme for the shallow water equations on unstructured
+               grids with application to the {Continental Shelf}},
+  journal   = {Ocean Dynamics},
+  volume    = {61},
+  number    = {8},
+  pages     = {1175--1188},
+  year      = {2011},
+  doi       = {10.1007/s10236-011-0423-6}
 }
 
-@manual{deltares2024dflowfm,
+% SWMM 5.2 is the engine actually used here -- the SWMM report header from these
+% runs reads "EPA STORM WATER MANAGEMENT MODEL - VERSION 5.2 (Build 5.2.4)" -- so
+% the 5.1 manual would document a different code than the one that produced the
+% results.
+@techreport{rossman2022swmm,
+  author      = {Rossman, Lewis A. and Simon, Michelle A.},
+  title       = {Storm Water Management Model User's Manual Version 5.2},
+  institution = {{U.S. Environmental Protection Agency}},
+  type        = {{EPA/600/R-22/030}},
+  address     = {Cincinnati, OH},
+  year        = {2022}
+}
+
+@manual{deltares2026dflowfm,
   author       = {{Deltares}},
   title        = {{D-Flow Flexible Mesh} User Manual},
   organization = {{Deltares}},
   address      = {Delft, The Netherlands},
-  year         = {2024}
+  year         = {2026},
+  note         = {Kernel version 1.2.184}
 }
