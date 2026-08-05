@@ -87,9 +87,20 @@ MF_T = LANE_Y["MODFLOW 6"] + H         # 0.24
 # two lines lying on top of each other, where the upper one simply hides the other.
 # The band between MODFLOW 6 and D-Flow FM carries two horizontals: s1,hs runs left
 # of the gutter and q^ext runs right of it, so they never meet.
-Y_QS, Y_S1, Y_QE = 1.50, 0.62, 0.52
-Y_QJ_UP, Y_QJ_DN = 1.58, 0.36     # Q_j delivery channels
+# Ordering in the band between MODFLOW 6 and D-Flow FM is forced, not chosen. At the
+# start of an interval three connectors land on the same edge: s1,hs comes down to
+# the MODFLOW 6 bar, the seepage comes down to it as well, and q^ext goes up to the
+# D-Flow FM bar. Stacking them s1,hs < seepage < q^ext is the only order in which
+# the seepage shows above the water level and q^ext stays clear of both.
+Y_QS = 1.50
+Y_S1, Y_QJ_DN, Y_QE = 0.36, 0.50, 0.62
+Y_QJ_UP = 1.58                    # Q_j delivery to SWMM
 Y_QJ_IN = 1.00                    # Q_j collector, on the label's centre line
+# q^ext leaves through the RIGHT EDGE of the MODFLOW 6 bar rather than its top
+# corner. s1,hs now runs below q^ext, so both would need a vertical on that corner
+# and would lie on top of each other between the two channels. Leaving through the
+# edge is no less true to "the end of the step" and keeps the corner for s1,hs.
+Y_QE_EXIT = LANE_Y["MODFLOW 6"]
 
 
 def bar(ax, lane, x0, x1, alpha=1.0):
@@ -129,6 +140,9 @@ with styles.USGSPlot():
     for k, x0 in enumerate(starts):
         xe = x0 + W_INT                       # end of the integrated interval
         xn = xe + W_GUT                       # start of the next interval
+        # Gutter verticals, all at distinct x so nothing runs inside anything else:
+        # the Q_j collector, the q^ext riser, and the Q_j junction.
+        xi, xr, xc = xe + 0.22, xe + 0.46, xe + 0.70
         if k % 2 == 0:
             ax.add_patch(Rectangle((x0, -0.62), W_INT + W_GUT, 3.05 + 0.62,
                                    facecolor="0.95", edgecolor="none", zorder=0))
@@ -172,15 +186,13 @@ with styles.USGSPlot():
         # that sets the boundary.
         poly(ax, [(xe - PAD, DF_B), (xe - PAD, Y_S1), (x0 + PAD, Y_S1), (x0 + PAD, MF_T)],
              LANE_C["D-Flow FM"], r"$s_1,\,h_s$",
-             lxy=((x0 + xe) / 2.0, Y_S1 - 0.13), ha="center", zorder=8)
-        # FORWARD into the next interval, leaving the end of the MODFLOW 6 step.
-        # It enters the D-Flow FM bar a little inside its start: s1,hs of the next
-        # interval descends at that start through 0.62 to 0.24, and q^ext rises
-        # there through 0.52 to 0.76, so sharing the edge would put the two on top
-        # of one another between 0.52 and 0.62.
-        poly(ax, [(xe - PAD, MF_T), (xe - PAD, Y_QE), (xn + 0.18, Y_QE), (xn + 0.18, DF_B)],
+             lxy=((x0 + xe) / 2.0, Y_S1 + 0.13), ha="center", zorder=8)
+        # FORWARD into the start of the next D-Flow FM step, leaving through the
+        # right edge of the MODFLOW 6 bar.
+        poly(ax, [(xe - PAD, Y_QE_EXIT), (xr, Y_QE_EXIT), (xr, Y_QE),
+                  (xn + PAD, Y_QE), (xn + PAD, DF_B)],
              LANE_C["MODFLOW 6"], r"$q^{\mathrm{ext}}$",
-             lxy=(xe + 0.38, Y_QE + 0.15), ha="left")
+             lxy=(xc + 0.10, Y_QE + 0.13), ha="left")
         # Q_j is the seepage between the aquifer and the sewer: the groundwater head
         # against the water surface in the pipe, or against the pipe invert once the
         # water table drops below it. It is a property of neither model, so it is
@@ -196,7 +208,6 @@ with styles.USGSPlot():
         # them is ever formed -- the driving head is a single number -- so two
         # separate inputs would suggest the models contribute independently when
         # between them they contribute one value.
-        xi, xc = xe + 0.22, xe + 0.70
         poly(ax, [(xe - PAD, SW_B), (xi, SW_B), (xi, MF_T), (xe - PAD, MF_T)],
              "0.45", lw=0.75, head=False)
         poly(ax, [(xi, Y_QJ_IN), (xc - 0.17, Y_QJ_IN)], "0.45", lw=0.75)
