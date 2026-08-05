@@ -93,7 +93,11 @@ MF_T = LANE_Y["MODFLOW 6"] + H         # 0.24
 # D-Flow FM bar. Stacking them s1,hs < seepage < q^ext is the only order in which
 # the seepage shows above the water level and q^ext stays clear of both.
 Y_QS = 1.50
-Y_S1, Y_QJ_DN, Y_QE = 0.36, 0.50, 0.62
+# Spacing is set by what each landing needs, working outward from the MODFLOW 6 bar
+# at 0.24 and the D-Flow FM bar at 0.76: s1,hs and q^ext each need enough run below
+# their head to read as a line rather than as a bare arrowhead, and the seepage has
+# to clear s1,hs by enough to show above it.
+Y_S1, Y_QJ_DN, Y_QE = 0.42, 0.52, 0.60
 Y_QJ_UP = 1.58                    # Q_j delivery to SWMM
 Y_QJ_IN = 1.00                    # Q_j collector, on the label's centre line
 # q^ext leaves through the RIGHT EDGE of the MODFLOW 6 bar rather than its top
@@ -208,9 +212,12 @@ with styles.USGSPlot():
         # them is ever formed -- the driving head is a single number -- so two
         # separate inputs would suggest the models contribute independently when
         # between them they contribute one value.
+        # Same weight as the delivery arms: this is one exchange, and a hairline in
+        # against a full-weight line out made the collection look like a lesser
+        # thing than the delivery. The lighter grey still separates the two roles.
         poly(ax, [(xe - PAD, SW_B), (xi, SW_B), (xi, MF_T), (xe - PAD, MF_T)],
-             "0.45", lw=0.75, head=False)
-        poly(ax, [(xi, Y_QJ_IN), (xc - 0.17, Y_QJ_IN)], "0.45", lw=0.75)
+             "0.45", head=False)
+        poly(ax, [(xi, Y_QJ_IN), (xc - 0.17, Y_QJ_IN)], "0.45")
         # Delivered to the start of the next SWMM and MODFLOW 6 bars. On MODFLOW 6
         # that is the same point s1,hs lands on, and the water level is drawn over
         # the seepage there -- both really do apply from that instant, so they are
