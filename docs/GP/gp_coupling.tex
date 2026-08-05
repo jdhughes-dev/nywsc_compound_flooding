@@ -292,18 +292,22 @@ coupling interval.
 \begin{figure}[ht]
 \centering
 \includegraphics[width=\textwidth]{figures/coupling_sequence.pdf}
-\caption{Order of execution and state exchanged among the three simulators over
-two coupling intervals. Lanes are ordered by execution rather than by physical
-position. On each user time step, $\Delta t_u$, SWMM advances and its mean outfall
-discharge, $\bar{q}_s$, is written into the D-Flow FM source term, after which
-D-Flow FM advances. At the end of each coupling interval, $\Delta t_c$, the D-Flow
-FM water level and water depth, $s_1$ and $h_s$, are mapped to the MODFLOW~6
-coastal boundary; MODFLOW~6 advances one time step; and the simulated boundary
+\caption{Model time steps, order of execution, and state exchanged among the three
+simulators over two coupling intervals. Bar width is the model time step each
+simulator integrates: MODFLOW~6 advances the whole coupling interval,
+$\Delta t_c$, in one step, while SWMM and D-Flow FM tile that same span with one
+bar per user time step, $\Delta t_u$. Lanes are ordered by execution rather than
+by physical position. Within a user time step SWMM advances first, so that its
+outfall covers the interval D-Flow FM is about to integrate, and the mean outfall
+discharge over that step, $\bar{q}_s$, is written into the D-Flow FM source term
+before D-Flow FM advances; the second and third user time steps repeat this and
+are drawn faded, with the exchange shown only once. At the end of each coupling
+interval the D-Flow FM water level and water depth, $s_1$ and $h_s$, are mapped to
+the MODFLOW~6 coastal boundary; MODFLOW~6 advances; and the simulated boundary
 flow, $q^{\mathrm{ext}}$, and aquifer--sewer seepage, $Q_j$, are returned to
 D-Flow FM and SWMM. The exchange column occupies no model time and is given width
-only to separate the arrows. The coupling interval is drawn as three user time
-steps, which is the ratio at the finest interval simulated here; it reaches 288 at
-daily coupling.}
+only to separate the arrows. Three user time steps per coupling interval is the
+ratio at the finest interval simulated here; it reaches 288 at daily coupling.}
 \label{fig:sequence}
 \end{figure}
 
