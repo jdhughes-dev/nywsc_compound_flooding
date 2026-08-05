@@ -56,19 +56,29 @@ def bar(ax, lane, x0, x1, alpha=1.0):
                            edgecolor="none", alpha=alpha, zorder=3))
 
 
-def arrow(ax, x, a, b, color, label=None, ly=None, both=False):
+def arrow(ax, x, a, b, color, label=None, ly=None, both=False, dx=0.0, lx=0.07):
     """ly places the label at an explicit height, so arrows sharing the same
     vertical span do not stack their labels on top of one another. both=True
-    draws a double head, for an exchange that is genuinely two-way."""
+    draws a double head, for an exchange that is genuinely two-way.
+
+    dx offsets the tip horizontally, so the arrow leans toward -- and lands on --
+    the model time step that CONSUMES the value. That lean is the only thing in
+    the figure separating the backward hand-off (an end-of-interval stage driving
+    the step that just ended) from the forward ones (a flux held over the interval
+    about to start), and that separation is what makes the coupling explicit."""
     ya, yb = LANE_Y[a], LANE_Y[b]
     y0 = ya - H if ya > yb else ya + H
     y1 = yb + H if ya > yb else yb - H
-    ax.add_patch(FancyArrowPatch((x, y0), (x, y1),
+    ax.add_patch(FancyArrowPatch((x, y0), (x + dx, y1),
                                  arrowstyle="<|-|>" if both else "-|>",
                                  mutation_scale=8, linewidth=1.1, color=color,
                                  shrinkA=0, shrinkB=0, zorder=5))
     if label:
-        ax.text(x + 0.07, (y0 + y1) / 2.0 if ly is None else ly, label,
+        yl = (y0 + y1) / 2.0 if ly is None else ly
+        # Track the shaft: with a lean, offsetting from the base x would strand
+        # the label well away from the arrow it names.
+        xl = x + dx * (yl - y0) / (y1 - y0)
+        ax.text(xl + lx, yl, label,
                 fontsize=7.5, ha="left", va="center", color=color, zorder=6)
 
 
@@ -111,15 +121,24 @@ with styles.USGSPlot():
         # s1,hs and q^ext both span the lower half, so they are separated
         # horizontally; Q_j spans the full height and its label sits in the upper
         # half, clear of the other two.
-        arrow(ax, xe + 0.22, "D-Flow FM", "MODFLOW 6", LANE_C["D-Flow FM"],
-              r"$s_1,\,h_s$", ly=0.50)
-        arrow(ax, xe + 1.02, "MODFLOW 6", "D-Flow FM", LANE_C["MODFLOW 6"],
-              r"$q^{\mathrm{ext}}$", ly=0.50)
-        # Two-way: Q_j is computed from the MODFLOW head and the SWMM pipe stage
-        # together, then applied to both as a specified flux, equal and opposite.
-        # A single head would misstate it as a one-directional hand-off.
-        arrow(ax, xe + 1.62, "MODFLOW 6", "SWMM", "0.25",
-              r"$Q_j$", ly=1.55, both=True)
+        #
+        # BACKWARD. The stage is read at the end of the interval and then drives
+        # the MODFLOW step over the interval that just ended, so the arrow leans
+        # left and its tip lands back on that bar. Taking the boundary at the end
+        # of the step is consistent with MODFLOW's own backward-in-time step.
+        arrow(ax, xe + 0.50, "D-Flow FM", "MODFLOW 6", LANE_C["D-Flow FM"],
+              r"$s_1,\,h_s$", ly=0.50, dx=-0.62, lx=0.06)
+        # The forward tips reach past the gutter and land on the first bars of the
+        # next interval. Stopping them inside the gutter would have left the lean
+        # as the only cue, and only the backward arrow actually touching a bar.
+        # FORWARD. Both fluxes are computed after MODFLOW finalizes its step and
+        # are then held over the interval about to start, so these lean right onto
+        # the first bar of the next interval. This one-interval lag is the error
+        # the coupling-frequency sweep measures.
+        arrow(ax, xe + 0.80, "MODFLOW 6", "SWMM", "0.25",
+              r"$Q_j$", ly=0.95, both=True, dx=1.62)
+        arrow(ax, xe + 1.42, "MODFLOW 6", "D-Flow FM", LANE_C["MODFLOW 6"],
+              r"$q^{\mathrm{ext}}$", ly=0.50, dx=0.90, lx=0.10)
 
         # coupling interval span
         ax.annotate("", xy=(x0 + 0.02, 2.66), xytext=(xe - 0.02, 2.66),
@@ -136,16 +155,22 @@ with styles.USGSPlot():
     for name, y, c in LANES:
         ax.text(-0.22, y, name, ha="right", va="center", fontsize=8.5)
 
+    # Both edges of a gutter are the SAME instant -- the gutter is zero model
+    # time -- so both carry the tick. Labelling only one edge left the other
+    # unlabelled and, worse, was inconsistent between the two gutters: the first
+    # was labelled on the right, the second on the left.
     ticks, labels, n = [], [], 0
     for x0 in starts:
         for s in range(N_SUB):
             ticks.append(x0 + s * W_SUB)
             labels.append(r"$t_0$" if n == 0 else rf"$+{n}\Delta t_u$")
             n += 1
-    ticks.append(starts[-1] + W_INT)
+        ticks.append(x0 + W_INT)                 # gutter left edge
+        labels.append(rf"$+{n}\Delta t_u$")
+    ticks.append(X_END)                          # last gutter's right edge
     labels.append(rf"$+{n}\Delta t_u$")
 
-    ax.set_xlim(-1.85, X_END + 0.10)
+    ax.set_xlim(-1.85, X_END + 0.62)
     ax.set_ylim(-0.95, 3.05)
     ax.set_yticks([])
     ax.set_xticks(ticks)

@@ -284,7 +284,17 @@ over that step is written into the D-Flow FM source term before D-Flow FM advanc
 Once per coupling interval, after the last user time step of the interval, the
 D-Flow FM water levels and depths are mapped to the MODFLOW~6 coastal boundary,
 MODFLOW~6 is advanced one time step, and the simulated boundary flows are returned
-to D-Flow FM. The aquifer--sewer seepage is two-way: it is computed from the
+to D-Flow FM. The two directions of this exchange carry different lags. The water
+levels are read at the \emph{end} of the coupling interval and are the boundary
+condition for the MODFLOW~6 step spanning the interval that has just been
+integrated, which is consistent with the backward-in-time step MODFLOW~6 takes
+internally and introduces no lag. The boundary flows, in contrast, can only be
+recovered after MODFLOW~6 has finalized that step, so they are held constant over
+the \emph{following} coupling interval and lag the hydrodynamics by $\Delta t_c$.
+That lag is the principal coupling error, and it is what the sweep over coupling
+intervals reported below is designed to bound. The aquifer--sewer seepage is
+returned on the same schedule as the boundary flows, and so carries the same lag.
+It is two-way: it is computed from the
 simulated heads and the water surface in the pipe together, and the same flux is
 applied to both models with opposite sign, as an inflow to the SWMM junction and
 an equal withdrawal from the MODFLOW~6 cell, so that mass leaving one model enters
@@ -300,20 +310,29 @@ simulators over two coupling intervals. Bar width is the model time step each
 simulator integrates: MODFLOW~6 advances the whole coupling interval,
 $\Delta t_c$, in one step, while SWMM and D-Flow FM tile that same span with one
 bar per user time step, $\Delta t_u$. Lanes are ordered by execution rather than
-by physical position. Within a user time step SWMM advances first, so that its
+by physical position. Each arrow ends on the model time step that \emph{uses} the
+value, so the lean of an arrow shows whether the value is applied backward or
+forward in time. Within a user time step SWMM advances first, so that its
 outfall covers the interval D-Flow FM is about to integrate, and the mean outfall
 discharge over that step, $\bar{q}_s$, is written into the D-Flow FM source term
-before D-Flow FM advances; the second and third user time steps repeat this and
-are drawn faded, with the exchange shown only once. At the end of each coupling
-interval the D-Flow FM water level and water depth, $s_1$ and $h_s$, are mapped to
-the MODFLOW~6 coastal boundary; MODFLOW~6 advances; and the simulated boundary
-flow, $q^{\mathrm{ext}}$, is returned to D-Flow FM. The aquifer--sewer seepage,
-$Q_j$, is drawn with two heads and in a neutral color because it belongs to
-neither model: it is computed from the MODFLOW~6 head and the SWMM water surface
-in the pipe together, and applied to both as a specified flux, equal and opposite.
-The exchange column occupies no model time and is given width
-only to separate the arrows. Three user time steps per coupling interval is the
-ratio at the finest interval simulated here; it reaches 288 at daily coupling.}
+before D-Flow FM advances; that arrow is vertical because there is no lag. The
+second and third user time steps repeat this and are drawn faded, with the
+exchange shown only once. At the end of each coupling interval the D-Flow FM water
+level and water depth, $s_1$ and $h_s$, are mapped to the MODFLOW~6 coastal
+boundary; that arrow leans back because the state read at the end of the interval
+is the boundary condition for the MODFLOW~6 step over the interval that just
+ended, consistent with the backward-in-time step MODFLOW~6 takes internally.
+MODFLOW~6 then advances, and the boundary flow, $q^{\mathrm{ext}}$, and the
+aquifer--sewer seepage, $Q_j$, are computed from the new solution and held over
+the interval about to start; those arrows lean forward, and that one-interval lag
+is the coupling error the sweep in this study measures. $Q_j$ is drawn with two
+heads and in a neutral color because it belongs to neither model: it is computed
+from the MODFLOW~6 head and the SWMM water surface in the pipe together, and
+applied to both as a specified flux, equal and opposite. The exchange column
+occupies no model time---both of its edges carry the same tick---and is given
+width only to separate the arrows. Three user time steps per coupling interval is
+the ratio at the finest interval simulated here; it reaches 288 at daily
+coupling.}
 \label{fig:sequence}
 \end{figure}
 
