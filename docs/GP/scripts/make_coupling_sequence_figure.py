@@ -99,7 +99,7 @@ def bar(ax, lane, x0, x1, alpha=1.0):
 
 
 def poly(ax, pts, color, label=None, lxy=None, ha="left", both=False, lw=1.1,
-         alpha=1.0, head=True):
+         alpha=1.0, head=True, zorder=5):
     """Orthogonal connector through the given vertices, head on the last segment.
 
     FancyArrowPatch takes a Path directly, which keeps the whole connector a
@@ -110,11 +110,11 @@ def poly(ax, pts, color, label=None, lxy=None, ha="left", both=False, lw=1.1,
                                  arrowstyle="-" if not head
                                  else ("<|-|>" if both else "-|>"),
                                  mutation_scale=8, linewidth=lw, color=color,
-                                 shrinkA=0, shrinkB=0, zorder=5, alpha=alpha,
+                                 shrinkA=0, shrinkB=0, zorder=zorder, alpha=alpha,
                                  joinstyle="miter", capstyle="butt"))
     if label and lxy:
         ax.text(lxy[0], lxy[1], label, fontsize=7.5, ha=ha, va="center",
-                color=color, zorder=6, alpha=alpha)
+                color=color, zorder=zorder + 1, alpha=alpha)
 
 
 with styles.USGSPlot():
@@ -163,14 +163,22 @@ with styles.USGSPlot():
         ax.text(xe + W_GUT / 2.0, -0.36, "exchange", ha="center", va="top",
                 fontsize=7, color="0.35", style="italic")
 
-        # BACKWARD across the interval, into the start of the MODFLOW 6 step that
-        # spans it.
-        poly(ax, [(xe, DF_B), (xe, Y_S1), (x0, Y_S1), (x0, MF_T)],
+        # Every endpoint lands on a real bar edge rather than on the nominal
+        # interval bound, which sits PAD outside it.
+        #
+        # BACKWARD across the interval: from the end of the last D-Flow FM step to
+        # the start of the MODFLOW 6 step that spans it. Drawn above the seepage,
+        # because both deliver to that same start and the water level is the one
+        # that sets the boundary.
+        poly(ax, [(xe - PAD, DF_B), (xe - PAD, Y_S1), (x0 + PAD, Y_S1), (x0 + PAD, MF_T)],
              LANE_C["D-Flow FM"], r"$s_1,\,h_s$",
-             lxy=((x0 + xe) / 2.0, Y_S1 - 0.13), ha="center")
-        # FORWARD into the next interval. Both leave the same corner -- the end of
-        # the MODFLOW 6 step -- because both come from the same solution.
-        poly(ax, [(xe, MF_T), (xe, Y_QE), (xn, Y_QE), (xn, DF_B)],
+             lxy=((x0 + xe) / 2.0, Y_S1 - 0.13), ha="center", zorder=8)
+        # FORWARD into the next interval, leaving the end of the MODFLOW 6 step.
+        # It enters the D-Flow FM bar a little inside its start: s1,hs of the next
+        # interval descends at that start through 0.62 to 0.24, and q^ext rises
+        # there through 0.52 to 0.76, so sharing the edge would put the two on top
+        # of one another between 0.52 and 0.62.
+        poly(ax, [(xe - PAD, MF_T), (xe - PAD, Y_QE), (xn + 0.18, Y_QE), (xn + 0.18, DF_B)],
              LANE_C["MODFLOW 6"], r"$q^{\mathrm{ext}}$",
              lxy=(xe + 0.38, Y_QE + 0.15), ha="left")
         # Q_j is the seepage between the aquifer and the sewer: the groundwater head
@@ -189,14 +197,15 @@ with styles.USGSPlot():
         # separate inputs would suggest the models contribute independently when
         # between them they contribute one value.
         xi, xc = xe + 0.22, xe + 0.70
-        poly(ax, [(xe, SW_B), (xi, SW_B), (xi, MF_T), (xe, MF_T)],
+        poly(ax, [(xe - PAD, SW_B), (xi, SW_B), (xi, MF_T), (xe - PAD, MF_T)],
              "0.45", lw=0.75, head=False)
         poly(ax, [(xi, Y_QJ_IN), (xc - 0.17, Y_QJ_IN)], "0.45", lw=0.75)
-        # Both arms enter just inside the next bars rather than exactly on their
-        # left edge. s1,hs of the following interval already lands on that edge, and
-        # its vertical run covers the whole of Q_j's, so drawn there the seepage arm
-        # would sit inside the blue one and vanish.
-        xd = xn + 0.16
+        # Delivered to the start of the next SWMM and MODFLOW 6 bars. On MODFLOW 6
+        # that is the same point s1,hs lands on, and the water level is drawn over
+        # the seepage there -- both really do apply from that instant, so they are
+        # shown converging rather than pushed apart. The seepage keeps its own
+        # arrowhead on the stub at the right, where no water level arrives.
+        xd = xn + PAD
         poly(ax, [(xc, 1.14), (xc, Y_QJ_UP), (xd, Y_QJ_UP), (xd, SW_B)], "0.25")
         poly(ax, [(xc, 0.86), (xc, Y_QJ_DN), (xd, Y_QJ_DN), (xd, MF_T)], "0.25",
              r"$Q_j$", lxy=(xc, 1.00), ha="center")
