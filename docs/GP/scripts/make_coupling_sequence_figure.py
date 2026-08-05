@@ -3,8 +3,9 @@
 Bar width is the model time step each simulator integrates, so the time-step
 hierarchy is visible directly: one MODFLOW 6 bar spans the whole coupling
 interval, while SWMM and D-Flow FM tile that same span with shorter bars, one per
-user time step. The second and third of those are drawn faded and without arrows,
-so the repeat reads as "and so on" rather than as three distinct exchanges.
+user time step. The second and third of those are drawn faded -- their SWMM to
+D-Flow FM handoff included, since it really does happen on every user time step --
+so the repeat reads as "and so on" without implying the exchange stops.
 
 Lanes are ordered by execution within a step -- SWMM, then D-Flow FM, then
 MODFLOW 6 -- so the figure answers "which model runs first" directly rather than
@@ -88,10 +89,7 @@ MF_T = LANE_Y["MODFLOW 6"] + H         # 0.24
 # of the gutter and q^ext runs right of it, so they never meet.
 Y_QS, Y_S1, Y_QE = 1.50, 0.62, 0.52
 Y_QJ_UP, Y_QJ_DN = 1.58, 0.36     # Q_j delivery channels
-# The two collection arms have to arrive at different heights. Routing both along
-# the centre line would make them collinear over most of their length, which is the
-# one thing that genuinely hides a connector.
-Y_QJ_IN_S, Y_QJ_IN_M = 1.12, 0.88
+Y_QJ_IN = 1.00                    # Q_j collector, on the label's centre line
 
 
 def bar(ax, lane, x0, x1, alpha=1.0):
@@ -100,20 +98,23 @@ def bar(ax, lane, x0, x1, alpha=1.0):
                            edgecolor="none", alpha=alpha, zorder=3))
 
 
-def poly(ax, pts, color, label=None, lxy=None, ha="left", both=False, lw=1.1):
+def poly(ax, pts, color, label=None, lxy=None, ha="left", both=False, lw=1.1,
+         alpha=1.0, head=True):
     """Orthogonal connector through the given vertices, head on the last segment.
 
     FancyArrowPatch takes a Path directly, which keeps the whole connector a
     single artist -- drawing it as separate segments would leave visible gaps at
-    the corners at this line width."""
+    the corners at this line width. head=False gives a bare run, for a path that
+    only gathers state rather than delivering it."""
     ax.add_patch(FancyArrowPatch(path=Path(pts),
-                                 arrowstyle="<|-|>" if both else "-|>",
+                                 arrowstyle="-" if not head
+                                 else ("<|-|>" if both else "-|>"),
                                  mutation_scale=8, linewidth=lw, color=color,
-                                 shrinkA=0, shrinkB=0, zorder=5,
+                                 shrinkA=0, shrinkB=0, zorder=5, alpha=alpha,
                                  joinstyle="miter", capstyle="butt"))
     if label and lxy:
         ax.text(lxy[0], lxy[1], label, fontsize=7.5, ha=ha, va="center",
-                color=color, zorder=6)
+                color=color, zorder=6, alpha=alpha)
 
 
 with styles.USGSPlot():
@@ -141,12 +142,16 @@ with styles.USGSPlot():
             al = 1.0 if s == 0 else FADE
             bar(ax, "SWMM", a, b, al)
             bar(ax, "D-Flow FM", a, b, al)
-            if s == 0:
-                # Backward by one user step: SWMM finishes the step, and D-Flow FM
-                # then integrates that same step from its start.
-                poly(ax, [(b, SW_B), (b, Y_QS), (a, Y_QS), (a, DF_T)],
-                     LANE_C["SWMM"], r"$\bar{q}_s$",
-                     lxy=((a + b) / 2.0, Y_QS + 0.11), ha="center")
+            # Backward by one user step: SWMM finishes the step, and D-Flow FM then
+            # integrates that same step from its start. Drawn on every step, and
+            # faded with its own bars, because this handoff really does happen every
+            # user time step -- showing it once made it look like a per-interval
+            # event, which is the same mistake as drawing the sub-steps unfaded.
+            # Only the leading step carries the label; repeating it six times would
+            # add nothing.
+            poly(ax, [(b, SW_B), (b, Y_QS), (a, Y_QS), (a, DF_T)],
+                 LANE_C["SWMM"], r"$\bar{q}_s$" if s == 0 else None,
+                 lxy=((a + b) / 2.0, Y_QS + 0.11), ha="center", alpha=al)
 
         # The gutter is a break in the time axis, so it is marked as one: a light
         # rule on each edge rather than a box. A box around a gutter this narrow
@@ -178,11 +183,15 @@ with styles.USGSPlot():
         #
         # The earlier version ran a horizontal along the bottom edge of the SWMM
         # bars, which read as underlining them rather than entering them.
-        xi_s, xi_m, xc = xe + 0.18, xe + 0.34, xe + 0.70
-        poly(ax, [(xe, SW_B), (xi_s, SW_B), (xi_s, Y_QJ_IN_S), (xc - 0.17, Y_QJ_IN_S)],
-             "0.45", lw=0.75)
-        poly(ax, [(xe, MF_T), (xi_m, MF_T), (xi_m, Y_QJ_IN_M), (xc - 0.17, Y_QJ_IN_M)],
-             "0.45", lw=0.75)
+        # One collector, not two converging arms: the state from both models is
+        # gathered onto a single riser and enters Q_j as a single arrow on its
+        # centre line. Two arms arriving at different heights implied the two
+        # inputs are used separately, when they only ever appear as the difference
+        # between them.
+        xi, xc = xe + 0.22, xe + 0.70
+        poly(ax, [(xe, SW_B), (xi, SW_B), (xi, MF_T), (xe, MF_T)],
+             "0.45", lw=0.75, head=False)
+        poly(ax, [(xi, Y_QJ_IN), (xc - 0.17, Y_QJ_IN)], "0.45", lw=0.75)
         # Both arms enter just inside the next bars rather than exactly on their
         # left edge. s1,hs of the following interval already lands on that edge, and
         # its vertical run covers the whole of Q_j's, so drawn there the seepage arm

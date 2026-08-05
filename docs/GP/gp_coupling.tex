@@ -317,7 +317,8 @@ between the two. Within a user time step SWMM advances first, so that its outfal
 covers the interval D-Flow FM is about to integrate; the mean outfall discharge
 over that step, $\bar{q}_s$, therefore returns one user time step to enter the
 D-Flow FM step spanning the same interval. The second and third user time steps
-repeat this and are drawn faded, with the exchange shown only once. At the end of
+repeat this exactly and are drawn faded, connector included, with only the leading
+step labelled. At the end of
 each coupling interval the D-Flow FM water level and water depth, $s_1$ and $h_s$,
 are mapped to the MODFLOW~6 coastal boundary; that connector returns across the
 whole interval, because the state read at its end is the boundary condition for
@@ -327,10 +328,11 @@ boundary flow, $q^{\mathrm{ext}}$, and the aquifer--sewer seepage, $Q_j$, cannot
 be recovered until MODFLOW~6 has finalized that step, so both run forward into the
 interval about to start; that one-interval lag is the coupling error the sweep in
 this study bounds. $Q_j$ is drawn in a neutral color and as a junction rather than
-as a line between two models, because it belongs to neither: two thin arms collect
-the end-of-step MODFLOW~6 head and SWMM water surface in the pipe, and two arms
-deliver the resulting flux, equal and opposite, to the start of the next step in
-each. One consequence is worth reading off the figure directly---a single
+as a line between two models, because it belongs to neither: a single collector
+gathers the end-of-step MODFLOW~6 head and SWMM water surface in the pipe and
+enters $Q_j$ as one arrow, since only the difference between them is ever used,
+and two arms deliver the resulting flux, equal and opposite, to the start of the
+next step in each. One consequence is worth reading off the figure directly---a single
 MODFLOW~6 step takes its coastal boundary at its \emph{end} and its sewer flux at
 its \emph{start}. The exchange break occupies no model time---both of its edges carry the
 same tick---and is drawn only wide enough to keep the two MODFLOW~6 blocks apart,
