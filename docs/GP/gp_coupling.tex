@@ -310,29 +310,33 @@ simulators over two coupling intervals. Bar width is the model time step each
 simulator integrates: MODFLOW~6 advances the whole coupling interval,
 $\Delta t_c$, in one step, while SWMM and D-Flow FM tile that same span with one
 bar per user time step, $\Delta t_u$. Lanes are ordered by execution rather than
-by physical position. Each arrow ends on the model time step that \emph{uses} the
-value, so the lean of an arrow shows whether the value is applied backward or
-forward in time. Within a user time step SWMM advances first, so that its
-outfall covers the interval D-Flow FM is about to integrate, and the mean outfall
-discharge over that step, $\bar{q}_s$, is written into the D-Flow FM source term
-before D-Flow FM advances; that arrow is vertical because there is no lag. The
-second and third user time steps repeat this and are drawn faded, with the
-exchange shown only once. At the end of each coupling interval the D-Flow FM water
-level and water depth, $s_1$ and $h_s$, are mapped to the MODFLOW~6 coastal
-boundary; that arrow leans back because the state read at the end of the interval
-is the boundary condition for the MODFLOW~6 step over the interval that just
-ended, consistent with the backward-in-time step MODFLOW~6 takes internally.
-MODFLOW~6 then advances, and the boundary flow, $q^{\mathrm{ext}}$, and the
-aquifer--sewer seepage, $Q_j$, are computed from the new solution and held over
-the interval about to start; those arrows lean forward, and that one-interval lag
-is the coupling error the sweep in this study measures. $Q_j$ is drawn with two
-heads and in a neutral color because it belongs to neither model: it is computed
-from the MODFLOW~6 head and the SWMM water surface in the pipe together, and
-applied to both as a specified flux, equal and opposite. The exchange column
-occupies no model time---both of its edges carry the same tick---and is given
-width only to separate the arrows. Three user time steps per coupling interval is
-the ratio at the finest interval simulated here; it reaches 288 at daily
-coupling.}
+by physical position. Every connector leaves the \emph{end} of the model time step
+that produces a value and enters the \emph{start} of the model time step that
+consumes it, so its horizontal run can be read against the time axis as the offset
+between the two. Within a user time step SWMM advances first, so that its outfall
+covers the interval D-Flow FM is about to integrate; the mean outfall discharge
+over that step, $\bar{q}_s$, therefore returns one user time step to enter the
+D-Flow FM step spanning the same interval. The second and third user time steps
+repeat this and are drawn faded, with the exchange shown only once. At the end of
+each coupling interval the D-Flow FM water level and water depth, $s_1$ and $h_s$,
+are mapped to the MODFLOW~6 coastal boundary; that connector returns across the
+whole interval, because the state read at its end is the boundary condition for
+the MODFLOW~6 step spanning that same interval, which is consistent with the
+backward-in-time step MODFLOW~6 takes internally and introduces no lag. The
+boundary flow, $q^{\mathrm{ext}}$, and the aquifer--sewer seepage, $Q_j$, cannot
+be recovered until MODFLOW~6 has finalized that step, so both run forward into the
+interval about to start; that one-interval lag is the coupling error the sweep in
+this study bounds. $Q_j$ is drawn in a neutral color, and as two horizontal runs
+joined by a double-headed riser, because it belongs to neither model: it is
+computed at the exchange from the MODFLOW~6 head and the SWMM water surface in the
+pipe together, and applied to the next step of both as a specified flux, equal and
+opposite. The exchange break occupies no model time---both of its edges carry the
+same tick---and is drawn only wide enough to keep the two MODFLOW~6 blocks apart,
+which would otherwise abut and read as one continuous step. A faded
+stub at the right is the interval that follows, drawn so those connectors end on a
+model time step rather than in blank space. Three user time steps per coupling
+interval is the ratio at the finest interval simulated here; it reaches 288 at
+daily coupling.}
 \label{fig:sequence}
 \end{figure}
 

@@ -1,4 +1,4 @@
-﻿"""Schematic of the coupling sequence over two coupling intervals.
+"""Schematic of the coupling sequence over two coupling intervals.
 
 Bar width is the model time step each simulator integrates, so the time-step
 hierarchy is visible directly: one MODFLOW 6 bar spans the whole coupling
@@ -10,8 +10,29 @@ Lanes are ordered by execution within a step -- SWMM, then D-Flow FM, then
 MODFLOW 6 -- so the figure answers "which model runs first" directly rather than
 implying a physical stacking.
 
-A gutter between coupling intervals carries the exchange arrows. It occupies no
-model time; without it the arrows collide with the following interval's bars.
+Every exchange is drawn as an orthogonal polyline that leaves the END of the
+producing model's time step and enters the START of the time step that consumes
+it. The horizontal run is therefore the lag, read directly off the time axis:
+
+    q_s      leaves the end of a SWMM user step and enters the start of the SAME
+             D-Flow FM step, so it runs backward by exactly one user step. SWMM
+             leads deliberately, so its outfall covers the interval D-Flow FM is
+             about to integrate.
+    s1,hs    leaves the end of the last D-Flow FM step in the interval and enters
+             the start of the MODFLOW 6 step spanning that same interval, so it
+             runs backward across the whole interval. Taking the boundary at the
+             end of the step is consistent with MODFLOW 6's own backward-in-time
+             step and introduces no lag.
+    q^ext    leaves the end of the MODFLOW 6 step and enters the start of the next
+    Q_j      interval, because neither can be recovered until MODFLOW 6 has
+             finalized. These are the lagged exchanges, and the sweep over
+             coupling intervals is what bounds that lag.
+
+A narrow gutter separates the coupling intervals. It occupies no model time -- both
+of its edges carry the same tick, and it is marked as an axis break rather than
+boxed. Orthogonal connectors turn in the horizontal channels rather than inside it,
+so it only has to be wide enough to keep the two MODFLOW 6 blocks from abutting,
+which would read as one continuous step across both intervals.
 
 Three user time steps per interval is not a simplification at the finest coupling
 interval simulated -- 15-minute coupling on a 300 s user time step is exactly
@@ -23,6 +44,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from matplotlib.patches import FancyArrowPatch, Patch, Rectangle
+from matplotlib.path import Path
 import flopy.plot.styles as styles
 
 # The flopy style supplies pdf.fonttype 42, savefig.dpi 300 and
@@ -34,13 +56,17 @@ mpl.rcParams["ps.fonttype"] = 42
 OUT = pl.Path(__file__).resolve().parent.parent / "figures" / "coupling_sequence.pdf"
 
 N_SUB, N_COUP = 3, 2
-# The gutter must hold three labelled arrows side by side. At 1.15 the labels
-# overlapped one another; the two that share the lower half also need horizontal
-# separation, so it is wider than the arrows alone would require.
-W_SUB, W_GUT = 1.0, 1.95
+# Once the connectors became orthogonal they turn in the horizontal channels rather
+# than in the gutter, so the gutter no longer has to be wide enough to hold three
+# arrows side by side. What it still has to do is keep the two MODFLOW 6 blocks
+# apart -- abutting them would read as one continuous step across both intervals,
+# which is precisely the thing the figure exists to deny.
+W_SUB, W_GUT = 1.0, 0.95
 W_INT = N_SUB * W_SUB
 PAD = 0.035                 # gap between abutting bars, so edges stay legible
 FADE = 0.42                 # alpha for the repeated user time steps
+GHOST = 0.22                # alpha for the stub of the interval after the last
+W_STUB = 0.55
 
 LANES = [("SWMM", 2.0, "#2ca02c"),
          ("D-Flow FM", 1.0, "#1f77b4"),
@@ -49,6 +75,16 @@ LANE_Y = {n: y for n, y, _ in LANES}
 LANE_C = {n: c for n, _, c in LANES}
 H = 0.24
 
+SW_B = LANE_Y["SWMM"] - H              # 1.76, bottom edge of the SWMM bars
+DF_T = LANE_Y["D-Flow FM"] + H         # 1.24
+DF_B = LANE_Y["D-Flow FM"] - H         # 0.76
+MF_T = LANE_Y["MODFLOW 6"] + H         # 0.24
+
+# Routing channels, chosen so no two horizontal runs share a height in the same
+# span. The band between MODFLOW 6 and D-Flow FM carries two: s1,hs runs left of
+# the gutter and q^ext runs right of it, so they never meet.
+Y_QS, Y_S1, Y_QE = 1.50, 0.62, 0.44
+
 
 def bar(ax, lane, x0, x1, alpha=1.0):
     y = LANE_Y[lane]
@@ -56,30 +92,20 @@ def bar(ax, lane, x0, x1, alpha=1.0):
                            edgecolor="none", alpha=alpha, zorder=3))
 
 
-def arrow(ax, x, a, b, color, label=None, ly=None, both=False, dx=0.0, lx=0.07):
-    """ly places the label at an explicit height, so arrows sharing the same
-    vertical span do not stack their labels on top of one another. both=True
-    draws a double head, for an exchange that is genuinely two-way.
+def poly(ax, pts, color, label=None, lxy=None, ha="left", both=False):
+    """Orthogonal connector through the given vertices, head on the last segment.
 
-    dx offsets the tip horizontally, so the arrow leans toward -- and lands on --
-    the model time step that CONSUMES the value. That lean is the only thing in
-    the figure separating the backward hand-off (an end-of-interval stage driving
-    the step that just ended) from the forward ones (a flux held over the interval
-    about to start), and that separation is what makes the coupling explicit."""
-    ya, yb = LANE_Y[a], LANE_Y[b]
-    y0 = ya - H if ya > yb else ya + H
-    y1 = yb + H if ya > yb else yb - H
-    ax.add_patch(FancyArrowPatch((x, y0), (x + dx, y1),
+    FancyArrowPatch takes a Path directly, which keeps the whole connector a
+    single artist -- drawing it as separate segments would leave visible gaps at
+    the corners at this line width."""
+    ax.add_patch(FancyArrowPatch(path=Path(pts),
                                  arrowstyle="<|-|>" if both else "-|>",
                                  mutation_scale=8, linewidth=1.1, color=color,
-                                 shrinkA=0, shrinkB=0, zorder=5))
-    if label:
-        yl = (y0 + y1) / 2.0 if ly is None else ly
-        # Track the shaft: with a lean, offsetting from the base x would strand
-        # the label well away from the arrow it names.
-        xl = x + dx * (yl - y0) / (y1 - y0)
-        ax.text(xl + lx, yl, label,
-                fontsize=7.5, ha="left", va="center", color=color, zorder=6)
+                                 shrinkA=0, shrinkB=0, zorder=5,
+                                 joinstyle="miter", capstyle="butt"))
+    if label and lxy:
+        ax.text(lxy[0], lxy[1], label, fontsize=7.5, ha=ha, va="center",
+                color=color, zorder=6)
 
 
 with styles.USGSPlot():
@@ -93,6 +119,7 @@ with styles.USGSPlot():
 
     for k, x0 in enumerate(starts):
         xe = x0 + W_INT                       # end of the integrated interval
+        xn = xe + W_GUT                       # start of the next interval
         if k % 2 == 0:
             ax.add_patch(Rectangle((x0, -0.62), W_INT + W_GUT, 3.05 + 0.62,
                                    facecolor="0.95", edgecolor="none", zorder=0))
@@ -107,44 +134,54 @@ with styles.USGSPlot():
             bar(ax, "SWMM", a, b, al)
             bar(ax, "D-Flow FM", a, b, al)
             if s == 0:
-                arrow(ax, (a + b) / 2.0, "SWMM", "D-Flow FM", LANE_C["SWMM"],
-                      r"$\bar{q}_s$")
+                # Backward by one user step: SWMM finishes the step, and D-Flow FM
+                # then integrates that same step from its start.
+                poly(ax, [(b, SW_B), (b, Y_QS), (a, Y_QS), (a, DF_T)],
+                     LANE_C["SWMM"], r"$\bar{q}_s$",
+                     lxy=((a + b) / 2.0, Y_QS + 0.11), ha="center")
 
-        # exchange gutter: no model time, arrows only
-        # The box stops well above the axis so the caption word below it does not
-        # sit on the spine.
-        ax.add_patch(Rectangle((xe, -0.30), W_GUT, 2.88, facecolor="none",
-                               edgecolor="0.6", linewidth=0.7,
-                               linestyle=(0, (3, 2)), zorder=1))
+        # The gutter is a break in the time axis, so it is marked as one: a light
+        # rule on each edge rather than a box. A box around a gutter this narrow
+        # would crowd the connectors turning inside it, and would also suggest the
+        # gutter contains something, when it contains no model time at all.
+        for xv in (xe, xn):
+            ax.plot([xv, xv], [-0.30, 2.44], color="0.6", linewidth=0.7,
+                    linestyle=(0, (3, 2)), zorder=1)
         ax.text(xe + W_GUT / 2.0, -0.36, "exchange", ha="center", va="top",
                 fontsize=7, color="0.35", style="italic")
-        # s1,hs and q^ext both span the lower half, so they are separated
-        # horizontally; Q_j spans the full height and its label sits in the upper
-        # half, clear of the other two.
-        #
-        # BACKWARD. The stage is read at the end of the interval and then drives
-        # the MODFLOW step over the interval that just ended, so the arrow leans
-        # left and its tip lands back on that bar. Taking the boundary at the end
-        # of the step is consistent with MODFLOW's own backward-in-time step.
-        arrow(ax, xe + 0.50, "D-Flow FM", "MODFLOW 6", LANE_C["D-Flow FM"],
-              r"$s_1,\,h_s$", ly=0.50, dx=-0.62, lx=0.06)
-        # The forward tips reach past the gutter and land on the first bars of the
-        # next interval. Stopping them inside the gutter would have left the lean
-        # as the only cue, and only the backward arrow actually touching a bar.
-        # FORWARD. Both fluxes are computed after MODFLOW finalizes its step and
-        # are then held over the interval about to start, so these lean right onto
-        # the first bar of the next interval. This one-interval lag is the error
-        # the coupling-frequency sweep measures.
-        arrow(ax, xe + 0.80, "MODFLOW 6", "SWMM", "0.25",
-              r"$Q_j$", ly=0.95, both=True, dx=1.62)
-        arrow(ax, xe + 1.42, "MODFLOW 6", "D-Flow FM", LANE_C["MODFLOW 6"],
-              r"$q^{\mathrm{ext}}$", ly=0.50, dx=0.90, lx=0.10)
+
+        # BACKWARD across the interval, into the start of the MODFLOW 6 step that
+        # spans it.
+        poly(ax, [(xe, DF_B), (xe, Y_S1), (x0, Y_S1), (x0, MF_T)],
+             LANE_C["D-Flow FM"], r"$s_1,\,h_s$",
+             lxy=((x0 + xe) / 2.0, Y_S1 - 0.13), ha="center")
+        # FORWARD into the next interval. Both leave the same corner -- the end of
+        # the MODFLOW 6 step -- because both come from the same solution.
+        poly(ax, [(xe, MF_T), (xe, Y_QE), (xn, Y_QE), (xn, DF_B)],
+             LANE_C["MODFLOW 6"], r"$q^{\mathrm{ext}}$",
+             lxy=(xe + 0.38, Y_QE + 0.15), ha="left")
+        # Q_j is mutual: the two horizontals carry it into the next step of both
+        # models, and the double-headed riser between them is where it is computed,
+        # from the MODFLOW 6 head and the SWMM pipe stage together.
+        poly(ax, [(xe, SW_B), (xn, SW_B)], "0.25")
+        poly(ax, [(xe, MF_T), (xn, MF_T)], "0.25")
+        # Left of centre, so both its own label and the q^ext label clear the riser
+        # on the same side instead of straddling it.
+        xg = xe + 0.30
+        poly(ax, [(xg, SW_B), (xg, MF_T)], "0.25", r"$Q_j$",
+             lxy=(xg + 0.08, 1.03), ha="left", both=True)
 
         # coupling interval span
         ax.annotate("", xy=(x0 + 0.02, 2.66), xytext=(xe - 0.02, 2.66),
                     arrowprops=dict(arrowstyle="<->", color="0.45", lw=0.8))
         ax.text((x0 + xe) / 2.0, 2.79, r"coupling interval $\Delta t_c$",
                 ha="center", va="bottom", fontsize=7.5, color="0.3")
+
+    # A stub of the interval after the last one, so the forward connectors land on
+    # a real time step instead of stopping in blank space.
+    bar(ax, "MODFLOW 6", X_END + PAD, X_END + W_STUB, GHOST)
+    bar(ax, "SWMM", X_END + PAD, X_END + W_STUB, GHOST)
+    bar(ax, "D-Flow FM", X_END + PAD, X_END + W_STUB, GHOST)
 
     # one user time step, called out on the first bar
     ax.annotate("", xy=(starts[0] + 0.02, 2.30), xytext=(starts[0] + W_SUB - 0.02, 2.30),
@@ -170,7 +207,7 @@ with styles.USGSPlot():
     ticks.append(X_END)                          # last gutter's right edge
     labels.append(rf"$+{n}\Delta t_u$")
 
-    ax.set_xlim(-1.85, X_END + 0.62)
+    ax.set_xlim(-1.85, X_END + W_STUB + 0.12)
     ax.set_ylim(-0.95, 3.05)
     ax.set_yticks([])
     ax.set_xticks(ticks)
@@ -203,4 +240,3 @@ with styles.USGSPlot():
 
     fig.savefig(OUT)
 print("wrote", OUT)
-
