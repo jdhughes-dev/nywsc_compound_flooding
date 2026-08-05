@@ -61,7 +61,7 @@ N_SUB, N_COUP = 3, 2
 # arrows side by side. What it still has to do is keep the two MODFLOW 6 blocks
 # apart -- abutting them would read as one continuous step across both intervals,
 # which is precisely the thing the figure exists to deny.
-W_SUB, W_GUT = 1.0, 0.95
+W_SUB, W_GUT = 1.0, 1.30
 W_INT = N_SUB * W_SUB
 PAD = 0.035                 # gap between abutting bars, so edges stay legible
 FADE = 0.42                 # alpha for the repeated user time steps
@@ -80,10 +80,18 @@ DF_T = LANE_Y["D-Flow FM"] + H         # 1.24
 DF_B = LANE_Y["D-Flow FM"] - H         # 0.76
 MF_T = LANE_Y["MODFLOW 6"] + H         # 0.24
 
-# Routing channels, chosen so no two horizontal runs share a height in the same
-# span. The band between MODFLOW 6 and D-Flow FM carries two: s1,hs runs left of
-# the gutter and q^ext runs right of it, so they never meet.
-Y_QS, Y_S1, Y_QE = 1.50, 0.62, 0.44
+# Routing channels, chosen so no two runs are ever collinear -- every horizontal
+# has its span to itself at that height, and the verticals that share an x have
+# disjoint extents. Connectors do cross, which is legible; what is not legible is
+# two lines lying on top of each other, where the upper one simply hides the other.
+# The band between MODFLOW 6 and D-Flow FM carries two horizontals: s1,hs runs left
+# of the gutter and q^ext runs right of it, so they never meet.
+Y_QS, Y_S1, Y_QE = 1.50, 0.62, 0.52
+Y_QJ_UP, Y_QJ_DN = 1.58, 0.36     # Q_j delivery channels
+# The two collection arms have to arrive at different heights. Routing both along
+# the centre line would make them collinear over most of their length, which is the
+# one thing that genuinely hides a connector.
+Y_QJ_IN_S, Y_QJ_IN_M = 1.12, 0.88
 
 
 def bar(ax, lane, x0, x1, alpha=1.0):
@@ -92,7 +100,7 @@ def bar(ax, lane, x0, x1, alpha=1.0):
                            edgecolor="none", alpha=alpha, zorder=3))
 
 
-def poly(ax, pts, color, label=None, lxy=None, ha="left", both=False):
+def poly(ax, pts, color, label=None, lxy=None, ha="left", both=False, lw=1.1):
     """Orthogonal connector through the given vertices, head on the last segment.
 
     FancyArrowPatch takes a Path directly, which keeps the whole connector a
@@ -100,7 +108,7 @@ def poly(ax, pts, color, label=None, lxy=None, ha="left", both=False):
     the corners at this line width."""
     ax.add_patch(FancyArrowPatch(path=Path(pts),
                                  arrowstyle="<|-|>" if both else "-|>",
-                                 mutation_scale=8, linewidth=1.1, color=color,
+                                 mutation_scale=8, linewidth=lw, color=color,
                                  shrinkA=0, shrinkB=0, zorder=5,
                                  joinstyle="miter", capstyle="butt"))
     if label and lxy:
@@ -160,16 +168,29 @@ with styles.USGSPlot():
         poly(ax, [(xe, MF_T), (xe, Y_QE), (xn, Y_QE), (xn, DF_B)],
              LANE_C["MODFLOW 6"], r"$q^{\mathrm{ext}}$",
              lxy=(xe + 0.38, Y_QE + 0.15), ha="left")
-        # Q_j is mutual: the two horizontals carry it into the next step of both
-        # models, and the double-headed riser between them is where it is computed,
-        # from the MODFLOW 6 head and the SWMM pipe stage together.
-        poly(ax, [(xe, SW_B), (xn, SW_B)], "0.25")
-        poly(ax, [(xe, MF_T), (xn, MF_T)], "0.25")
-        # Left of centre, so both its own label and the q^ext label clear the riser
-        # on the same side instead of straddling it.
-        xg = xe + 0.30
-        poly(ax, [(xg, SW_B), (xg, MF_T)], "0.25", r"$Q_j$",
-             lxy=(xg + 0.08, 1.03), ha="left", both=True)
+        # Q_j is collected from both models and delivered to both, so it is drawn
+        # as a junction rather than as a line between them: two thin arms bring the
+        # end-of-step state in from the SWMM and MODFLOW 6 bars, and two arms carry
+        # the resulting flux out to the START of the next step in each. Verified
+        # against the loop -- update_swmm writes the API well package and
+        # generated_inflow AFTER finalize_time_step, so neither is seen until the
+        # following step, and both are then held across it.
+        #
+        # The earlier version ran a horizontal along the bottom edge of the SWMM
+        # bars, which read as underlining them rather than entering them.
+        xi_s, xi_m, xc = xe + 0.18, xe + 0.34, xe + 0.70
+        poly(ax, [(xe, SW_B), (xi_s, SW_B), (xi_s, Y_QJ_IN_S), (xc - 0.17, Y_QJ_IN_S)],
+             "0.45", lw=0.75)
+        poly(ax, [(xe, MF_T), (xi_m, MF_T), (xi_m, Y_QJ_IN_M), (xc - 0.17, Y_QJ_IN_M)],
+             "0.45", lw=0.75)
+        # Both arms enter just inside the next bars rather than exactly on their
+        # left edge. s1,hs of the following interval already lands on that edge, and
+        # its vertical run covers the whole of Q_j's, so drawn there the seepage arm
+        # would sit inside the blue one and vanish.
+        xd = xn + 0.16
+        poly(ax, [(xc, 1.14), (xc, Y_QJ_UP), (xd, Y_QJ_UP), (xd, SW_B)], "0.25")
+        poly(ax, [(xc, 0.86), (xc, Y_QJ_DN), (xd, Y_QJ_DN), (xd, MF_T)], "0.25",
+             r"$Q_j$", lxy=(xc, 1.00), ha="center")
 
         # coupling interval span
         ax.annotate("", xy=(x0 + 0.02, 2.66), xytext=(xe - 0.02, 2.66),

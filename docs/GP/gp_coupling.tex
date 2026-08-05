@@ -326,11 +326,13 @@ backward-in-time step MODFLOW~6 takes internally and introduces no lag. The
 boundary flow, $q^{\mathrm{ext}}$, and the aquifer--sewer seepage, $Q_j$, cannot
 be recovered until MODFLOW~6 has finalized that step, so both run forward into the
 interval about to start; that one-interval lag is the coupling error the sweep in
-this study bounds. $Q_j$ is drawn in a neutral color, and as two horizontal runs
-joined by a double-headed riser, because it belongs to neither model: it is
-computed at the exchange from the MODFLOW~6 head and the SWMM water surface in the
-pipe together, and applied to the next step of both as a specified flux, equal and
-opposite. The exchange break occupies no model time---both of its edges carry the
+this study bounds. $Q_j$ is drawn in a neutral color and as a junction rather than
+as a line between two models, because it belongs to neither: two thin arms collect
+the end-of-step MODFLOW~6 head and SWMM water surface in the pipe, and two arms
+deliver the resulting flux, equal and opposite, to the start of the next step in
+each. One consequence is worth reading off the figure directly---a single
+MODFLOW~6 step takes its coastal boundary at its \emph{end} and its sewer flux at
+its \emph{start}. The exchange break occupies no model time---both of its edges carry the
 same tick---and is drawn only wide enough to keep the two MODFLOW~6 blocks apart,
 which would otherwise abut and read as one continuous step. A faded
 stub at the right is the interval that follows, drawn so those connectors end on a
