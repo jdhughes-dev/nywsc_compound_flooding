@@ -56,6 +56,7 @@ OVERRIDES = {
     "pipe_leakance": "leakance",
     "smoke_test_days": "smoke_days",
     "scenario_suffix": "scenario_suffix",
+    "coastal_boundary_averaging": "coastal_averaging",
 }
 
 
@@ -164,6 +165,15 @@ def main():
         default="",
         help="append to the scenario id so a variant run lands beside an existing "
              "scenario instead of overwriting it (e.g. '_bcfull')",
+    )
+    p.add_argument(
+        "--coastal-averaging",
+        default="mean",
+        choices=("mean", "instant"),
+        help="how D-Flow FM stage and depth are reduced to the MODFLOW coastal "
+             "boundary over a coupling interval: 'mean' time-averages, weighted by "
+             "the wetted fraction; 'instant' takes the end-of-interval value, which "
+             "is what every scenario before 2026-08 used",
     )
     p.add_argument(
         "--force",
