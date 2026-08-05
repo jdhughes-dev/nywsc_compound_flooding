@@ -235,6 +235,12 @@ to the exchange interval.
 
 \section*{Model components}
 
+% TODO: the D-Flow FM Long Island Sound grid has no citable reference. Searches of
+% Herdman's published works, USGS publications and Crossref turned up nothing that
+% documents it, and the nearest Long Island compound-flooding paper
+% (Glas et al., NHESS 2026) is statistical rather than hydrodynamic. If the grid is
+% documented in a data release or report, cite it here; otherwise it needs a
+% sentence describing its provenance.
 Three simulators are coupled. Coastal hydrodynamics and the transport of a
 conservative tracer of sewer discharge are simulated with D-Flow Flexible Mesh (D-Flow FM),
 which solves the depth-averaged shallow water equations on an unstructured grid
@@ -492,9 +498,12 @@ some equivalent.
 
 \section*{Demonstration}
 
-The coupling is exercised on the Greenport sewer network described above. Three
-D-Flow FM grids of increasing resolution were used, spanning the same domain and
-driven by the same tidal and atmospheric forcing. The groundwater and sewer
+The coupling is exercised on the Greenport sewer network described above. The
+groundwater model is a cutout of the regional Long Island aquifer system model
+\citep{walter2024longisland}, which simulates the period 1900 to 2019 with
+MODFLOW~6 including the position of the saltwater interface. Three D-Flow FM grids
+of increasing resolution were used, spanning the same domain and driven by the
+same tidal and atmospheric forcing. The groundwater and sewer
 models are identical across all simulations, so differences among grids reflect
 the resolution of the coastal water level alone, and differences among exchange
 intervals reflect the coupling alone. The configurations simulated are
