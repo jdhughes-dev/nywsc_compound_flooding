@@ -56,13 +56,15 @@ def bar(ax, lane, x0, x1, alpha=1.0):
                            edgecolor="none", alpha=alpha, zorder=3))
 
 
-def arrow(ax, x, a, b, color, label=None, ly=None):
+def arrow(ax, x, a, b, color, label=None, ly=None, both=False):
     """ly places the label at an explicit height, so arrows sharing the same
-    vertical span do not stack their labels on top of one another."""
+    vertical span do not stack their labels on top of one another. both=True
+    draws a double head, for an exchange that is genuinely two-way."""
     ya, yb = LANE_Y[a], LANE_Y[b]
     y0 = ya - H if ya > yb else ya + H
     y1 = yb + H if ya > yb else yb - H
-    ax.add_patch(FancyArrowPatch((x, y0), (x, y1), arrowstyle="-|>",
+    ax.add_patch(FancyArrowPatch((x, y0), (x, y1),
+                                 arrowstyle="<|-|>" if both else "-|>",
                                  mutation_scale=8, linewidth=1.1, color=color,
                                  shrinkA=0, shrinkB=0, zorder=5))
     if label:
@@ -99,10 +101,12 @@ with styles.USGSPlot():
                       r"$\bar{q}_s$" if k == 0 else None)
 
         # exchange gutter: no model time, arrows only
-        ax.add_patch(Rectangle((xe, -0.42), W_GUT, 3.0, facecolor="none",
+        # The box stops well above the axis so the caption word below it does not
+        # sit on the spine.
+        ax.add_patch(Rectangle((xe, -0.30), W_GUT, 2.88, facecolor="none",
                                edgecolor="0.6", linewidth=0.7,
                                linestyle=(0, (3, 2)), zorder=1))
-        ax.text(xe + W_GUT / 2.0, -0.50, "exchange", ha="center", va="top",
+        ax.text(xe + W_GUT / 2.0, -0.36, "exchange", ha="center", va="top",
                 fontsize=7, color="0.35", style="italic")
         # s1,hs and q^ext both span the lower half, so they are separated
         # horizontally; Q_j spans the full height and its label sits in the upper
@@ -111,8 +115,11 @@ with styles.USGSPlot():
               r"$s_1,\,h_s$" if k == 0 else None, ly=0.50)
         arrow(ax, xe + 1.02, "MODFLOW 6", "D-Flow FM", LANE_C["MODFLOW 6"],
               r"$q^{\mathrm{ext}}$" if k == 0 else None, ly=0.50)
-        arrow(ax, xe + 1.62, "MODFLOW 6", "SWMM", LANE_C["MODFLOW 6"],
-              r"$Q_j$" if k == 0 else None, ly=1.55)
+        # Two-way: Q_j is computed from the MODFLOW head and the SWMM pipe stage
+        # together, then applied to both as a specified flux, equal and opposite.
+        # A single head would misstate it as a one-directional hand-off.
+        arrow(ax, xe + 1.62, "MODFLOW 6", "SWMM", "0.25",
+              r"$Q_j$" if k == 0 else None, ly=1.55, both=True)
 
         # coupling interval span
         ax.annotate("", xy=(x0 + 0.02, 2.66), xytext=(xe - 0.02, 2.66),
@@ -155,12 +162,16 @@ with styles.USGSPlot():
         Line2D([], [], color=LANE_C["D-Flow FM"], lw=1.4,
                label=r"$s_1$, $h_s$, water level and depth"),
         Line2D([], [], color=LANE_C["MODFLOW 6"], lw=1.4,
-               label=r"$q^{\mathrm{ext}}$, boundary flow; $Q_j$, seepage"),
+               label=r"$q^{\mathrm{ext}}$, boundary flow"),
+        # Neutral, not a lane color: Q_j belongs to neither model, being computed
+        # from both and applied to both.
+        Line2D([], [], color="0.25", lw=1.4,
+               label=r"$Q_j$, seepage (two-way)"),
     ]
     styles.graph_legend(ax=ax, handles=handles,
                         labels=[h.get_label() for h in handles],
                         loc="lower center", bbox_to_anchor=(0.5, -0.34),
-                        ncol=3, frameon=False, fontsize=7)
+                        ncol=4, frameon=False, fontsize=7)
     styles.xlabel(ax=ax, label="Model time")
     styles.heading(ax=ax, heading="Model time steps, order of execution, and "
                                   "exchanged state")

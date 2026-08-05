@@ -283,9 +283,12 @@ outfall covers the interval D-Flow FM is about to integrate, and the mean discha
 over that step is written into the D-Flow FM source term before D-Flow FM advances.
 Once per coupling interval, after the last user time step of the interval, the
 D-Flow FM water levels and depths are mapped to the MODFLOW~6 coastal boundary,
-MODFLOW~6 is advanced one time step, and the simulated boundary flows and the
-aquifer--sewer seepage computed from the simulated heads are returned to D-Flow FM
-and to SWMM. Because each exchange uses the state at the end of the preceding
+MODFLOW~6 is advanced one time step, and the simulated boundary flows are returned
+to D-Flow FM. The aquifer--sewer seepage is two-way: it is computed from the
+simulated heads and the water surface in the pipe together, and the same flux is
+applied to both models with opposite sign, as an inflow to the SWMM junction and
+an equal withdrawal from the MODFLOW~6 cell, so that mass leaving one model enters
+the other exactly. Because each exchange uses the state at the end of the preceding
 operation, the coupling is fully explicit and no iteration is performed within a
 coupling interval.
 
@@ -304,8 +307,11 @@ before D-Flow FM advances; the second and third user time steps repeat this and
 are drawn faded, with the exchange shown only once. At the end of each coupling
 interval the D-Flow FM water level and water depth, $s_1$ and $h_s$, are mapped to
 the MODFLOW~6 coastal boundary; MODFLOW~6 advances; and the simulated boundary
-flow, $q^{\mathrm{ext}}$, and aquifer--sewer seepage, $Q_j$, are returned to
-D-Flow FM and SWMM. The exchange column occupies no model time and is given width
+flow, $q^{\mathrm{ext}}$, is returned to D-Flow FM. The aquifer--sewer seepage,
+$Q_j$, is drawn with two heads and in a neutral color because it belongs to
+neither model: it is computed from the MODFLOW~6 head and the SWMM water surface
+in the pipe together, and applied to both as a specified flux, equal and opposite.
+The exchange column occupies no model time and is given width
 only to separate the arrows. Three user time steps per coupling interval is the
 ratio at the finest interval simulated here; it reaches 288 at daily coupling.}
 \label{fig:sequence}
