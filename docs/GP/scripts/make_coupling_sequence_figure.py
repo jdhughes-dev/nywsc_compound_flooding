@@ -1,4 +1,4 @@
-"""Schematic of the coupling sequence over two coupling intervals.
+﻿"""Schematic of the coupling sequence over two coupling intervals.
 
 Bar width is the model time step each simulator integrates, so the time-step
 hierarchy is visible directly: one MODFLOW 6 bar spans the whole coupling
@@ -98,7 +98,7 @@ with styles.USGSPlot():
             bar(ax, "D-Flow FM", a, b, al)
             if s == 0:
                 arrow(ax, (a + b) / 2.0, "SWMM", "D-Flow FM", LANE_C["SWMM"],
-                      r"$\bar{q}_s$" if k == 0 else None)
+                      r"$\bar{q}_s$")
 
         # exchange gutter: no model time, arrows only
         # The box stops well above the axis so the caption word below it does not
@@ -112,14 +112,14 @@ with styles.USGSPlot():
         # horizontally; Q_j spans the full height and its label sits in the upper
         # half, clear of the other two.
         arrow(ax, xe + 0.22, "D-Flow FM", "MODFLOW 6", LANE_C["D-Flow FM"],
-              r"$s_1,\,h_s$" if k == 0 else None, ly=0.50)
+              r"$s_1,\,h_s$", ly=0.50)
         arrow(ax, xe + 1.02, "MODFLOW 6", "D-Flow FM", LANE_C["MODFLOW 6"],
-              r"$q^{\mathrm{ext}}$" if k == 0 else None, ly=0.50)
+              r"$q^{\mathrm{ext}}$", ly=0.50)
         # Two-way: Q_j is computed from the MODFLOW head and the SWMM pipe stage
         # together, then applied to both as a specified flux, equal and opposite.
         # A single head would misstate it as a one-directional hand-off.
         arrow(ax, xe + 1.62, "MODFLOW 6", "SWMM", "0.25",
-              r"$Q_j$" if k == 0 else None, ly=1.55, both=True)
+              r"$Q_j$", ly=1.55, both=True)
 
         # coupling interval span
         ax.annotate("", xy=(x0 + 0.02, 2.66), xytext=(xe - 0.02, 2.66),
@@ -178,3 +178,4 @@ with styles.USGSPlot():
 
     fig.savefig(OUT)
 print("wrote", OUT)
+
