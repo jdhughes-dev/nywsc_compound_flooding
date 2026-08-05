@@ -41,8 +41,13 @@
 
 \begin{frontmatter}
 
-\title{In-memory coupling of coastal hydrodynamic, groundwater flow, and sewer
-network models through their library interfaces}
+% Title note: "library interfaces" rather than "the Basic Model Interface".
+% MODFLOW 6 and D-Flow FM implement BMI; SWMM does not, and is driven through the
+% SWMM toolkit API, which supplies the same capabilities under different names.
+% Naming BMI in the title would misstate one of the three. BMI is carried in the
+% abstract and keywords instead, where it can be qualified.
+\title{Dynamic coupling of coastal hydrodynamic, groundwater flow, and sewer
+network models using library interfaces}
 
 % Name spellings and affiliations below are taken from each author's ORCID record
 % (pub.orcid.org/v3.0/<id>/person and /employments), not from correspondence, so
@@ -95,7 +100,11 @@ simulation, so that a self-consistent coupled solution is obtained from one
 simulation. None of the codes is modified: each is used as distributed and driven
 through its published interface, so the coupling does not fork a source tree or
 reimplement one process inside another, and it survives a new release of any
-component. Exchange formulations are given for each pair of models. Particular
+component. Two of the three implement the Basic Model Interface and the third does
+not, which is shown to be immaterial: what a simulator must supply is the ability
+to be initialized, advanced and finalized as a shared library, and to have named
+state read and written, whatever those calls are named. Exchange formulations are
+given for each pair of models. Particular
 attention is given to returning the sewer model outfall discharge to the
 hydrodynamic model as a sewage tracer source, which places the strongest
 requirement on the interface: the transfer has to occur between the external
@@ -147,6 +156,20 @@ can be loaded into a single process and advanced under external control, with
 state passed as arrays in memory. The exchange interval is then set by the
 numerics rather than by any intermediate file format, and a self-consistent
 coupled solution is obtained from one simulation.
+
+A simulator need not implement the Basic Model Interface as such to take part. The
+requirement is functional rather than nominal: the code must be callable as a
+shared library and must provide four capabilities---initialize a simulation from
+its own input, advance it by a time step, finalize it, and get and set named
+state. The Basic Model Interface is a codification of that set, and where a
+simulator implements it the coupling is written directly against it. Where a
+simulator does not, an interface offering the same four capabilities under
+different names serves equally well. Of the three codes coupled here, two
+implement the Basic Model Interface and the third does not, and the distinction
+turns out to matter only to the names of the calls. What does matter, and is
+returned to below, is whether the interface also permits access part way through a
+time step; that is a stronger requirement than the four capabilities above, and it
+is not part of the standard.
 
 The decisive property is that none of the coupled codes is modified. Each is used
 as distributed: the coupling lives entirely in the controlling program, which
@@ -211,10 +234,14 @@ sewer network is simulated with the Storm Water Management Model (SWMM)
 \citep{rossman2022swmm}.
 
 The three simulators are advanced within a single process and exchange state
-through their respective library interfaces. MODFLOW~6 is controlled through
-its application programming interface \citep{hughes2022modflowapi}, and D-Flow
-FM through its Basic Model Interface implementation \citep{hutton2020bmi}.
-SWMM is controlled through the PySWMM interface \citep{mcdonnell2020pyswmm}. The
+through their respective library interfaces. MODFLOW~6 is controlled through its
+application programming interface, which extends the Basic Model Interface
+\citep{hughes2022modflowapi}, and D-Flow FM through its Basic Model Interface
+implementation \citep{hutton2020bmi}. SWMM implements neither, and is controlled
+through the SWMM toolkit by way of PySWMM \citep{mcdonnell2020pyswmm}; that
+interface opens a simulation from a SWMM input file, advances it by a routing
+step, closes it, and reads and writes node and link state, which are the same
+capabilities the other two supply under Basic Model Interface names. The
 MODFLOW~6 model is constructed with FloPy \citep{hughes2023flopy}. All three
 simulators are used as distributed, without modification.
 
