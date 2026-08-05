@@ -18,13 +18,5 @@
 # repository is concerned -- co-authors need them to build the document.
 gp_coupling.pdf
 
-# The repository root ignores "figures*/", which is right for the notebook output
-# directories but wrong here: these figures are manuscript source. Git cannot
-# re-include a file whose parent directory is excluded, so the directory itself
-# has to be un-ignored, and a rule in this deeper file takes precedence over the
-# root one.
-!figures/
-!figures/**
-
 # Byte-compiled figure scripts
 __pycache__/
