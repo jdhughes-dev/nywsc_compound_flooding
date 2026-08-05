@@ -273,16 +273,39 @@ SWMM version 5.2.4 accessed through PySWMM 2.0.1.
 \section*{Coupling framework}
 
 The coupled simulation is driven by the D-Flow FM model time. D-Flow FM advances
-in increments of its user time step, $\Delta t_u$, and the remaining models are
-advanced and exchanged at a coupling interval, $\Delta t_c$, that is an integer
-multiple of $\Delta t_u$. Within a coupling interval the sequence of operations
-is: D-Flow FM is advanced to the end of the interval; the resulting water
-levels and water depths are mapped to the MODFLOW~6 coastal boundary; MODFLOW~6
-is advanced one time step; the simulated boundary flows are returned to D-Flow
-FM as an external volume source; simulated groundwater heads are used to compute
-the sewer exchange; and SWMM is advanced. Because each exchange uses the state
-at the end of the preceding operation, the coupling is fully explicit and no
-iteration is performed within a coupling interval.
+in increments of its user time step, $\Delta t_u$, and MODFLOW~6 is advanced at a
+coupling interval, $\Delta t_c$, that is an integer multiple of $\Delta t_u$. The
+order of execution and the state passed between the models are shown in
+Figure~\ref{fig:sequence}.
+
+Two cadences operate. On every user time step SWMM is advanced first, so that its
+outfall covers the interval D-Flow FM is about to integrate, and the mean discharge
+over that step is written into the D-Flow FM source term before D-Flow FM advances.
+Once per coupling interval, after the last user time step of the interval, the
+D-Flow FM water levels and depths are mapped to the MODFLOW~6 coastal boundary,
+MODFLOW~6 is advanced one time step, and the simulated boundary flows and the
+aquifer--sewer seepage computed from the simulated heads are returned to D-Flow FM
+and to SWMM. Because each exchange uses the state at the end of the preceding
+operation, the coupling is fully explicit and no iteration is performed within a
+coupling interval.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\textwidth]{figures/coupling_sequence.pdf}
+\caption{Order of execution and state exchanged among the three simulators over
+two coupling intervals. Lanes are ordered by execution rather than by physical
+position. On each user time step, $\Delta t_u$, SWMM advances and its mean outfall
+discharge, $\bar{q}_s$, is written into the D-Flow FM source term, after which
+D-Flow FM advances. At the end of each coupling interval, $\Delta t_c$, the D-Flow
+FM water level and water depth, $s_1$ and $h_s$, are mapped to the MODFLOW~6
+coastal boundary; MODFLOW~6 advances one time step; and the simulated boundary
+flow, $q^{\mathrm{ext}}$, and aquifer--sewer seepage, $Q_j$, are returned to
+D-Flow FM and SWMM. The exchange column occupies no model time and is given width
+only to separate the arrows. The coupling interval is drawn as three user time
+steps, which is the ratio at the finest interval simulated here; it reaches 288 at
+daily coupling.}
+\label{fig:sequence}
+\end{figure}
 
 The explicit scheme is imposed by what the interfaces expose, not chosen for
 convenience. An implicit coupling requires every participant to re-evaluate a time
@@ -485,7 +508,9 @@ the complete time step is overwritten by the forcing update before it is
 reached. The direct tracer mechanism therefore advances D-Flow FM through the
 separate initialization, computation, and finalization entry points of its
 interface rather than through the combined update, and writes the source term
-between the first and the second.
+between the first and the second. This is the transfer drawn as $\bar{q}_s$ in
+figure~\ref{fig:sequence}; the arrow falls within a user time step, not between
+two of them.
 
 This is the sub-time-step access described earlier, and the two simulators reach
 it differently. MODFLOW~6 extends the Basic Model Interface with functions that
