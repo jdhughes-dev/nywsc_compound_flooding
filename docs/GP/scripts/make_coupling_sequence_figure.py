@@ -173,21 +173,21 @@ with styles.USGSPlot():
         poly(ax, [(xe, MF_T), (xe, Y_QE), (xn, Y_QE), (xn, DF_B)],
              LANE_C["MODFLOW 6"], r"$q^{\mathrm{ext}}$",
              lxy=(xe + 0.38, Y_QE + 0.15), ha="left")
-        # Q_j is collected from both models and delivered to both, so it is drawn
-        # as a junction rather than as a line between them: two thin arms bring the
-        # end-of-step state in from the SWMM and MODFLOW 6 bars, and two arms carry
-        # the resulting flux out to the START of the next step in each. Verified
-        # against the loop -- update_swmm writes the API well package and
+        # Q_j is the seepage between the aquifer and the sewer: the groundwater head
+        # against the water surface in the pipe, or against the pipe invert once the
+        # water table drops below it. It is a property of neither model, so it is
+        # drawn as a junction rather than as a line between them -- head and stage
+        # come in, and the flux goes out to the START of the next step in both.
+        # Verified against the loop: update_swmm writes the API well package and
         # generated_inflow AFTER finalize_time_step, so neither is seen until the
         # following step, and both are then held across it.
         #
         # The earlier version ran a horizontal along the bottom edge of the SWMM
         # bars, which read as underlining them rather than entering them.
-        # One collector, not two converging arms: the state from both models is
-        # gathered onto a single riser and enters Q_j as a single arrow on its
-        # centre line. Two arms arriving at different heights implied the two
-        # inputs are used separately, when they only ever appear as the difference
-        # between them.
+        # Head and stage enter on one line, not two. Only the difference between
+        # them is ever formed -- the driving head is a single number -- so two
+        # separate inputs would suggest the models contribute independently when
+        # between them they contribute one value.
         xi, xc = xe + 0.22, xe + 0.70
         poly(ax, [(xe, SW_B), (xi, SW_B), (xi, MF_T), (xe, MF_T)],
              "0.45", lw=0.75, head=False)
@@ -255,10 +255,9 @@ with styles.USGSPlot():
                label=r"$s_1$, $h_s$, water level and depth"),
         Line2D([], [], color=LANE_C["MODFLOW 6"], lw=1.4,
                label=r"$q^{\mathrm{ext}}$, boundary flow"),
-        # Neutral, not a lane color: Q_j belongs to neither model, being computed
-        # from both and applied to both.
+        # Neutral, not a lane color: the seepage is a property of neither model.
         Line2D([], [], color="0.25", lw=1.4,
-               label=r"$Q_j$, seepage (two-way)"),
+               label=r"$Q_j$, aquifer-sewer seepage"),
     ]
     styles.graph_legend(ax=ax, handles=handles,
                         labels=[h.get_label() for h in handles],
