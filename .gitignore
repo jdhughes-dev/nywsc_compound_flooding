@@ -225,3 +225,7 @@ FlowFM_map.nc
 FlowFM.dia
 FlowFM_Cdwcoeff.tek
 hd_obs.csv
+# Cached NWIS / CO-OPS observations fetched by step3_plot_compare_observations.
+# Re-fetched automatically from the public archives, which are stable for 2010, so
+# the ~9 MB is not carried in the repository. Drop this rule to freeze a snapshot.
+data/GP/observations/
