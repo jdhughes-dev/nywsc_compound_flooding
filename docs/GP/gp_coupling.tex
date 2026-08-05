@@ -56,6 +56,7 @@ network models using library interfaces}
 % city: Coram for Bayraktar, Troy for Jahn.
 \author[inst1]{Joseph D. Hughes\,\orcidlink{0000-0003-1311-2354}}
 \author[inst2]{Liv Herdman\,\orcidlink{0000-0002-5444-6441}}
+\author[inst5]{Valentina Prigiobbe\,\orcidlink{0000-0001-6603-4295}}
 \author[inst3]{Martijn J. Russcher\,\orcidlink{0000-0001-8799-6514}}
 \author[inst4]{Banu Bayraktar\,\orcidlink{0000-0003-3612-6767}}
 \author[inst2]{Kalle L. Jahn\,\orcidlink{0000-0002-4976-0137}}
@@ -89,6 +90,12 @@ network models using library interfaces}
   postcode={11727},
   country={USA}}
 
+\affiliation[inst5]{organization={Department of Geosciences, University of Padua},
+  addressline={Via Gradenigo 6},
+  city={Padua},
+  postcode={35131},
+  country={Italy}}
+
 \begin{abstract}
 Processes that span the coast, the subsurface, and engineered infrastructure are
 simulated by codes developed independently of one another, each with its own
@@ -106,12 +113,12 @@ to be initialized, advanced and finalized as a shared library, and to have named
 state read and written, whatever those calls are named. Exchange formulations are
 given for each pair of models. Particular
 attention is given to returning the sewer model outfall discharge to the
-hydrodynamic model as a sewage tracer source, which places the strongest
+hydrodynamic model as a sewer discharge tracer source, which places the strongest
 requirement on the interface: the transfer has to occur between the external
 forcing update and the flow computation, a window the combined time-stepping
 entry point does not expose, and the value applied over a model time step is
 formed from the cumulative outfall volume so that mass is conserved exactly
-rather than sampled. The approach is demonstrated on a sanitary sewer network on
+rather than sampled. The approach is demonstrated on a combined sewer network on
 eastern Long Island, New York, where groundwater infiltration to the sewer is
 modulated by the tide, and the sensitivity of the coupled solution to the
 exchange interval is evaluated across three hydrodynamic grid resolutions.
@@ -200,36 +207,42 @@ The purpose of this paper is to describe an approach for coupling a coastal
 hydrodynamic model, a groundwater flow model, and a sewer network model in
 memory through their library interfaces, and to set out the exchange
 formulations between each pair. Returning the sewer model outfall discharge to
-the hydrodynamic model as a sewage tracer source is treated in most detail,
+the hydrodynamic model as a sewer discharge tracer source is treated in most detail,
 because it places the strongest requirement on the interface: the transfer must
 occur between the external forcing update and the flow computation, a window the
 combined time-stepping entry point such interfaces usually present does not
 expose.
 
 The approach is demonstrated on a problem that exercises all three couplings at
-once. Sanitary sewers in low-lying coastal communities are subject to groundwater
+once. Sewers in low-lying coastal communities are subject to groundwater
 infiltration that varies with the tide: where the water table stands above the
 pipe invert, groundwater enters the sewer through defects in the pipe wall and at
-joints, increasing the volume conveyed to the treatment works and discharged at
-outfalls. The water table is itself tidally forced, so the infiltration rate is
-modulated at tidal frequencies by a process external to the sewer network. The
-demonstration uses a sanitary sewer network at Greenport, New York, on the north
-fork of eastern Long Island, which discharges to Greenport Harbor and the
-surrounding waters of Long Island Sound and Peconic Bay. It is used here to
-evaluate the coupling rather than to characterize the site, and in particular to
-establish how frequently the exchange must occur for the coupled solution to be
-insensitive to the exchange interval.
+joints, adding to the volume the network conveys. The water table is itself
+tidally forced, so the infiltration rate is modulated at tidal frequencies by a
+process external to the sewer network. That interaction, and its consequences for
+flooding and for water quality, has been studied in coastal urban settings through
+field measurement, statistical and machine-learning models, and scenarios of sea
+level rise \citep{liu2018gwsewer, su2019infiltration, liu2021predicting,
+su2022slr}.
+
+The demonstration uses the sewer network at Greenport, New York, on the north fork
+of eastern Long Island, which discharges to Greenport Harbor and the surrounding
+waters of Long Island Sound and Peconic Bay. The network is a combined system
+carrying both stormwater runoff and dry weather flow. It is used here to evaluate
+the coupling rather than to characterize the site, and in particular to establish
+how frequently the exchange must occur for the coupled solution to be insensitive
+to the exchange interval.
 
 \section*{Model components}
 
 Three simulators are coupled. Coastal hydrodynamics and the transport of a
-conservative sewage tracer are simulated with D-Flow Flexible Mesh (D-Flow FM),
+conservative tracer of sewer discharge are simulated with D-Flow Flexible Mesh (D-Flow FM),
 which solves the depth-averaged shallow water equations on an unstructured grid
 using the scheme of \cite{kernkamp2011unstructured} and is documented in
 \cite{deltares2026dflowfm}. Groundwater flow is simulated with MODFLOW~6
 \citep{langevin2017modflow6}, using the Groundwater Flow (GWF) and Groundwater
 Transport (GWT) models with the Buoyancy (BUY) package so that density effects
-associated with the saltwater interface are represented. Flow in the sanitary
+associated with the saltwater interface are represented. Flow in the combined
 sewer network is simulated with the Storm Water Management Model (SWMM)
 \citep{rossman2022swmm}.
 
@@ -421,10 +434,10 @@ MODFLOW~6 as an equal and opposite well flux, so that mass is conserved between
 the two models. Cells that are dry or inactive return a head of $-10^{30}$ in
 MODFLOW~6 and are assigned zero exchange rather than being used unguarded.
 
-\section*{Sewage tracer transport}
+\section*{Sewer discharge tracer transport}
 
 Flow reaching the outfall is introduced to D-Flow FM as a point source carrying
-a conservative sewage tracer, which is then advected and dispersed by the
+a conservative tracer of sewer discharge, which is then advected and dispersed by the
 hydrodynamic model. The source discharge is the total inflow simulated by SWMM
 at the outfall, and the tracer concentration assigned to that discharge is
 constant, so the tracer mass flux follows the simulated SWMM outfall discharge
