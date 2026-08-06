@@ -96,8 +96,31 @@ network models using library interfaces}
   postcode={35131},
   country={Italy}}
 
+% SUBMISSION LIMITS -- Environmental Modelling & Software (Elsevier, ISSN 1364-8152)
+%
+%   Abstract   150 words maximum.
+%   Highlights 3 to 5 bullets, 85 characters maximum EACH, including spaces.
+%              Not yet drafted; they are a separate submission item, not part of
+%              this file.
+%
+% This abstract currently runs to 309 words and so needs roughly halving. Cutting it
+% is deferred until Results is written, because what survives the cut should be
+% decided by what the findings turn out to be, not before.
+%
+% Page charges: none found. No page limit and no excess-page fee appears in any
+% reachable source, which matches Elsevier's usual practice for a hybrid
+% subscription title -- publication free to the author, colour free online. The only
+% fee located is the OPTIONAL open-access APC, USD 3,620 excluding tax, which is a
+% choice rather than a length penalty. Treat this as unconfirmed: it rests on not
+% finding a policy, which is weaker evidence than reading one.
+%
+% NONE of the above was read off the guide directly -- ScienceDirect returns HTTP
+% 403 to automated fetches, so these come from search summaries. Confirm all three
+% against the live guide before submitting:
+%   https://www.sciencedirect.com/journal/environmental-modelling-and-software/publish/guide-for-authors
 \begin{abstract}
-Processes that span the coast, the subsurface, and engineered infrastructure are
+Hydrologic and hydrodynamic processes that span the coast, the subsurface, and
+engineered infrastructure are
 simulated by codes developed independently of one another, each with its own
 numerical formulation, grid, model time step, and control interface. An approach
 is described in which three such codes---a coastal hydrodynamic model, a
@@ -384,19 +407,46 @@ lateral perimeter. The D-Flow FM grid and the MODFLOW~6 grid are not
 coincident, so the exchange is mediated by area-weighted mapping matrices
 computed once, before simulation, from the intersection of the two grids.
 
+D-Flow FM resolves the tide on a time step orders of magnitude shorter than the
+coupling interval, so a single boundary value has to stand for everything that
+happened over the interval. MODFLOW~6 advances that interval in one
+backward-in-time step, and the exchange term of such a step is applied across its
+whole length: the volume exchanged is the product of the interval, the
+conductance, and the head difference. The boundary value must therefore represent
+the interval rather than any instant within it, and the reduction used here is a
+time average weighted by the wetted state,
+
+\begin{equation}
+  \bar{\delta}_{j} = \frac{1}{\Delta t_{c}}
+      \int_{t_{k}}^{t_{k+1}} \delta_{j}(t) \, \mathrm{d}t ,
+  \qquad
+  \bar{s}_{j} = \frac{\int_{t_{k}}^{t_{k+1}} \delta_{j}(t) \, s_{j}(t) \,
+      \mathrm{d}t}{\int_{t_{k}}^{t_{k+1}} \delta_{j}(t) \, \mathrm{d}t} ,
+  \label{eq:tmean}
+\end{equation}
+
+\noindent where $\bar{\delta}_{j}$ is the fraction of the coupling interval over
+which D-Flow FM cell $j$ is wet (dimensionless), $\delta_{j}(t)$ is unity where
+that cell is wet and zero where it is dry (dimensionless), $s_{j}(t)$ is the water
+level it simulates (L), $\bar{s}_{j}$ is the mean of that water level over the
+wetted part of the interval (L), and $\Delta t_{c}$ is the coupling interval (T).
+The integrals are evaluated by the trapezoidal rule on the D-Flow FM user time
+step. Weighting the level by the wetted state is necessary rather than tidy: an
+unweighted mean would credit an intertidal cell with a water level over the part
+of the interval it stood dry.
+
 The boundary head assigned to GHB cell $i$ is
 
 \begin{equation}
-  h_{i}^{\mathrm{GHB}} = \gamma \sum_{j} w_{ij}^{\mathrm{GHB}} \, s_{j} ,
+  h_{i}^{\mathrm{GHB}} = \gamma \sum_{j} w_{ij}^{\mathrm{GHB}} \, \bar{s}_{j} ,
   \label{eq:ghbhead}
 \end{equation}
 
 \noindent where $h_{i}^{\mathrm{GHB}}$ is the boundary head of cell $i$ (L),
 $w_{ij}^{\mathrm{GHB}}$ is the area-weighted contribution of D-Flow FM cell $j$
-to MODFLOW~6 cell $i$ (dimensionless), $s_{j}$ is the water level simulated by
-D-Flow FM in cell $j$ (L), and $\gamma$ is the unit conversion from meters to
-feet (dimensionless). Constant-head values are computed identically using the
-corresponding CHD mapping.
+to MODFLOW~6 cell $i$ (dimensionless), and $\gamma$ is the unit conversion from
+meters to feet (dimensionless). Constant-head values are computed identically
+using the corresponding CHD mapping.
 
 Intertidal cells alternately wet and dry over a tidal cycle. A D-Flow FM cell
 with zero water depth contributes no head and no conductance, so the GHB
@@ -404,14 +454,30 @@ conductance is reduced in proportion to the wetted fraction of the contributing
 cells,
 
 \begin{equation}
-  C_{i}^{\mathrm{GHB}} = C_{i}^{0} \sum_{j} w_{ij}^{\mathrm{GHB}} \, \delta_{j} ,
+  C_{i}^{\mathrm{GHB}} = C_{i}^{0} \sum_{j} w_{ij}^{\mathrm{GHB}} \,
+      \bar{\delta}_{j} ,
   \label{eq:ghbcond}
 \end{equation}
 
 \noindent where $C_{i}^{\mathrm{GHB}}$ is the conductance applied to cell $i$
-(L$^{2}$T$^{-1}$), $C_{i}^{0}$ is the conductance of cell $i$ in the base model
-(L$^{2}$T$^{-1}$), and $\delta_{j}$ is unity where D-Flow FM cell $j$ is wet and
-zero where it is dry (dimensionless). The base-model conductance, rather than
+(L$^{2}$T$^{-1}$), and $C_{i}^{0}$ is the conductance of cell $i$ in the base
+model (L$^{2}$T$^{-1}$). Equations~\ref{eq:tmean} to \ref{eq:ghbcond} together
+reproduce the interval-mean exchange exactly rather than approximately. Because
+the instantaneous conductance is the base conductance multiplied by a quantity
+that is either zero or one, and because MODFLOW~6 carries a single head over the
+step,
+
+\begin{equation}
+  \frac{1}{\Delta t_{c}} \int_{t_{k}}^{t_{k+1}} C^{0} \delta_{j}(t)
+      \left( s_{j}(t) - h \right) \mathrm{d}t
+    = C^{0} \, \bar{\delta}_{j} \left( \bar{s}_{j} - h \right) ,
+  \label{eq:exact}
+\end{equation}
+
+\noindent where $h$ is the groundwater head at the end of the step (L). The
+wetted fraction is thus the conductance multiplier and the wet-weighted mean is
+the boundary head, and no other pair of values reproduces the interval-mean flux.
+The base-model conductance, rather than
 the conductance from the preceding coupling interval, is used on the right-hand
 side of equation~\ref{eq:ghbcond}; applying the reduction multiplicatively to
 the previous value would drive the conductance monotonically toward zero over
@@ -436,6 +502,94 @@ second (dimensionless). The sign convention of MODFLOW~6 reports boundary flow
 as positive into the groundwater model, so the leading negative sign renders
 $q_{j}^{\mathrm{ext}}$ positive into the surface water. Dry cells receive no
 source.
+
+\subsection*{Choice of temporal reduction}
+
+Averaging is one of two reductions in common use. The other is to sample the
+D-Flow FM state at the end of the coupling interval and apply it unchanged, which
+is the simpler implementation and is consistent in the sense that it converges as
+the interval is shortened. The two are not better and worse versions of one
+approximation. They fail by different mechanisms, and which mechanism is active is
+set by the tide rather than by the model. Sampling preserves the amplitude of the
+boundary signal but aliases it once the coupling interval exceeds the Nyquist limit
+of the dominant tidal constituent. Averaging cannot alias, but damps the amplitude
+by an amount that grows with the interval.
+
+Figure~\ref{fig:reduction} shows what each reduction does to cells of differing
+wetness under a tidal signal representative of the study area. For a cell that is
+never dry, the conductance is fixed and only the head is at issue, and the trade
+between aliasing and damping is the whole of it. For an intertidal cell the
+conductance carries the more consequential difference. Sampled instantaneously,
+such a cell is reported as either fully connected or entirely disconnected
+depending on where the sampling instant happens to fall in the tide, so the
+boundary switches on and off at the beat frequency between the coupling interval
+and the tide while nothing physical about the cell has changed. The wetted
+fraction of equation~\ref{eq:tmean} instead reports the partial connection the
+interval actually contained.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\textwidth]{figures/boundary_reduction.pdf}
+\caption{Reduction of a tidal boundary to one value per coupling interval, for
+cells wet 100, 75, 50, and 25 percent of the time, at coupling intervals of 2, 8,
+and 24 hours. Each pair of panels shows the water level and, beneath it, the
+multiplier applied to the base conductance. The water level is the sum of the
+three semidiurnal constituents fitted to the National Oceanic and Atmospheric
+Administration record at Kings Point, New York (station 8516945, referenced to
+NAVD 1988), so the spring--neap and perigean beat are those of the measured
+record; fitted amplitudes are \SI{1.110}{\meter} for $M_2$, \SI{0.225}{\meter}
+for $S_2$, and \SI{0.287}{\meter} for $N_2$. Bed elevations are placed at
+quantiles of that water level to give the stated wetted fractions. Crosses mark
+coupling intervals for which instantaneous sampling reports the cell dry, so that
+no boundary is applied at all. The 2-hour interval is below the $M_2$ Nyquist
+limit of \SI{6.21}{\hour} and the other two are above it.}
+\label{fig:reduction}
+\end{figure}
+
+The consequence for the coupled solution was evaluated by simulating the coarse
+grid at coupling intervals of 2, 4, 8, and 24 hours under both reductions and
+scoring each against a 30-minute simulation, which resolves the tide and serves as
+the reference. Both a sampled and an averaged 30-minute simulation were used as the
+reference, because the averaged one shares its formulation with half of the
+simulations being scored; the two give the same result, so the comparison does not
+depend on that choice.
+
+Results are summarized in Figure~\ref{fig:averaging}. The sewer discharge tracer,
+which is the quantity of interest here, is represented more accurately by sampling
+at 2 and 4 hours and by averaging at 8 and 24 hours, with the ratio of the two
+errors crossing unity between the 4- and 8-hour simulations. That interval brackets
+the $M_2$ Nyquist limit of \SI{6.21}{\hour}, which is where aliasing begins. The
+intervals at which sampling is the more accurate reduction are, however, intervals
+at which the choice does not matter: root-mean-square error in simulated
+groundwater head is below one millimeter at 2 and 4 hours under either reduction.
+At daily coupling, where the choice does matter, sampling carries \SI{33}{\milli
+\meter} of head error against \SI{3}{\milli\meter} for averaging, and overstates
+peak simulated tracer concentration by 62 percent against 10 percent.
+
+The abruptness of the transition, rather than its location, is what distinguishes
+the two error mechanisms. A truncation error grows smoothly as the step is
+lengthened. Aliasing is absent until the sampling interval crosses the limit and
+grows quickly thereafter, which is the behavior of the sampled peak concentration
+in Figure~\ref{fig:averaging}: within one percent of the reference at 2 and 4
+hours, and \SI{27}{\percent} and \SI{62}{\percent} above it at 8 and 24 hours.
+Because a coupling interval is normally chosen for computational cost rather than
+for its relation to the tide, and because a study of coupling interval necessarily
+spans the limit, averaging is used throughout this work.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\textwidth]{figures/boundary_averaging.pdf}
+\caption{Error in the coupled solution relative to a 30-minute reference
+simulation, for the two reductions of the D-Flow FM boundary, on the coarse grid.
+(A) simulated groundwater head, (B) aquifer--sewer seepage, (C) sewer discharge
+tracer, and (D) peak simulated tracer concentration, with the reference value
+shown dashed. The first five days are excluded as model spin-up. The vertical rule
+is the Nyquist limit for the $M_2$ constituent, \SI{6.21}{\hour}. Below the limit
+the two reductions differ by amounts too small to matter---head error is below one
+millimeter---while above it the sampled solution departs from the reference
+abruptly, which is characteristic of aliasing rather than of truncation.}
+\label{fig:averaging}
+\end{figure}
 
 \section*{Sewer exchange}
 
