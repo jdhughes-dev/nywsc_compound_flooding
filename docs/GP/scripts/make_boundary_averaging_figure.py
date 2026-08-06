@@ -35,44 +35,53 @@ h = ds["hours"].values[order]
 s = {v: sub[v].values[order] for v in sub.data_vars}
 peak_ref = float(ds.attrs["peak_reference_concentration"])
 
+# Ticks are the intervals actually simulated, so they follow the archive rather than
+# a hard-coded list that would silently drop a point when one is added.
+TICK_H = list(h)
+TICK_LAB = [f"{v:.0f} h" if v < 24 else "1 d" if v == 24
+            else f"{v/24:.0f} d" for v in h]
+
+PANELS = {"head": ("head_inst", "head_mean", "Aquifer head RMSE, in millimeters"),
+          "seep": ("seep_inst", "seep_mean",
+                   "Sewer seepage RMSE, in cubic feet per day"),
+          "trac": ("trac_inst", "trac_mean", "Sewer tracer RMSE, dimensionless"),
+          "peak": ("peak_inst", "peak_mean", "Peak sewer tracer concentration")}
+
 with styles.USGSPlot():
-    fig, axs = plt.subplots(nrows=2, ncols=2, figsize=(7.5, 5.2), layout="constrained")
-    panels = [(axs[0, 0], "head_inst", "head_mean", "Aquifer head RMSE, in millimeters"),
-              (axs[0, 1], "seep_inst", "seep_mean",
-               "Sewer seepage RMSE, in cubic feet per day"),
-              (axs[1, 0], "trac_inst", "trac_mean", "Sewer tracer RMSE, dimensionless")]
-    for i, (ax, ci, cm, lab) in enumerate(panels):
+    fig, axd = plt.subplot_mosaic([["head", "seep"], ["trac", "peak"]],
+                                  figsize=(7.5, 5.2), layout="constrained")
+    for letter, (key, (ci, cm, lab)) in zip("ABCD", PANELS.items()):
+        ax = axd[key]
         ax.plot(h, s[ci], "o-", color=C_I, lw=1.2, ms=4, label="instantaneous")
         ax.plot(h, s[cm], "s-", color=C_M, lw=1.2, ms=4, label="time-averaged")
         ax.set_xscale("log")
-        ax.set_yscale("log")
+        if key != "peak":
+            # The peak panel is a concentration against a reference value, not an
+            # error that spans decades, so a log scale would flatten the departure
+            # that is the whole point of it.
+            ax.set_yscale("log")
+        else:
+            ax.axhline(peak_ref, color="0.35", lw=0.9, linestyle=(0, (3, 2)),
+                       zorder=1)
+            ax.annotate("reference", xy=(0.02, peak_ref),
+                        xycoords=("axes fraction", "data"),
+                        xytext=(0, 3), textcoords="offset points",
+                        fontsize=6.5, color="0.35")
         ax.axvline(NYQUIST_H, color="0.35", lw=0.9, linestyle=(0, (3, 2)), zorder=1)
-        ax.set_xticks([2, 4, 8, 24])
-        ax.set_xticklabels(["2 h", "4 h", "8 h", "1 d"], fontsize=7)
+        ax.set_xticks(TICK_H)
+        ax.set_xticklabels(TICK_LAB, fontsize=7)
         ax.tick_params(labelsize=7, top=False)
-        styles.heading(ax=ax, letter="ABCD"[i], heading=lab, fontsize=7.5)
-
-    ax = axs[1, 1]
-    ax.axhline(peak_ref, color="0.35", lw=0.9, linestyle=(0, (3, 2)), zorder=1)
-    ax.plot(h, s["peak_inst"], "o-", color=C_I, lw=1.2, ms=4)
-    ax.plot(h, s["peak_mean"], "s-", color=C_M, lw=1.2, ms=4)
-    ax.axvline(NYQUIST_H, color="0.35", lw=0.9, linestyle=(0, (3, 2)), zorder=1)
-    ax.set_xscale("log")
-    ax.set_xticks([2, 4, 8, 24])
-    ax.set_xticklabels(["2 h", "4 h", "8 h", "1 d"], fontsize=7)
-    ax.tick_params(labelsize=7, top=False)
-    styles.heading(ax=ax, letter="D", heading="Peak sewer tracer concentration",
-                   fontsize=7.5)
-    ax.annotate("reference", xy=(2.05, peak_ref), xytext=(2.05, peak_ref * 1.04),
-                fontsize=6.5, color="0.35")
-
-    for ax in axs.flat:
+        # Anchored in axes fraction, not to get_ylim()[1]: the data top IS the top
+        # spine, so the label sat on it.
+        ax.annotate(r"$M_2$ Nyquist", xy=(NYQUIST_H, 0.96),
+                    xycoords=("data", "axes fraction"),
+                    xytext=(3, 0), textcoords="offset points",
+                    fontsize=6.5, color="0.35", va="top", ha="left")
+        styles.heading(ax=ax, letter=letter, heading=lab, fontsize=7.5)
         styles.xlabel(ax=ax, label="Coupling interval")
-        ax.annotate(r"$M_2$ Nyquist", xy=(NYQUIST_H, ax.get_ylim()[1]),
-                    xytext=(NYQUIST_H * 1.06, ax.get_ylim()[1]),
-                    fontsize=6.5, color="0.35", va="top")
-    hs, ls = axs[0, 0].get_legend_handles_labels()
-    styles.graph_legend(ax=axs[1, 0], handles=hs, labels=ls, loc="lower center",
+
+    hs, ls = axd["head"].get_legend_handles_labels()
+    styles.graph_legend(ax=axd["trac"], handles=hs, labels=ls, loc="lower center",
                         bbox_to_anchor=(1.05, -0.42), ncol=2, frameon=False,
                         fontsize=7.5)
     fig.savefig(OUT, bbox_inches="tight")

@@ -70,13 +70,13 @@ t = np.arange(0.0, DAYS * 24.0 + DT_U, DT_U)
 s = stage(t)
 
 with styles.USGSPlot():
-    # Explicit spacing rather than constrained layout: each cell is a head panel
-    # with its own conductance strip, and constrained layout spaced the strip as far
-    # from its own panel as from the next row's, so it read as belonging to neither.
-    fig = plt.figure(figsize=(7.5, 8.6))
-    outer = fig.add_gridspec(len(WET_FRACTIONS), len(INTERVALS), hspace=0.62,
-                             wspace=0.20, left=0.095, right=0.985, top=0.955,
-                             bottom=0.085)
+    # Subfigures, not a nested gridspec. Each cell is a head panel with its own
+    # conductance strip, and constrained layout over a nested gridspec spaced the
+    # strip as far from its own panel as from the next row's, so it read as belonging
+    # to neither. A subfigure is laid out as a unit, which welds the pair together
+    # and still lets constrained layout take up the slack around them.
+    fig = plt.figure(figsize=(7.5, 7.6), layout="constrained")
+    cells = fig.subfigures(len(WET_FRACTIONS), len(INTERVALS), hspace=0.0, wspace=0.0)
 
     for i, frac in enumerate(WET_FRACTIONS):
         # Bed elevation placed so the cell is wet exactly `frac` of the time. For the
@@ -86,9 +86,9 @@ with styles.USGSPlot():
         w = s > z_b
 
         for j, dt_c in enumerate(INTERVALS):
-            inner = outer[i, j].subgridspec(2, 1, height_ratios=[3.0, 1.0], hspace=0.06)
-            axh = fig.add_subplot(inner[0])
-            axc = fig.add_subplot(inner[1], sharex=axh)
+            axh, axc = cells[i, j].subplots(
+                2, 1, sharex=True,
+                gridspec_kw={"height_ratios": [3.0, 1.0], "hspace": 0.06})
 
             t0, h_i, c_i, h_m, c_m = reduce_interval(t, s, w, dt_c)
 
@@ -130,7 +130,6 @@ with styles.USGSPlot():
                plt.Line2D([], [], color=C_INST, lw=0, marker="x", ms=4, mew=0.9,
                           label="boundary switched off")]
     fig.legend(handles=handles, labels=[h.get_label() for h in handles],
-               loc="lower center", bbox_to_anchor=(0.5, 0.012), ncol=4,
-               frameon=False, fontsize=7)
-    fig.savefig(OUT, bbox_inches="tight")
+               loc="outside lower center", ncol=4, frameon=False, fontsize=7)
+    fig.savefig(OUT)
 print("wrote", OUT)
