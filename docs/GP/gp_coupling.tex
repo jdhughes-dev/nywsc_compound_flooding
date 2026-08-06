@@ -62,39 +62,19 @@ network models using library interfaces}
 \author[inst2]{Kalle L. Jahn\,\orcidlink{0000-0002-4976-0137}}
 
 \affiliation[inst1]{organization={INTERA Incorporated},
-  addressline={927 W Belle Plaine Ave},
-  city={Chicago},
-  state={IL},
-  postcode={60613},
-  country={USA}}
+addressline={927 W Belle Plaine Ave}, city={Chicago}, state={IL}, postcode={60613}, country={USA}}
 
 \affiliation[inst2]{organization={U.S. Geological Survey, New York Water Science
-    Center},
-  addressline={425 Jordan Road},
-  city={Troy},
-  state={NY},
-  postcode={12180},
-  country={USA}}
+Center}, addressline={425 Jordan Road}, city={Troy}, state={NY}, postcode={12180}, country={USA}}
 
 \affiliation[inst3]{organization={Deltares},
-  addressline={Boussinesqweg 1},
-  city={Delft},
-  postcode={2629 HV},
-  country={The Netherlands}}
+addressline={Boussinesqweg 1}, city={Delft}, postcode={2629 HV}, country={The Netherlands}}
 
 \affiliation[inst4]{organization={U.S. Geological Survey, New York Water Science
-    Center},
-  addressline={2045 Route 112, Building 4},
-  city={Coram},
-  state={NY},
-  postcode={11727},
-  country={USA}}
+Center}, addressline={2045 Route 112, Building 4}, city={Coram}, state={NY}, postcode={11727}, country={USA}}
 
 \affiliation[inst5]{organization={Department of Geosciences, University of Padua},
-  addressline={Via Gradenigo 6},
-  city={Padua},
-  postcode={35131},
-  country={Italy}}
+addressline={Via Gradenigo 6}, city={Padua}, postcode={35131}, country={Italy}}
 
 % SUBMISSION LIMITS -- Environmental Modelling & Software (Elsevier, ISSN 1364-8152)
 %
@@ -119,32 +99,7 @@ network models using library interfaces}
 % highlights format and the absence of page charges before submitting:
 %   https://www.sciencedirect.com/journal/environmental-modelling-and-software/publish/guide-for-authors
 \begin{abstract}
-Hydrodynamic and hydrologic processes that span the coast, the subsurface, and
-engineered infrastructure are
-simulated by codes developed independently of one another, each with its own
-numerical formulation, grid, model time step, and control interface. An approach
-is described in which three such codes---a coastal hydrodynamic model, a
-groundwater flow model, and a sewer network model---are loaded as libraries into
-a single process and exchange state in memory at a fixed interval throughout a
-simulation, so that a self-consistent coupled solution is obtained from one
-simulation. None of the codes is modified: each is used as distributed and driven
-through its published interface, so the coupling does not fork a source tree or
-reimplement one process inside another, and it survives a new release of any
-component. Two of the three implement the Basic Model Interface and the third does
-not, which is shown to be immaterial: what a simulator must supply is the ability
-to be initialized, advanced and finalized as a shared library, and to have named
-state read and written, whatever those calls are named. Exchange formulations are
-given for each pair of models. Particular
-attention is given to returning the sewer model outfall discharge to the
-hydrodynamic model as a sewer discharge tracer source, which places the strongest
-requirement on the interface: the transfer has to occur between the external
-forcing update and the flow computation, a window the combined time-stepping
-entry point does not expose, and the value applied over a model time step is
-formed from the cumulative outfall volume so that mass is conserved exactly
-rather than sampled. The approach is demonstrated on a combined sewer network on
-eastern Long Island, New York, where groundwater infiltration to the sewer is
-modulated by the tide, and the sensitivity of the coupled solution to the
-exchange interval is evaluated across three hydrodynamic grid resolutions.
+Hydrodynamic and hydrologic processes that span the coast, the subsurface, and engineered infrastructure are simulated by codes developed independently of one another, each with its own numerical formulation, grid, model time step, and control interface. An approach is described in which three such codes---a coastal hydrodynamic model, a groundwater flow model, and a sewer network model---are loaded as libraries into a single process and exchange state in memory at a fixed interval throughout a simulation, so that a self-consistent coupled solution is obtained from one simulation. None of the codes is modified: each is used as distributed and driven through its published interface, so the coupling does not fork a source tree or reimplement one process inside another, and it survives a new release of any component. Two of the three implement the Basic Model Interface and the third does not, which is shown to be immaterial: what a simulator must supply is the ability to be initialized, advanced and finalized as a shared library, and to have named state read and written, whatever those calls are named. Exchange formulations are given for each pair of models. Particular attention is given to returning the sewer model outfall discharge to the hydrodynamic model as a sewer discharge tracer source, which places the strongest requirement on the interface: the transfer has to occur between the external forcing update and the flow computation, a window the combined time-stepping entry point does not expose, and the value applied over a model time step is formed from the cumulative outfall volume so that mass is conserved exactly rather than sampled. The approach is demonstrated on a combined sewer network on eastern Long Island, New York, where groundwater infiltration to the sewer is modulated by the tide, and the sensitivity of the coupled solution to the exchange interval is evaluated across three hydrodynamic grid resolutions.
 \end{abstract}
 
 \begin{keyword}
@@ -161,100 +116,23 @@ SWMM
 
 \section*{Introduction}
 
-Processes that cross the boundary between the coastal ocean, the subsurface, and
-engineered infrastructure are rarely represented by a single code. Each domain
-has a mature simulator of its own, developed independently, with its own
-governing equations, spatial discretization, model time step, and means of
-external control. Representing the coupled process therefore means making those
-codes exchange state while they run.
+Processes that cross the boundary between the coastal ocean, the subsurface, and engineered infrastructure are rarely represented by a single code. Each domain has a mature simulator of its own, developed independently, with its own governing equations, spatial discretization, model time step, and means of external control. Representing the coupled process therefore means making those codes exchange state while they run.
 
-Coupling of this kind has generally been achieved in one of two ways. The first
-adds the second process to an existing code, which yields a tightly integrated
-solution but confines it to the domains the host code implements; the coupled
-surface water routing added to MODFLOW is an example \citep{hughes2014swr}. The
-second couples separate codes externally, and has been applied to urban drainage
-and groundwater through SWMM and MODFLOW \citep{zhang2020swmmmodflow,
-li2022urbansaturated, tajari2026compound}, to large-scale hydrology and
-groundwater \citep{guillaumot2022cwatm}, and to the coastal zone by coupling a
-hydrodynamic model to a groundwater model \citep{jin2025gwocean}.
+Coupling of this kind has generally been achieved in one of two ways. The first adds the second process to an existing code, which yields a tightly integrated solution but confines it to the domains the host code implements; the coupled surface water routing added to MODFLOW is an example \citep{hughes2014swr}. The second couples separate codes externally, and has been applied to urban drainage and groundwater through SWMM and MODFLOW \citep{zhang2020swmmmodflow, li2022urbansaturated, tajari2026compound}, to large-scale hydrology and groundwater \citep{guillaumot2022cwatm}, and to the coastal zone by coupling a hydrodynamic model to a groundwater model \citep{jin2025gwocean}.
 
-Standardized control interfaces make the second route practical without the cost
-that has historically accompanied it. Simulators that expose a library interface,
-such as the Basic Model Interface \citep{hutton2020bmi} or an application
-programming interface built for the same purpose \citep{hughes2022modflowapi},
-can be loaded into a single process and advanced under external control, with
-state passed as arrays in memory. The exchange interval is then set by the
-numerics rather than by any intermediate file format, and a self-consistent
-coupled solution is obtained from one simulation.
+Standardized control interfaces make the second route practical without the cost that has historically accompanied it. Simulators that expose a library interface, such as the Basic Model Interface \citep{hutton2020bmi} or an application programming interface built for the same purpose \citep{hughes2022modflowapi}, can be loaded into a single process and advanced under external control, with state passed as arrays in memory. The exchange interval is then set by the numerics rather than by any intermediate file format, and a self-consistent coupled solution is obtained from one simulation.
 
-A simulator need not implement the Basic Model Interface as such to take part. The
-requirement is functional rather than nominal: the code must be callable as a
-shared library and must provide four capabilities---initialize a simulation from
-its own input, advance it by a time step, finalize it, and get and set named
-state. The Basic Model Interface is a codification of that set, and where a
-simulator implements it the coupling is written directly against it. Where a
-simulator does not, an interface offering the same four capabilities under
-different names serves equally well. Of the three codes coupled here, two
-implement the Basic Model Interface and the third does not, and the distinction
-turns out to matter only to the names of the calls. What does matter, and is
-returned to below, is whether the interface also permits access part way through a
-time step; that is a stronger requirement than the four capabilities above, and it
-is not part of the standard.
+A simulator need not implement the Basic Model Interface as such to take part. The requirement is functional rather than nominal: the code must be callable as a shared library and must provide four capabilities---initialize a simulation from its own input, advance it by a time step, finalize it, and get and set named state. The Basic Model Interface is a codification of that set, and where a simulator implements it the coupling is written directly against it. Where a simulator does not, an interface offering the same four capabilities under different names serves equally well. Of the three codes coupled here, two implement the Basic Model Interface and the third does not, and the distinction turns out to matter only to the names of the calls. What does matter, and is returned to below, is whether the interface also permits access part way through a time step; that is a stronger requirement than the four capabilities above, and it is not part of the standard.
 
-The decisive property is that none of the coupled codes is modified. Each is used
-as distributed: the coupling lives entirely in the controlling program, which
-advances each simulator through its published interface and moves state between
-them. No source is forked, no process is reimplemented inside a host code, and
-each simulator continues to be developed, tested and released by the group that
-maintains it. A coupling built this way survives a new release of any component,
-and the same controlling program can be repointed at a different combination of
-simulators. \cite{jin2025gwocean} exploit the same property in coupling a
-hydrodynamic model to MODFLOW~6, adjusting the general-head boundary through the
-interface rather than by altering the code.
+The decisive property is that none of the coupled codes is modified. Each is used as distributed: the coupling lives entirely in the controlling program, which advances each simulator through its published interface and moves state between them. No source is forked, no process is reimplemented inside a host code, and each simulator continues to be developed, tested and released by the group that maintains it. A coupling built this way survives a new release of any component, and the same controlling program can be repointed at a different combination of simulators. \cite{jin2025gwocean} exploit the same property in coupling a hydrodynamic model to MODFLOW~6, adjusting the general-head boundary through the interface rather than by altering the code.
 
-What such an interface exposes, however, is not always sufficient on its own. A
-quantity may be readable but not writable in a way the solution uses, and where
-within the model time step a value is written can determine whether it survives
-to be used at all. The Basic Model Interface defines initialization, advancement
-in time, and finalization; it does not define access to model state part way
-through a time step. That omission is not incidental, and it has been encountered
-before: the MODFLOW application programming interface extends the Basic Model
-Interface precisely because the ability to modify variables within a time step
-falls outside it \citep{hughes2022modflowapi}. Any coupling that must inject state
-between two operations of a single time step therefore depends on something beyond
-the standard, and a simulator exposing only the standard interface cannot support
-that class of coupling at all. Both simulators driven here provide such an
-extension, by different routes, and the coupling described below depends on it.
+What such an interface exposes, however, is not always sufficient on its own. A quantity may be readable but not writable in a way the solution uses, and where within the model time step a value is written can determine whether it survives to be used at all. The Basic Model Interface defines initialization, advancement in time, and finalization; it does not define access to model state part way through a time step. That omission is not incidental, and it has been encountered before: the MODFLOW application programming interface extends the Basic Model Interface precisely because the ability to modify variables within a time step falls outside it \citep{hughes2022modflowapi}. Any coupling that must inject state between two operations of a single time step therefore depends on something beyond the standard, and a simulator exposing only the standard interface cannot support that class of coupling at all. Both simulators driven here provide such an extension, by different routes, and the coupling described below depends on it.
 
-The purpose of this paper is to describe an approach for coupling a coastal
-hydrodynamic model, a groundwater flow model, and a sewer network model in
-memory through their library interfaces, and to set out the exchange
-formulations between each pair. Returning the sewer model outfall discharge to
-the hydrodynamic model as a sewer discharge tracer source is treated in most detail,
-because it places the strongest requirement on the interface: the transfer must
-occur between the external forcing update and the flow computation, a window the
-combined time-stepping entry point such interfaces usually present does not
-expose.
+The purpose of this paper is to describe an approach for coupling a coastal hydrodynamic model, a groundwater flow model, and a sewer network model in memory through their library interfaces, and to set out the exchange formulations between each pair. Returning the sewer model outfall discharge to the hydrodynamic model as a sewer discharge tracer source is treated in most detail, because it places the strongest requirement on the interface: the transfer must occur between the external forcing update and the flow computation, a window the combined time-stepping entry point such interfaces usually present does not expose.
 
-The approach is demonstrated on a problem that exercises all three couplings at
-once. Sewers in low-lying coastal communities are subject to groundwater
-infiltration that varies with the tide: where the water table stands above the
-pipe invert, groundwater enters the sewer through defects in the pipe wall and at
-joints, adding to the volume the network conveys. The water table is itself
-tidally forced, so the infiltration rate is modulated at tidal frequencies by a
-process external to the sewer network. That interaction, and its consequences for
-flooding and for water quality, has been studied in coastal urban settings through
-field measurement, statistical and machine-learning models, and scenarios of sea
-level rise \citep{liu2018gwsewer, su2019infiltration, liu2021predicting,
-su2022slr}.
+The approach is demonstrated on a problem that exercises all three couplings at once. Sewers in low-lying coastal communities are subject to groundwater infiltration that varies with the tide: where the water table stands above the pipe invert, groundwater enters the sewer through defects in the pipe wall and at joints, adding to the volume the network conveys. The water table is itself tidally forced, so the infiltration rate is modulated at tidal frequencies by a process external to the sewer network. That interaction, and its consequences for flooding and for water quality, has been studied in coastal urban settings through field measurement, statistical and machine-learning models, and scenarios of sea level rise \citep{liu2018gwsewer, su2019infiltration, liu2021predicting, su2022slr}.
 
-The demonstration uses the sewer network at Greenport, New York, on the north fork
-of eastern Long Island, which discharges to Greenport Harbor and the surrounding
-waters of Long Island Sound and Peconic Bay. The network is a combined system
-carrying both stormwater runoff and dry weather flow. It is used here to evaluate
-the coupling rather than to characterize the site, and in particular to establish
-how frequently the exchange must occur for the coupled solution to be insensitive
-to the exchange interval.
+The demonstration uses the sewer network at Greenport, New York, on the north fork of eastern Long Island, which discharges to Greenport Harbor and the surrounding waters of Long Island Sound and Peconic Bay. The network is a combined system carrying both stormwater runoff and dry weather flow. It is used here to evaluate the coupling rather than to characterize the site, and in particular to establish how frequently the exchange must occur for the coupled solution to be insensitive to the exchange interval.
 
 \section*{Model components}
 
@@ -264,157 +142,39 @@ to the exchange interval.
 % (Glas et al., NHESS 2026) is statistical rather than hydrodynamic. If the grid is
 % documented in a data release or report, cite it here; otherwise it needs a
 % sentence describing its provenance.
-Three simulators are coupled. Coastal hydrodynamics and the transport of a
-conservative tracer of sewer discharge are simulated with D-Flow Flexible Mesh (D-Flow FM),
-which solves the depth-averaged shallow water equations on an unstructured grid
-using the scheme of \cite{kernkamp2011unstructured} and is documented in
-\cite{deltares2026dflowfm}. Groundwater flow is simulated with MODFLOW~6
-\citep{langevin2017modflow6}, using the Groundwater Flow (GWF) and Groundwater
-Transport (GWT) models with the Buoyancy (BUY) package so that density effects
-associated with the saltwater interface are represented. Flow in the combined
-sewer network is simulated with the Storm Water Management Model (SWMM)
-\citep{rossman2022swmm}.
+Three simulators are coupled. Coastal hydrodynamics and the transport of a conservative tracer of sewer discharge are simulated with D-Flow Flexible Mesh (D-Flow FM), which solves the depth-averaged shallow water equations on an unstructured grid using the scheme of \cite{kernkamp2011unstructured} and is documented in \cite{deltares2026dflowfm}. Groundwater flow is simulated with MODFLOW~6 \citep{langevin2017modflow6}, using the Groundwater Flow (GWF) and Groundwater Transport (GWT) models with the Buoyancy (BUY) package so that density effects associated with the saltwater interface are represented. Flow in the combined sewer network is simulated with the Storm Water Management Model (SWMM) \citep{rossman2022swmm}.
 
-The three simulators are advanced within a single process and exchange state
-through their respective library interfaces. MODFLOW~6 is controlled through its
-application programming interface, which extends the Basic Model Interface
-\citep{hughes2022modflowapi}, and D-Flow FM through its Basic Model Interface
-implementation \citep{hutton2020bmi}. SWMM implements neither, and is controlled
-through the SWMM toolkit by way of PySWMM \citep{mcdonnell2020pyswmm}; that
-interface opens a simulation from a SWMM input file, advances it by a routing
-step, closes it, and reads and writes node and link state, which are the same
-capabilities the other two supply under Basic Model Interface names. The
-MODFLOW~6 model is constructed with FloPy \citep{hughes2023flopy}. All three
-simulators are used as distributed, without modification.
+The three simulators are advanced within a single process and exchange state through their respective library interfaces. MODFLOW~6 is controlled through its application programming interface, which extends the Basic Model Interface \citep{hughes2022modflowapi}, and D-Flow FM through its Basic Model Interface implementation \citep{hutton2020bmi}. SWMM implements neither, and is controlled through the SWMM toolkit by way of PySWMM \citep{mcdonnell2020pyswmm}; that interface opens a simulation from a SWMM input file, advances it by a routing step, closes it, and reads and writes node and link state, which are the same capabilities the other two supply under Basic Model Interface names. The MODFLOW~6 model is constructed with FloPy \citep{hughes2023flopy}. All three simulators are used as distributed, without modification.
 
 % VERSION STATEMENT -- must match whichever runs produce the reported results.
 % The completed 21-scenario sweep used MODFLOW 6 version 6.5.0; 6.7.0 is what is
 % configured now. Reconcile before submission.
-The versions used are D-Flow FM kernel 1.2.184, MODFLOW~6 version 6.7.0, and
-SWMM version 5.2.4 accessed through PySWMM 2.0.1.
+The versions used are D-Flow FM kernel 1.2.184, MODFLOW~6 version 6.7.0, and SWMM version 5.2.4 accessed through PySWMM 2.0.1.
 
 \section*{Coupling framework}
 
-The coupled simulation is driven by the D-Flow FM model time. D-Flow FM advances
-in increments of its user time step, $\Delta t_u$, and MODFLOW~6 is advanced at a
-coupling interval, $\Delta t_c$, that is an integer multiple of $\Delta t_u$. The
-order of execution and the state passed between the models are shown in
-Figure~\ref{fig:sequence}.
+The coupled simulation is driven by the D-Flow FM model time. D-Flow FM advances in increments of its user time step, $\Delta t_u$, and MODFLOW~6 is advanced at a coupling interval, $\Delta t_c$, that is an integer multiple of $\Delta t_u$. The order of execution and the state passed between the models are shown in Figure~\ref{fig:sequence}.
 
-Two cadences operate. On every user time step SWMM is advanced first, so that its
-outfall covers the interval D-Flow FM is about to integrate, and the mean discharge
-over that step is written into the D-Flow FM source term before D-Flow FM advances.
-Once per coupling interval, after the last user time step of the interval, the
-D-Flow FM water levels and depths are mapped to the MODFLOW~6 coastal boundary,
-MODFLOW~6 is advanced one time step, and the simulated boundary flows are returned
-to D-Flow FM. The two directions of this exchange carry different lags. The water
-levels are read at the \emph{end} of the coupling interval and are the boundary
-condition for the MODFLOW~6 step spanning the interval that has just been
-integrated, which is consistent with the backward-in-time step MODFLOW~6 takes
-internally and introduces no lag. The boundary flows, in contrast, can only be
-recovered after MODFLOW~6 has finalized that step, so they are held constant over
-the \emph{following} coupling interval and lag the hydrodynamics by $\Delta t_c$.
-That lag is the principal coupling error, and it is what the sweep over coupling
-intervals reported below is designed to bound. The aquifer--sewer seepage is
-returned on the same schedule as the boundary flows, and so carries the same lag.
-It is two-way: it is computed from the
-simulated heads and the water surface in the pipe together, and the same flux is
-applied to both models with opposite sign, as an inflow to the SWMM junction and
-an equal withdrawal from the MODFLOW~6 cell, so that mass leaving one model enters
-the other exactly. Because each exchange uses the state at the end of the preceding
-operation, the coupling is fully explicit and no iteration is performed within a
-coupling interval.
+Two cadences operate. On every user time step SWMM is advanced first, so that its outfall covers the interval D-Flow FM is about to integrate, and the mean discharge over that step is written into the D-Flow FM source term before D-Flow FM advances. Once per coupling interval, after the last user time step of the interval, the D-Flow FM water levels and depths are mapped to the MODFLOW~6 coastal boundary, MODFLOW~6 is advanced one time step, and the simulated boundary flows are returned to D-Flow FM. The two directions of this exchange carry different lags. The water levels are read at the \emph{end} of the coupling interval and are the boundary condition for the MODFLOW~6 step spanning the interval that has just been integrated, which is consistent with the backward-in-time step MODFLOW~6 takes internally and introduces no lag. The boundary flows, in contrast, can only be recovered after MODFLOW~6 has finalized that step, so they are held constant over the \emph{following} coupling interval and lag the hydrodynamics by $\Delta t_c$. That lag is the principal coupling error, and it is what the sweep over coupling intervals reported below is designed to bound. The aquifer--sewer seepage is returned on the same schedule as the boundary flows, and so carries the same lag. It is two-way: it is computed from the simulated heads and the water surface in the pipe together, and the same flux is applied to both models with opposite sign, as an inflow to the SWMM junction and an equal withdrawal from the MODFLOW~6 cell, so that mass leaving one model enters the other exactly. Because each exchange uses the state at the end of the preceding operation, the coupling is fully explicit and no iteration is performed within a coupling interval.
 
 \begin{figure}[ht]
 \centering
 \includegraphics[width=\textwidth]{figures/coupling_sequence.pdf}
-\caption{Model time steps, order of execution, and state exchanged among the three
-simulators over two coupling intervals. Bar width is the model time step each
-simulator integrates: MODFLOW~6 advances the whole coupling interval,
-$\Delta t_c$, in one step, while SWMM and D-Flow FM tile that same span with one
-bar per user time step, $\Delta t_u$. Lanes are ordered by execution rather than
-by physical position. Every connector leaves the \emph{end} of the model time step
-that produces a value and enters the \emph{start} of the model time step that
-consumes it, so its horizontal run can be read against the time axis as the offset
-between the two. Within a user time step SWMM advances first, so that its outfall
-covers the interval D-Flow FM is about to integrate; the mean outfall discharge
-over that step, $\bar{q}_s$, therefore returns one user time step to enter the
-D-Flow FM step spanning the same interval. The second and third user time steps
-repeat this exactly and are drawn faded, connector included, with only the leading
-step labelled. At the end of
-each coupling interval the D-Flow FM water level and water depth, $s_1$ and $h_s$,
-are mapped to the MODFLOW~6 coastal boundary; that connector returns across the
-whole interval, because the state read at its end is the boundary condition for
-the MODFLOW~6 step spanning that same interval, which is consistent with the
-backward-in-time step MODFLOW~6 takes internally and introduces no lag. The
-boundary flow, $q^{\mathrm{ext}}$, and the aquifer--sewer seepage, $Q_j$, cannot
-be recovered until MODFLOW~6 has finalized that step, so both run forward into the
-interval about to start; that one-interval lag is the coupling error the sweep in
-this study bounds. $Q_j$ is drawn in a neutral color because it belongs to neither
-model. It is the seepage between the aquifer and the sewer at junction $j$, driven
-by the groundwater head against the water surface in the pipe or, where the water
-table has fallen below the pipe invert, by the depth of water in the pipe alone
-(equation~\ref{eq:pot}). Head and stage are read at the end of the coupling
-interval and enter together because only the difference between them is formed.
-Infiltration and exfiltration are the same quantity with opposite sign, so $Q_j$
-enters the SWMM junction as an inflow and leaves the MODFLOW~6 cell as an equal
-withdrawal, and both models see it from the start of their next time step. One
-consequence is worth reading off the figure directly---a single
-MODFLOW~6 step takes its coastal boundary at its \emph{end} and its sewer flux at
-its \emph{start}. The exchange break occupies no model time---both of its edges carry the
-same tick---and is drawn only wide enough to keep the two MODFLOW~6 blocks apart,
-which would otherwise abut and read as one continuous step. A faded
-stub at the right is the interval that follows, drawn so those connectors end on a
-model time step rather than in blank space. Three user time steps per coupling
-interval is the ratio at the finest interval simulated here; it reaches 288 at
-daily coupling.}
+\caption{Model time steps, order of execution, and state exchanged among the three simulators over two coupling intervals. Bar width is the model time step each simulator integrates: MODFLOW~6 advances the whole coupling interval, $\Delta t_c$, in one step, while SWMM and D-Flow FM tile that same span with one bar per user time step, $\Delta t_u$. Lanes are ordered by execution rather than by physical position. Every connector leaves the \emph{end} of the model time step that produces a value and enters the \emph{start} of the model time step that consumes it, so its horizontal run can be read against the time axis as the offset between the two. Within a user time step SWMM advances first, so that its outfall covers the interval D-Flow FM is about to integrate; the mean outfall discharge over that step, $\bar{q}_s$, therefore returns one user time step to enter the D-Flow FM step spanning the same interval. The second and third user time steps repeat this exactly and are drawn faded, connector included, with only the leading step labelled. At the end of each coupling interval the D-Flow FM water level and water depth, $s_1$ and $h_s$, are mapped to the MODFLOW~6 coastal boundary; that connector returns across the whole interval, because the state read at its end is the boundary condition for the MODFLOW~6 step spanning that same interval, which is consistent with the backward-in-time step MODFLOW~6 takes internally and introduces no lag. The boundary flow, $q^{\mathrm{ext}}$, and the aquifer--sewer seepage, $Q_j$, cannot be recovered until MODFLOW~6 has finalized that step, so both run forward into the interval about to start; that one-interval lag is the coupling error the sweep in this study bounds. $Q_j$ is drawn in a neutral color because it belongs to neither model. It is the seepage between the aquifer and the sewer at junction $j$, driven by the groundwater head against the water surface in the pipe or, where the water table has fallen below the pipe invert, by the depth of water in the pipe alone (equation~\ref{eq:pot}). Head and stage are read at the end of the coupling interval and enter together because only the difference between them is formed. Infiltration and exfiltration are the same quantity with opposite sign, so $Q_j$ enters the SWMM junction as an inflow and leaves the MODFLOW~6 cell as an equal withdrawal, and both models see it from the start of their next time step. One consequence is worth reading off the figure directly---a single MODFLOW~6 step takes its coastal boundary at its \emph{end} and its sewer flux at its \emph{start}. The exchange break occupies no model time---both of its edges carry the same tick---and is drawn only wide enough to keep the two MODFLOW~6 blocks apart, which would otherwise abut and read as one continuous step. A faded stub at the right is the interval that follows, drawn so those connectors end on a model time step rather than in blank space. Three user time steps per coupling interval is the ratio at the finest interval simulated here; it reaches 288 at daily coupling.}
 \label{fig:sequence}
 \end{figure}
 
-The explicit scheme is imposed by what the interfaces expose, not chosen for
-convenience. An implicit coupling requires every participant to re-evaluate a time
-step against revised exchange terms, and only one of the three permits it: the
-MODFLOW application programming interface exposes the nonlinear solution within a
-time step, so the groundwater solution can be iterated
-\citep{hughes2022modflowapi}. The hydrodynamic and sewer interfaces do not. Both
-publish entry points that bracket a time step and advance it, with no facility to
-re-solve the same step once an exchanged quantity has changed, so a coupled
-iteration has nothing to iterate on two of its three legs.
+The explicit scheme is imposed by what the interfaces expose, not chosen for convenience. An implicit coupling requires every participant to re-evaluate a time step against revised exchange terms, and only one of the three permits it: the MODFLOW application programming interface exposes the nonlinear solution within a time step, so the groundwater solution can be iterated \citep{hughes2022modflowapi}. The hydrodynamic and sewer interfaces do not. Both publish entry points that bracket a time step and advance it, with no facility to re-solve the same step once an exchanged quantity has changed, so a coupled iteration has nothing to iterate on two of its three legs.
 
-The disparity in time step compounds the difficulty. The hydrodynamic model
-advances on a user time step of seconds to minutes, the groundwater model on the
-coupling interval, and the sewer model routes internally on a step of its own, so
-the models step at rates differing by up to two orders of magnitude. Even were
-re-evaluation available throughout, defining a converged coupled state across
-those scales, and deciding which model repeats how many of its own steps per
-outer iteration, is not a matter of simply looping the exchange. Quantifying how
-the explicit solution depends on the exchange interval, which the demonstration
-below does, is the useful thing that can be established without it.
+The disparity in time step compounds the difficulty. The hydrodynamic model advances on a user time step of seconds to minutes, the groundwater model on the coupling interval, and the sewer model routes internally on a step of its own, so the models step at rates differing by up to two orders of magnitude. Even were re-evaluation available throughout, defining a converged coupled state across those scales, and deciding which model repeats how many of its own steps per outer iteration, is not a matter of simply looping the exchange. Quantifying how the explicit solution depends on the exchange interval, which the demonstration below does, is the useful thing that can be established without it.
 
-The coupling interval is the principal numerical control on the approach. The
-coastal boundary of the groundwater model is forced by a semidiurnal tide with a
-period of approximately \SI{12.42}{\hour}, so a coupling interval that is a
-substantial fraction of that period samples the tidal signal sparsely and
-aliases it. Coupling intervals of 15 minutes, 30 minutes, and 1, 2, 4, 8, and 24
-hours were simulated on each of three D-Flow FM grids to bound this effect.
+The coupling interval is the principal numerical control on the approach. The coastal boundary of the groundwater model is forced by a semidiurnal tide with a period of approximately \SI{12.42}{\hour}, so a coupling interval that is a substantial fraction of that period samples the tidal signal sparsely and aliases it. Coupling intervals of 15 minutes, 30 minutes, and 1, 2, 4, 8, and 24 hours were simulated on each of three D-Flow FM grids to bound this effect.
 
 \section*{Coastal exchange}
 
-Water levels simulated by D-Flow FM are applied to the MODFLOW~6 coastal
-boundary, which is represented by a General-Head Boundary (GHB) package covering
-the inner bays and a Constant-Head (CHD) package covering the open coast and the
-lateral perimeter. The D-Flow FM grid and the MODFLOW~6 grid are not
-coincident, so the exchange is mediated by area-weighted mapping matrices
-computed once, before simulation, from the intersection of the two grids.
+Water levels simulated by D-Flow FM are applied to the MODFLOW~6 coastal boundary, which is represented by a General-Head Boundary (GHB) package covering the inner bays and a Constant-Head (CHD) package covering the open coast and the lateral perimeter. The D-Flow FM grid and the MODFLOW~6 grid are not coincident, so the exchange is mediated by area-weighted mapping matrices computed once, before simulation, from the intersection of the two grids.
 
-D-Flow FM resolves the tide on a time step orders of magnitude shorter than the
-coupling interval, so a single boundary value has to stand for everything that
-happened over the interval. MODFLOW~6 advances that interval in one
-backward-in-time step, and the exchange term of such a step is applied across its
-whole length: the volume exchanged is the product of the interval, the
-conductance, and the head difference. The boundary value must therefore represent
-the interval rather than any instant within it, and the reduction used here is a
-time average weighted by the wetted state,
+D-Flow FM resolves the tide on a time step orders of magnitude shorter than the coupling interval, so a single boundary value has to stand for everything that happened over the interval. MODFLOW~6 advances that interval in one backward-in-time step, and the exchange term of such a step is applied across its whole length: the volume exchanged is the product of the interval, the conductance, and the head difference. The boundary value must therefore represent the interval rather than any instant within it, and the reduction used here is a time average weighted by the wetted state,
 
 \begin{equation}
   \bar{\delta}_{j} = \frac{1}{\Delta t_{c}}
@@ -425,15 +185,7 @@ time average weighted by the wetted state,
   \label{eq:tmean}
 \end{equation}
 
-\noindent where $\bar{\delta}_{j}$ is the fraction of the coupling interval over
-which D-Flow FM cell $j$ is wet (dimensionless), $\delta_{j}(t)$ is unity where
-that cell is wet and zero where it is dry (dimensionless), $s_{j}(t)$ is the water
-level it simulates (L), $\bar{s}_{j}$ is the mean of that water level over the
-wetted part of the interval (L), and $\Delta t_{c}$ is the coupling interval (T).
-The integrals are evaluated by the trapezoidal rule on the D-Flow FM user time
-step. Weighting the level by the wetted state is necessary rather than tidy: an
-unweighted mean would credit an intertidal cell with a water level over the part
-of the interval it stood dry.
+\noindent where $\bar{\delta}_{j}$ is the fraction of the coupling interval over which D-Flow FM cell $j$ is wet (dimensionless), $\delta_{j}(t)$ is unity where that cell is wet and zero where it is dry (dimensionless), $s_{j}(t)$ is the water level it simulates (L), $\bar{s}_{j}$ is the mean of that water level over the wetted part of the interval (L), and $\Delta t_{c}$ is the coupling interval (T). The integrals are evaluated by the trapezoidal rule on the D-Flow FM user time step. Weighting the level by the wetted state is necessary rather than tidy: an unweighted mean would credit an intertidal cell with a water level over the part of the interval it stood dry.
 
 The boundary head assigned to GHB cell $i$ is
 
@@ -442,16 +194,9 @@ The boundary head assigned to GHB cell $i$ is
   \label{eq:ghbhead}
 \end{equation}
 
-\noindent where $h_{i}^{\mathrm{GHB}}$ is the boundary head of cell $i$ (L),
-$w_{ij}^{\mathrm{GHB}}$ is the area-weighted contribution of D-Flow FM cell $j$
-to MODFLOW~6 cell $i$ (dimensionless), and $\gamma$ is the unit conversion from
-meters to feet (dimensionless). Constant-head values are computed identically
-using the corresponding CHD mapping.
+\noindent where $h_{i}^{\mathrm{GHB}}$ is the boundary head of cell $i$ (L), $w_{ij}^{\mathrm{GHB}}$ is the area-weighted contribution of D-Flow FM cell $j$ to MODFLOW~6 cell $i$ (dimensionless), and $\gamma$ is the unit conversion from meters to feet (dimensionless). Constant-head values are computed identically using the corresponding CHD mapping.
 
-Intertidal cells alternately wet and dry over a tidal cycle. A D-Flow FM cell
-with zero water depth contributes no head and no conductance, so the GHB
-conductance is reduced in proportion to the wetted fraction of the contributing
-cells,
+Intertidal cells alternately wet and dry over a tidal cycle. A D-Flow FM cell with zero water depth contributes no head and no conductance, so the GHB conductance is reduced in proportion to the wetted fraction of the contributing cells,
 
 \begin{equation}
   C_{i}^{\mathrm{GHB}} = C_{i}^{0} \sum_{j} w_{ij}^{\mathrm{GHB}} \,
@@ -459,13 +204,7 @@ cells,
   \label{eq:ghbcond}
 \end{equation}
 
-\noindent where $C_{i}^{\mathrm{GHB}}$ is the conductance applied to cell $i$
-(L$^{2}$T$^{-1}$), and $C_{i}^{0}$ is the conductance of cell $i$ in the base
-model (L$^{2}$T$^{-1}$). Equations~\ref{eq:tmean} to \ref{eq:ghbcond} together
-reproduce the interval-mean exchange exactly rather than approximately. Because
-the instantaneous conductance is the base conductance multiplied by a quantity
-that is either zero or one, and because MODFLOW~6 carries a single head over the
-step,
+\noindent where $C_{i}^{\mathrm{GHB}}$ is the conductance applied to cell $i$ (L$^{2}$T$^{-1}$), and $C_{i}^{0}$ is the conductance of cell $i$ in the base model (L$^{2}$T$^{-1}$). Equations~\ref{eq:tmean} to \ref{eq:ghbcond} together reproduce the interval-mean exchange exactly rather than approximately. Because the instantaneous conductance is the base conductance multiplied by a quantity that is either zero or one, and because MODFLOW~6 carries a single head over the step,
 
 \begin{equation}
   \frac{1}{\Delta t_{c}} \int_{t_{k}}^{t_{k+1}} C^{0} \delta_{j}(t)
@@ -474,17 +213,9 @@ step,
   \label{eq:exact}
 \end{equation}
 
-\noindent where $h$ is the groundwater head at the end of the step (L). The
-wetted fraction is thus the conductance multiplier and the wet-weighted mean is
-the boundary head, and no other pair of values reproduces the interval-mean flux.
-The base-model conductance, rather than
-the conductance from the preceding coupling interval, is used on the right-hand
-side of equation~\ref{eq:ghbcond}; applying the reduction multiplicatively to
-the previous value would drive the conductance monotonically toward zero over
-the simulation.
+\noindent where $h$ is the groundwater head at the end of the step (L). The wetted fraction is thus the conductance multiplier and the wet-weighted mean is the boundary head, and no other pair of values reproduces the interval-mean flux. The base-model conductance, rather than the conductance from the preceding coupling interval, is used on the right-hand side of equation~\ref{eq:ghbcond}; applying the reduction multiplicatively to the previous value would drive the conductance monotonically toward zero over the simulation.
 
-Boundary flows simulated by MODFLOW~6 are returned to D-Flow FM as an external
-volume source. The source applied to D-Flow FM cell $j$ is
+Boundary flows simulated by MODFLOW~6 are returned to D-Flow FM as an external volume source. The source applied to D-Flow FM cell $j$ is
 
 \begin{equation}
   q_{j}^{\mathrm{ext}} = -\beta \, \delta_{j}
@@ -493,135 +224,48 @@ volume source. The source applied to D-Flow FM cell $j$ is
   \label{eq:qext}
 \end{equation}
 
-\noindent where $q_{j}^{\mathrm{ext}}$ is the volumetric source applied to
-D-Flow FM cell $j$ (L$^{3}$T$^{-1}$), $a_{ji}$ is the area-weighted
-contribution of MODFLOW~6 boundary $i$ to D-Flow FM cell $j$ (dimensionless),
-$Q_{i}$ is the boundary flow simulated by MODFLOW~6 (L$^{3}$T$^{-1}$), and
-$\beta$ is the unit conversion from cubic feet per day to cubic meters per
-second (dimensionless). The sign convention of MODFLOW~6 reports boundary flow
-as positive into the groundwater model, so the leading negative sign renders
-$q_{j}^{\mathrm{ext}}$ positive into the surface water. Dry cells receive no
-source.
+\noindent where $q_{j}^{\mathrm{ext}}$ is the volumetric source applied to D-Flow FM cell $j$ (L$^{3}$T$^{-1}$), $a_{ji}$ is the area-weighted contribution of MODFLOW~6 boundary $i$ to D-Flow FM cell $j$ (dimensionless), $Q_{i}$ is the boundary flow simulated by MODFLOW~6 (L$^{3}$T$^{-1}$), and $\beta$ is the unit conversion from cubic feet per day to cubic meters per second (dimensionless). The sign convention of MODFLOW~6 reports boundary flow as positive into the groundwater model, so the leading negative sign renders $q_{j}^{\mathrm{ext}}$ positive into the surface water. Dry cells receive no source.
 
 \subsection*{Choice of temporal reduction}
 
-Averaging is one of two reductions in common use. The other is to sample the
-D-Flow FM state at the end of the coupling interval and apply it unchanged, which
-is the simpler implementation and is consistent in the sense that it converges as
-the interval is shortened. The two are not better and worse versions of one
-approximation. They fail by different mechanisms, and which mechanism is active is
-set by the tide rather than by the model. Sampling preserves the amplitude of the
-boundary signal but aliases it once the coupling interval exceeds the Nyquist limit
-of the dominant tidal constituent. Averaging cannot alias, but damps the amplitude
-by an amount that grows with the interval.
+Averaging is one of two reductions in common use. The other is to sample the D-Flow FM state at the end of the coupling interval and apply it unchanged, which is the simpler implementation and is consistent in the sense that it converges as the interval is shortened. The two are not better and worse versions of one approximation. They fail by different mechanisms, and which mechanism is active is set by the tide rather than by the model. Sampling preserves the amplitude of the boundary signal but aliases it once the coupling interval exceeds the Nyquist limit of the dominant tidal constituent. Averaging cannot alias, but damps the amplitude by an amount that grows with the interval.
 
-Figure~\ref{fig:reduction} shows what each reduction does to cells of differing
-wetness under a tidal signal representative of the study area. For a cell that is
-never dry, the conductance is fixed and only the head is at issue, and the trade
-between aliasing and damping is the whole of it. For an intertidal cell the
-conductance carries the more consequential difference. Sampled instantaneously,
-such a cell is reported as either fully connected or entirely disconnected
-depending on where the sampling instant happens to fall in the tide, so the
-boundary switches on and off at the beat frequency between the coupling interval
-and the tide while nothing physical about the cell has changed. The wetted
-fraction of equation~\ref{eq:tmean} instead reports the partial connection the
-interval actually contained.
+Figure~\ref{fig:reduction} shows what each reduction does to cells of differing wetness under a tidal signal representative of the study area. For a cell that is never dry, the conductance is fixed and only the head is at issue, and the trade between aliasing and damping is the whole of it. For an intertidal cell the conductance carries the more consequential difference. Sampled instantaneously, such a cell is reported as either fully connected or entirely disconnected depending on where the sampling instant happens to fall in the tide, so the boundary switches on and off at the beat frequency between the coupling interval and the tide while nothing physical about the cell has changed. The wetted fraction of equation~\ref{eq:tmean} instead reports the partial connection the interval actually contained.
 
 \begin{figure}[ht]
 \centering
 \includegraphics[width=\textwidth]{figures/boundary_reduction.pdf}
-\caption{Reduction of a tidal boundary to one value per coupling interval, for
-cells wet 100, 75, 50, and 25 percent of the time, at coupling intervals of 2, 8,
-and 24 hours. Each pair of panels shows the water level and, beneath it, the
-multiplier applied to the base conductance. The water level is the sum of the
-three semidiurnal constituents fitted to the National Oceanic and Atmospheric
-Administration record at Kings Point, New York (station 8516945, referenced to
-NAVD 1988), so the spring--neap and perigean beat are those of the measured
-record; fitted amplitudes are \SI{1.110}{\meter} for $M_2$, \SI{0.225}{\meter}
-for $S_2$, and \SI{0.287}{\meter} for $N_2$. Bed elevations are placed at
-quantiles of that water level to give the stated wetted fractions. Crosses mark
-coupling intervals for which instantaneous sampling reports the cell dry, so that
-no boundary is applied at all. The 2-hour interval is below the $M_2$ Nyquist
-limit of \SI{6.21}{\hour} and the other two are above it.}
+\caption{Reduction of a tidal boundary to one value per coupling interval, for cells wet 100, 75, 50, and 25 percent of the time, at coupling intervals of 2, 8, and 24 hours. Each pair of panels shows the water level and, beneath it, the multiplier applied to the base conductance. The water level is the sum of the three semidiurnal constituents fitted to the National Oceanic and Atmospheric Administration record at Kings Point, New York (station 8516945, referenced to NAVD 1988), so the spring--neap and perigean beat are those of the measured record; fitted amplitudes are \SI{1.110}{\meter} for $M_2$, \SI{0.225}{\meter} for $S_2$, and \SI{0.287}{\meter} for $N_2$. Bed elevations are placed at quantiles of that water level to give the stated wetted fractions. Crosses mark coupling intervals for which instantaneous sampling reports the cell dry, so that no boundary is applied at all. The 2-hour interval is below the $M_2$ Nyquist limit of \SI{6.21}{\hour} and the other two are above it.}
 \label{fig:reduction}
 \end{figure}
 
-The consequence for the coupled solution was evaluated by simulating the coarse
-grid at coupling intervals of 2, 4, 8, and 24 hours under both reductions and
-scoring each against a 30-minute simulation, which resolves the tide and serves as
-the reference. Both a sampled and an averaged 30-minute simulation were used as the
-reference, because the averaged one shares its formulation with half of the
-simulations being scored; the two give the same result, so the comparison does not
-depend on that choice.
+The consequence for the coupled solution was evaluated by simulating the coarse grid at coupling intervals of 2, 4, 8, and 24 hours under both reductions and scoring each against a 30-minute simulation, which resolves the tide and serves as the reference. Both a sampled and an averaged 30-minute simulation were used as the reference, because the averaged one shares its formulation with half of the simulations being scored; the two give the same result, so the comparison does not depend on that choice.
 
-Results are summarized in Figure~\ref{fig:averaging}. The sewer discharge tracer,
-which is the quantity of interest here, is represented more accurately by sampling
-at 2 and 4 hours and by averaging at 8 and 24 hours, with the ratio of the two
-errors crossing unity between the 4- and 8-hour simulations. That interval brackets
-the $M_2$ Nyquist limit of \SI{6.21}{\hour}, which is where aliasing begins. The
-intervals at which sampling is the more accurate reduction are, however, intervals
-at which the choice does not matter: root-mean-square error in simulated
-groundwater head is below one millimeter at 2 and 4 hours under either reduction.
-At daily coupling, where the choice does matter, sampling carries \SI{33}{\milli
-\meter} of head error against \SI{3}{\milli\meter} for averaging, and overstates
-peak simulated tracer concentration by 62 percent against 10 percent.
+Results are summarized in Figure~\ref{fig:averaging}. The sewer discharge tracer, which is the quantity of interest here, is represented more accurately by sampling at 2 and 4 hours and by averaging at 8 and 24 hours, with the ratio of the two errors crossing unity between the 4- and 8-hour simulations. That interval brackets the $M_2$ Nyquist limit of \SI{6.21}{\hour}, which is where aliasing begins. The intervals at which sampling is the more accurate reduction are, however, intervals at which the choice does not matter: root-mean-square error in simulated groundwater head is below one millimeter at 2 and 4 hours under either reduction. At daily coupling, where the choice does matter, sampling carries \SI{33}{\milli \meter} of head error against \SI{3}{\milli\meter} for averaging, and overstates peak simulated tracer concentration by 62 percent against 10 percent.
 
-The abruptness of the transition, rather than its location, is what distinguishes
-the two error mechanisms. A truncation error grows smoothly as the step is
-lengthened. Aliasing is absent until the sampling interval crosses the limit and
-grows quickly thereafter, which is the behavior of the sampled peak concentration
-in Figure~\ref{fig:averaging}: within one percent of the reference at 2 and 4
-hours, and \SI{27}{\percent} and \SI{62}{\percent} above it at 8 and 24 hours.
-Because a coupling interval is normally chosen for computational cost rather than
-for its relation to the tide, and because a study of coupling interval necessarily
-spans the limit, averaging is used throughout this work.
+The abruptness of the transition, rather than its location, is what distinguishes the two error mechanisms. A truncation error grows smoothly as the step is lengthened. Aliasing is absent until the sampling interval crosses the limit and grows quickly thereafter, which is the behavior of the sampled peak concentration in Figure~\ref{fig:averaging}: within one percent of the reference at 2 and 4 hours, and \SI{27}{\percent} and \SI{62}{\percent} above it at 8 and 24 hours. Because a coupling interval is normally chosen for computational cost rather than for its relation to the tide, and because a study of coupling interval necessarily spans the limit, averaging is used throughout this work.
 
 \begin{figure}[ht]
 \centering
 \includegraphics[width=\textwidth]{figures/boundary_averaging.pdf}
-\caption{Error in the coupled solution relative to a 30-minute reference
-simulation, for the two reductions of the D-Flow FM boundary, on the coarse grid.
-(A) simulated groundwater head, (B) aquifer--sewer seepage, (C) sewer discharge
-tracer, and (D) peak simulated tracer concentration, with the reference value
-shown dashed. The first five days are excluded as model spin-up. The vertical rule
-is the Nyquist limit for the $M_2$ constituent, \SI{6.21}{\hour}. Below the limit
-the two reductions differ by amounts too small to matter---head error is below one
-millimeter---while above it the sampled solution departs from the reference
-abruptly, which is characteristic of aliasing rather than of truncation.}
+\caption{Error in the coupled solution relative to a 30-minute reference simulation, for the two reductions of the D-Flow FM boundary, on the coarse grid. (A) simulated groundwater head, (B) aquifer--sewer seepage, (C) sewer discharge tracer, and (D) peak simulated tracer concentration, with the reference value shown dashed. The first five days are excluded as model spin-up. The vertical rule is the Nyquist limit for the $M_2$ constituent, \SI{6.21}{\hour}. Below the limit the two reductions differ by amounts too small to matter---head error is below one millimeter---while above it the sampled solution departs from the reference abruptly, which is characteristic of aliasing rather than of truncation.}
 \label{fig:averaging}
 \end{figure}
 
 \section*{Sewer exchange}
 
-Exchange between the aquifer and the sewer is computed at a set of junctions
-that fall within the active area of the groundwater model. Each junction is
-associated with the MODFLOW~6 cell containing it, and a well is added to the
-groundwater model at that cell.
+Exchange between the aquifer and the sewer is computed at a set of junctions that fall within the active area of the groundwater model. Each junction is associated with the MODFLOW~6 cell containing it, and a well is added to the groundwater model at that cell.
 
-Infiltration and exfiltration are driven by the difference between the
-groundwater head and the water surface inside the pipe, and are limited by a
-conductance representing the leakage area of the pipe wall served by the
-junction. A per-junction conductance is computed from the sewer geometry as
+Infiltration and exfiltration are driven by the difference between the groundwater head and the water surface inside the pipe, and are limited by a conductance representing the leakage area of the pipe wall served by the junction. A per-junction conductance is computed from the sewer geometry as
 
 \begin{equation}
   C_{j} = \lambda \, \pi D_{j} L_{j} ,
   \label{eq:pipecond}
 \end{equation}
 
-\noindent where $C_{j}$ is the leakage conductance of junction $j$
-(L$^{2}$T$^{-1}$), $\lambda$ is a bulk pipe-wall leakance (T$^{-1}$), $D_{j}$
-is the conduit diameter (L), and $L_{j}$ is the length of pipe served by
-junction $j$ (L), taken as half the length of every conduit that the junction
-touches. The served length varies by more than a factor of twenty across the
-network, from approximately 28 to \SI{677}{\foot}, so a conductance assigned
-uniformly per connection cannot represent the network geometry.
+\noindent where $C_{j}$ is the leakage conductance of junction $j$ (L$^{2}$T$^{-1}$), $\lambda$ is a bulk pipe-wall leakance (T$^{-1}$), $D_{j}$ is the conduit diameter (L), and $L_{j}$ is the length of pipe served by junction $j$ (L), taken as half the length of every conduit that the junction touches. The served length varies by more than a factor of twenty across the network, from approximately 28 to \SI{677}{\foot}, so a conductance assigned uniformly per connection cannot represent the network geometry.
 
-The driving head depends on whether the water table reaches the pipe. Where the
-groundwater head stands above the pipe invert the surrounding material is
-saturated and the gradient is measured to the water surface within the pipe;
-where the head falls below the invert the pipe free-drains through unsaturated
-material and the gradient is set by the depth of water in the pipe alone. The
-driving head is therefore
+The driving head depends on whether the water table reaches the pipe. Where the groundwater head stands above the pipe invert the surrounding material is saturated and the gradient is measured to the water surface within the pipe; where the head falls below the invert the pipe free-drains through unsaturated material and the gradient is set by the depth of water in the pipe alone. The driving head is therefore
 
 \begin{equation}
   \Delta h_{j} =
@@ -632,15 +276,7 @@ driving head is therefore
   \label{eq:pot}
 \end{equation}
 
-\noindent where $\Delta h_{j}$ is the driving head at junction $j$ (L), $h_{j}$
-is the simulated groundwater head in the cell containing junction $j$ (L),
-$z_{j}$ is the pipe invert elevation (L), and $d_{j}$ is the depth of water in
-the pipe above the invert (L). Positive $\Delta h_{j}$ produces infiltration
-into the sewer and negative $\Delta h_{j}$ produces exfiltration. Treating the
-disconnected case as $-d_{j}$ rather than $h_{j} - z_{j}$ is the same treatment
-given a disconnected stream, and it is necessary: the latter form produces
-exfiltration from an empty pipe that grows without bound as the water table
-falls.
+\noindent where $\Delta h_{j}$ is the driving head at junction $j$ (L), $h_{j}$ is the simulated groundwater head in the cell containing junction $j$ (L), $z_{j}$ is the pipe invert elevation (L), and $d_{j}$ is the depth of water in the pipe above the invert (L). Positive $\Delta h_{j}$ produces infiltration into the sewer and negative $\Delta h_{j}$ produces exfiltration. Treating the disconnected case as $-d_{j}$ rather than $h_{j} - z_{j}$ is the same treatment given a disconnected stream, and it is necessary: the latter form produces exfiltration from an empty pipe that grows without bound as the water table falls.
 
 The exchange at junction $j$ is
 
@@ -649,28 +285,13 @@ The exchange at junction $j$ is
   \label{eq:swmmq}
 \end{equation}
 
-\noindent where $Q_{j}$ is the exchange (L$^{3}$T$^{-1}$), and $\eta_{j}$ is
-unity for infiltration and an exfiltration ratio less than unity for
-exfiltration (dimensionless). Exfiltration into saturated material is more
-difficult than infiltration from it, and the asymmetry is retained. The
-exchange is applied to SWMM as a generated inflow at the junction and to
-MODFLOW~6 as an equal and opposite well flux, so that mass is conserved between
-the two models. Cells that are dry or inactive return a head of $-10^{30}$ in
-MODFLOW~6 and are assigned zero exchange rather than being used unguarded.
+\noindent where $Q_{j}$ is the exchange (L$^{3}$T$^{-1}$), and $\eta_{j}$ is unity for infiltration and an exfiltration ratio less than unity for exfiltration (dimensionless). Exfiltration into saturated material is more difficult than infiltration from it, and the asymmetry is retained. The exchange is applied to SWMM as a generated inflow at the junction and to MODFLOW~6 as an equal and opposite well flux, so that mass is conserved between the two models. Cells that are dry or inactive return a head of $-10^{30}$ in MODFLOW~6 and are assigned zero exchange rather than being used unguarded.
 
 \section*{Sewer discharge tracer transport}
 
-Flow reaching the outfall is introduced to D-Flow FM as a point source carrying
-a conservative tracer of sewer discharge, which is then advected and dispersed by the
-hydrodynamic model. The source discharge is the total inflow simulated by SWMM
-at the outfall, and the tracer concentration assigned to that discharge is
-constant, so the tracer mass flux follows the simulated SWMM outfall discharge
-directly.
+Flow reaching the outfall is introduced to D-Flow FM as a point source carrying a conservative tracer of sewer discharge, which is then advected and dispersed by the hydrodynamic model. The source discharge is the total inflow simulated by SWMM at the outfall, and the tracer concentration assigned to that discharge is constant, so the tracer mass flux follows the simulated SWMM outfall discharge directly.
 
-The SWMM outfall discharge is written into the D-Flow FM source term at each
-user time step. SWMM is advanced one user time step ahead of D-Flow FM so that
-its outfall covers the interval D-Flow FM is about to integrate, and the
-discharge applied over that interval is the mean
+The SWMM outfall discharge is written into the D-Flow FM source term at each user time step. SWMM is advanced one user time step ahead of D-Flow FM so that its outfall covers the interval D-Flow FM is about to integrate, and the discharge applied over that interval is the mean
 
 \begin{equation}
   \bar{q}_{s} = \frac{V\!\left(t + \Delta t_{u}\right) - V\!\left(t\right)}
@@ -678,61 +299,23 @@ discharge applied over that interval is the mean
   \label{eq:blockmean}
 \end{equation}
 
-\noindent where $\bar{q}_{s}$ is the mean SWMM outfall discharge over the user
-time step (L$^{3}$T$^{-1}$), $V$ is the cumulative volume conveyed through the
-SWMM outfall (L$^{3}$), and $\Delta t_{u}$ is the D-Flow FM user time step (T).
-Forming the mean from the cumulative volume conserves mass exactly over the
-step, whereas sampling the SWMM outfall discharge instantaneously once per
-coupling interval and holding it would introduce the same aliasing that the
-coupling interval itself is being tested for. Advancing SWMM at the user time step rather
-than at the coupling interval does not alter the sewer solution, because SWMM
-routes internally at its own routing step in either case and the exchange
-computed from equation~\ref{eq:swmmq} is still refreshed only once per coupling
-interval; it raises the resolution at which the outfall is observed.
+\noindent where $\bar{q}_{s}$ is the mean SWMM outfall discharge over the user time step (L$^{3}$T$^{-1}$), $V$ is the cumulative volume conveyed through the SWMM outfall (L$^{3}$), and $\Delta t_{u}$ is the D-Flow FM user time step (T). Forming the mean from the cumulative volume conserves mass exactly over the step, whereas sampling the SWMM outfall discharge instantaneously once per coupling interval and holding it would introduce the same aliasing that the coupling interval itself is being tested for. Advancing SWMM at the user time step rather than at the coupling interval does not alter the sewer solution, because SWMM routes internally at its own routing step in either case and the exchange computed from equation~\ref{eq:swmmq} is still refreshed only once per coupling interval; it raises the resolution at which the outfall is observed.
 
 \section*{Implementation}
 
-The coupled simulation is implemented in Python. The three simulators are loaded
-as shared libraries into a single process, so that state is passed between them
-as arrays in memory.
+The coupled simulation is implemented in Python. The three simulators are loaded as shared libraries into a single process, so that state is passed between them as arrays in memory.
 
-D-Flow FM applies its external forcings at the start of a user time step and
-then computes the flow solution. A source term written from outside the model
-between those two operations is used by the solution, whereas one written around
-the complete time step is overwritten by the forcing update before it is
-reached. The direct tracer mechanism therefore advances D-Flow FM through the
-separate initialization, computation, and finalization entry points of its
-interface rather than through the combined update, and writes the source term
-between the first and the second. This is the transfer drawn as $\bar{q}_s$ in
-figure~\ref{fig:sequence}; the arrow falls within a user time step, not between
-two of them.
+D-Flow FM applies its external forcings at the start of a user time step and then computes the flow solution. A source term written from outside the model between those two operations is used by the solution, whereas one written around the complete time step is overwritten by the forcing update before it is reached. The direct tracer mechanism therefore advances D-Flow FM through the separate initialization, computation, and finalization entry points of its interface rather than through the combined update, and writes the source term between the first and the second. This is the transfer drawn as $\bar{q}_s$ in figure~\ref{fig:sequence}; the arrow falls within a user time step, not between two of them.
 
-This is the sub-time-step access described earlier, and the two simulators reach
-it differently. MODFLOW~6 extends the Basic Model Interface with functions that
-expose the time step and the solution within it \citep{hughes2022modflowapi}, and
-those functions are what the groundwater exchange is written through. D-Flow FM
-instead publishes its user time step as three separate entry points alongside the
-combined one. Neither route is part of the Basic Model Interface itself, so a
-coupling of this kind is portable only to the extent that each simulator provides
-some equivalent.
+This is the sub-time-step access described earlier, and the two simulators reach it differently. MODFLOW~6 extends the Basic Model Interface with functions that expose the time step and the solution within it \citep{hughes2022modflowapi}, and those functions are what the groundwater exchange is written through. D-Flow FM instead publishes its user time step as three separate entry points alongside the combined one. Neither route is part of the Basic Model Interface itself, so a coupling of this kind is portable only to the extent that each simulator provides some equivalent.
 
 \section*{Demonstration}
 
-The coupling is exercised on the Greenport sewer network described above. The
-groundwater model is a cutout of the regional Long Island aquifer system model
-\citep{walter2024longisland}, which simulates the period 1900 to 2019 with
-MODFLOW~6 including the position of the saltwater interface. Three D-Flow FM grids
-of increasing resolution were used, spanning the same domain and driven by the
-same tidal and atmospheric forcing. The groundwater and sewer
-models are identical across all simulations, so differences among grids reflect
-the resolution of the coastal water level alone, and differences among exchange
-intervals reflect the coupling alone. The configurations simulated are
-summarized in Table~\ref{tab:scenarios}.
+The coupling is exercised on the Greenport sewer network described above. The groundwater model is a cutout of the regional Long Island aquifer system model \citep{walter2024longisland}, which simulates the period 1900 to 2019 with MODFLOW~6 including the position of the saltwater interface. Three D-Flow FM grids of increasing resolution were used, spanning the same domain and driven by the same tidal and atmospheric forcing. The groundwater and sewer models are identical across all simulations, so differences among grids reflect the resolution of the coastal water level alone, and differences among exchange intervals reflect the coupling alone. The configurations simulated are summarized in Table~\ref{tab:scenarios}.
 
 \begin{table}[ht]
 \centering
-\caption{Simulated configurations. Each grid was simulated at every coupling
-interval, giving 21 simulations in total.}
+\caption{Simulated configurations. Each grid was simulated at every coupling interval, giving 21 simulations in total.}
 \label{tab:scenarios}
 \begin{tabular}{lrrr}
 \toprule
@@ -784,8 +367,7 @@ The authors do not have any conflicts of interest to report.
 
 \section*{Disclaimer}
 
-Any use of trade, firm, or product names is for descriptive purposes only and
-does not imply endorsement by the U.S. Government.
+Any use of trade, firm, or product names is for descriptive purposes only and does not imply endorsement by the U.S. Government.
 
 \bibliographystyle{elsarticle-harv}
 \bibliography{gp_coupling}
