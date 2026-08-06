@@ -1,33 +1,8 @@
 """Extract the station water levels from each run's D-Flow FM history file.
 
-The history file is written into the RUN directory, which the sweep reuses: rerunning
-a scenario overwrites its FlowFM_his.nc, and only the source_sink_* subset was ever
-copied into results/. This pulls the station time series out to results/ so a rerun
-cannot take them. It is a copy, not a computation -- nothing here changes a result.
-
-The full history file is 82.9 MB, almost all of it cross sections and structures that
-none of the comparison notebooks read. Water level at 30 stations is 3.1 MB raw and
-compresses to a fraction of that, so every scenario can be kept.
-
-Each station is classified, because a D-Flow FM history file reports a value at every
-station whether or not the grid resolves it, and the three failure modes are not
-distinguishable from the value alone:
-
-    outside       every value NaN -- the station is off the grid entirely
-    dry           one constant value, which is the BED level, not a water level
-                  (coarse Port Jefferson reports 21.084 m; highres Willets Point
-                  4.5 m). Plotted unguarded this is a flat line at plausible-looking
-                  elevation, which is the dangerous case.
-    disconnected  varies, but with no tidal signal -- the cell is wet and sitting
-                  near the initial condition because the grid does not resolve the
-                  channel connecting it to the sound (coarse New Haven varies over
-                  0.006 m about -0.02 m against a true range near 4 m)
-    ok            a real tidal signal
-
-Coverage is NOT nested by resolution. The highres grid resolves Battery, which coarse
-misses, but loses New London and Willets Point, which midres resolves -- at higher
-resolution those stations fall on land cells. Any comparison across resolutions has to
-intersect the ok sets rather than assume the finest grid is a superset.
+The history file lives in the run directory, which the sweep reuses, so a rerun
+overwrites it; this copies the station series into results/ before that can happen.
+Each station is tagged with whether the grid actually resolves it.
 """
 import argparse
 import pathlib as pl
@@ -57,6 +32,18 @@ def station_names(ds):
 
 
 def classify(series):
+    """A history file reports a value at every station whether or not the grid
+    resolves it, and the failure modes are not distinguishable from the value alone.
+
+    dry is the dangerous one: the constant reported is the BED level, not a water
+    level -- coarse Port Jefferson gives a flat 21.084 m -- so unguarded it plots as
+    a plausible-looking line. disconnected means the cell is wet but sitting near the
+    initial condition because the grid does not resolve the channel to the sound.
+
+    Coverage is not nested by resolution: the highres grid resolves Battery, which
+    coarse misses, but loses New London, which midres resolves. Comparisons across
+    resolutions must intersect the ok sets.
+    """
     finite = series[np.isfinite(series)]
     if finite.size == 0:
         return "outside", np.nan

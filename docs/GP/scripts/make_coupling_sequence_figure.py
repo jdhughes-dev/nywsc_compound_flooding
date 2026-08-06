@@ -1,43 +1,9 @@
 """Schematic of the coupling sequence over two coupling intervals.
 
-Bar width is the model time step each simulator integrates, so the time-step
-hierarchy is visible directly: one MODFLOW 6 bar spans the whole coupling
-interval, while SWMM and D-Flow FM tile that same span with shorter bars, one per
-user time step. The second and third of those are drawn faded -- their SWMM to
-D-Flow FM handoff included, since it really does happen on every user time step --
-so the repeat reads as "and so on" without implying the exchange stops.
-
-Lanes are ordered by execution within a step -- SWMM, then D-Flow FM, then
-MODFLOW 6 -- so the figure answers "which model runs first" directly rather than
-implying a physical stacking.
-
-Every exchange is drawn as an orthogonal polyline that leaves the END of the
-producing model's time step and enters the START of the time step that consumes
-it. The horizontal run is therefore the lag, read directly off the time axis:
-
-    q_s      leaves the end of a SWMM user step and enters the start of the SAME
-             D-Flow FM step, so it runs backward by exactly one user step. SWMM
-             leads deliberately, so its outfall covers the interval D-Flow FM is
-             about to integrate.
-    s1,hs    leaves the end of the last D-Flow FM step in the interval and enters
-             the start of the MODFLOW 6 step spanning that same interval, so it
-             runs backward across the whole interval. Taking the boundary at the
-             end of the step is consistent with MODFLOW 6's own backward-in-time
-             step and introduces no lag.
-    q^ext    leaves the end of the MODFLOW 6 step and enters the start of the next
-    Q_j      interval, because neither can be recovered until MODFLOW 6 has
-             finalized. These are the lagged exchanges, and the sweep over
-             coupling intervals is what bounds that lag.
-
-A narrow gutter separates the coupling intervals. It occupies no model time -- both
-of its edges carry the same tick, and it is marked as an axis break rather than
-boxed. Orthogonal connectors turn in the horizontal channels rather than inside it,
-so it only has to be wide enough to keep the two MODFLOW 6 blocks from abutting,
-which would read as one continuous step across both intervals.
-
-Three user time steps per interval is not a simplification at the finest coupling
-interval simulated -- 15-minute coupling on a 300 s user time step is exactly
-three. The caption gives 288 as the ratio at daily coupling.
+Bar width is the model time step each simulator integrates, and lanes are ordered by
+execution rather than by physical position. Every connector runs from the end of the
+step that produces a value to the start of the step that consumes it, so its
+horizontal run is the lag.
 """
 import pathlib as pl
 
@@ -56,6 +22,8 @@ mpl.rcParams["ps.fonttype"] = 42
 
 OUT = pl.Path(__file__).resolve().parent.parent / "figures" / "coupling_sequence.pdf"
 
+# Three user steps per interval is exact at the finest coupling simulated: 15-minute
+# coupling on a 300 s user step. At daily coupling the ratio is 288.
 N_SUB, N_COUP = 3, 2
 # Once the connectors became orthogonal they turn in the horizontal channels rather
 # than in the gutter, so the gutter no longer has to be wide enough to hold three

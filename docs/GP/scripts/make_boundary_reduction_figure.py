@@ -1,31 +1,8 @@
 """How the two boundary reductions represent a tidal cell of a given wetness.
 
-Conceptual, but not invented: the stage is the sum of the three semidiurnal
-constituents fitted by least squares to the NOAA CO-OPS record at Kings Point
-(station 8516945, NAVD 1988, 6-minute verified, January--March 2010), which sits in
-mid Long Island Sound. Fitted amplitudes were M2 1.110 m, S2 0.225 m and N2 0.287 m
-about a mean of 0.032 m, giving the spring--neap and perigean beat the real record
-has. K1 and O1 came out at 0.083 and 0.060 m and are dropped -- they change nothing
-about the argument and would only add lines to read.
-
-Bed elevations are placed at quantiles of that stage, so each row is a cell wet for
-a stated fraction of the time. The figure exists because the two reductions fail in
-different ways, and the failure that matters is not the one in the fully wet row:
-
-  fully wet   the conductance never changes, so the only question is the head. The
-              instantaneous value tracks the tide while the interval stays below the
-              Nyquist limit and then aliases; the mean never aliases but damps.
-  partly wet  the conductance is the story. Sampled instantaneously, an intertidal
-              cell reports either fully connected or completely disconnected
-              depending on where the sampling instant happens to fall in the tide,
-              so the boundary switches on and off at a rate set by the beat between
-              the coupling interval and the tide. The wetted-fraction mean instead
-              reports a steady partial conductance, which is what the interval
-              actually contained.
-
-At 0.25 wet and daily coupling the instantaneous method reports the cell dry for
-long runs of consecutive intervals and then fully wet for others. Nothing physical
-changes across those transitions.
+The stage is the sum of the three semidiurnal constituents fitted to the NOAA CO-OPS
+record at Kings Point, and bed elevations are placed at quantiles of it so each row
+is a cell wet for a stated fraction of the time.
 """
 import pathlib as pl
 
@@ -38,13 +15,21 @@ mpl.rcParams["ps.fonttype"] = 42
 
 OUT = pl.Path(__file__).resolve().parent.parent / "figures" / "boundary_reduction.pdf"
 
-# Fitted to NOAA 8516945, Jan-Mar 2010; see the module docstring.
+# Least squares fit to NOAA 8516945 (Kings Point), NAVD 1988, 6-minute verified,
+# January-March 2010. K1 and O1 came out at 0.083 and 0.060 m and are dropped; they
+# add lines to read without changing the argument.
 MEAN_LEVEL = 0.032
 CONSTITUENTS = [("M2", 12.4206, 1.110), ("S2", 12.0000, 0.225), ("N2", 12.6583, 0.287)]
 
 DT_U = 300.0 / 3600.0          # D-Flow FM user time step, in hours
 DAYS = 6.0
 INTERVALS = [2.0, 8.0, 24.0]   # hours; 2 h is below the M2 Nyquist limit, 8 and 24 above
+# The fully wet row is the familiar aliasing-against-damping trade, since the
+# conductance never changes there. The partly wet rows carry the failure that is easy
+# to miss: sampled instantaneously, an intertidal cell reports either fully connected
+# or entirely disconnected depending on where the sampling instant falls in the tide,
+# so the boundary switches on and off at the beat between interval and tide while
+# nothing physical changes.
 WET_FRACTIONS = [1.00, 0.75, 0.50, 0.25]
 NYQUIST_H = 12.4206 / 2
 
