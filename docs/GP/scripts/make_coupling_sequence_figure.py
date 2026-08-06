@@ -188,8 +188,15 @@ with styles.USGSPlot():
         # the start of the MODFLOW 6 step that spans it. Drawn above the seepage,
         # because both deliver to that same start and the water level is the one
         # that sets the boundary.
-        poly(ax, [(xe - PAD, DF_B), (xe - PAD, Y_S1), (x0 + PAD, Y_S1), (x0 + PAD, MF_T)],
-             LANE_C["D-Flow FM"], r"$s_1,\,h_s$",
+        # Collected from EVERY D-Flow FM step in the interval, not read at the end of
+        # the last one: the boundary is a wetted-fraction time average, so a single
+        # tap on the final bar would draw the superseded method.
+        for s in range(N_SUB):
+            xt = x0 + (s + 0.5) * W_SUB
+            poly(ax, [(xt, DF_B), (xt, Y_S1)], LANE_C["D-Flow FM"], head=False,
+                 lw=0.75, alpha=1.0 if s == 0 else FADE)
+        poly(ax, [(x0 + (N_SUB - 0.5) * W_SUB, Y_S1), (x0 + PAD, Y_S1), (x0 + PAD, MF_T)],
+             LANE_C["D-Flow FM"], r"$\overline{s_1},\,\overline{h_s}$",
              lxy=((x0 + xe) / 2.0, Y_S1 + 0.13), ha="center", zorder=8)
         # FORWARD into the start of the next D-Flow FM step, leaving through the
         # right edge of the MODFLOW 6 bar.
@@ -279,7 +286,7 @@ with styles.USGSPlot():
         Line2D([], [], color=LANE_C["SWMM"], lw=1.4,
                label=r"$\bar{q}_s$, mean outfall discharge"),
         Line2D([], [], color=LANE_C["D-Flow FM"], lw=1.4,
-               label=r"$s_1$, $h_s$, water level and depth"),
+               label=r"$\overline{s_1}$, $\overline{h_s}$, mean level and depth"),
         Line2D([], [], color=LANE_C["MODFLOW 6"], lw=1.4,
                label=r"$q^{\mathrm{ext}}$, boundary flow"),
         # Neutral, not a lane color: the seepage is a property of neither model.
