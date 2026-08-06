@@ -105,6 +105,13 @@ def main():
                    choices=("coarse", "medium", "high"))
     p.add_argument("--domain", default="gp")
     p.add_argument("--junctions", type=int, default=500)
+    p.add_argument("--coastal-averaging", default="mean",
+                   choices=("mean", "instant"),
+                   help="how D-Flow FM stage and depth are reduced to the MODFLOW "
+                        "coastal boundary over a coupling interval")
+    p.add_argument("--scenario-suffix", default="",
+                   help="append to every scenario id, so a sweep under one "
+                        "reduction lands beside a sweep under the other")
     p.add_argument("--dry-run", action="store_true",
                    help="report what would run, and stop")
     p.add_argument("--keep-map", action="store_true",
@@ -127,6 +134,12 @@ def main():
     for res in args.resolution:
         for hours in COUPLING_HOURS:
             ws = get_results_path(args.domain, res, hours, n_conn)
+            # The suffix has to reach the results path, not just run_scenario.py.
+            # "Finished" is decided by the MODFLOW version found in this directory,
+            # so without it a sweep under a second reduction would look at the first
+            # one's output, find the target version, and skip every scenario.
+            if args.scenario_suffix:
+                ws = ws.parent / (ws.name + args.scenario_suffix)
             have = modflow_version_of(ws)
             if have and want and want in have:
                 done.append((res, hours, ws, have))
@@ -166,7 +179,9 @@ def main():
         rc = subprocess.run(
             [sys.executable, "-u", "run_scenario.py",
              "--resolution", res, "--coupling-hours", str(hours),
-             "--junctions", str(args.junctions), "--domain", args.domain],
+             "--junctions", str(args.junctions), "--domain", args.domain,
+             "--coastal-averaging", args.coastal_averaging,
+             "--scenario-suffix", args.scenario_suffix],
             cwd=str(HERE),
         ).returncode
         mins = (time.perf_counter() - t0) / 60.0
@@ -181,7 +196,7 @@ def main():
             [sys.executable, "-u", "finish_scenario.py",
              "--resolution", res, "--coupling-hours", str(hours),
              "--junctions", str(args.junctions), "--domain", args.domain,
-             "--skip-tracer"],
+             "--scenario-suffix", args.scenario_suffix, "--skip-tracer"],
             cwd=str(HERE),
         )
 
