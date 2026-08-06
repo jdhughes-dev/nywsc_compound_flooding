@@ -56,7 +56,23 @@ libmf6_source = "conda env" if libmf6.parent == _ENV_DLL_PATH.resolve() else "re
 cx_provider = cx.providers.USGS.USTopo
 mf6_model_crs = "EPSG:4456"
 
-fig_ext = ".png"
+# Journal artwork specification (Environmental Modelling & Software, Elsevier).
+# Figures are drawn at one of these widths and placed 1:1, never scaled in LaTeX --
+# scaling shrinks the fonts with the figure, and "artwork where text is
+# disproportionately small" is listed among the things not to submit.
+FIG_FULL_IN = 190.0 / 25.4          # full page width,  190 mm
+FIG_COL_IN = 90.0 / 25.4            # single column,     90 mm
+# A full-width figure and its caption share a 7.52 in text block, so a figure much
+# over 6.1 in tall pushes its caption off the page.
+FIG_MAX_H_IN = 6.15
+
+# PDF, not PNG. These are line drawings, and the specification puts bitmapped line
+# drawings at a minimum of 1000 dpi -- the flopy styles set savefig.dpi to 300, so a
+# raster export falls well short. Vector output removes the question. Figures
+# carrying a basemap or a dense mesh are the exception: rasterize those artists with
+# set_rasterized(True) and give the figure a dpi, so the heavy layer is a raster
+# inside an otherwise vector file, rather than exporting the whole page as one.
+fig_ext = ".pdf"
 transparent = True
 
 extentmax = (
