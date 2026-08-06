@@ -1,4 +1,4 @@
-"""How the two boundary reductions represent a tidal cell of a given wetness.
+﻿"""How the two boundary reductions represent a tidal cell of a given wetness.
 
 The stage is the sum of the three semidiurnal constituents fitted to the NOAA CO-OPS
 record at Kings Point, and bed elevations are placed at quantiles of it so each row
@@ -8,6 +8,7 @@ import pathlib as pl
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+from matplotlib.patches import FancyArrowPatch
 import numpy as np
 import flopy.plot.styles as styles
 
@@ -75,7 +76,10 @@ with styles.USGSPlot():
     # strip as far from its own panel as from the next row's, so it read as belonging
     # to neither. A subfigure is laid out as a unit, which welds the pair together
     # and still lets constrained layout take up the slack around them.
-    fig = plt.figure(figsize=(7.5, 7.6), layout="constrained")
+    fig = plt.figure(figsize=(7.5, 7.9), layout="constrained")
+    # Reserve a margin at the left and top for the two direction arrows; constrained
+    # layout will not make room for figure-level artists on its own.
+    fig.get_layout_engine().set(rect=(0.052, 0.0, 0.948, 0.952))
     cells = fig.subfigures(len(WET_FRACTIONS), len(INTERVALS), hspace=0.0, wspace=0.0)
 
     for i, frac in enumerate(WET_FRACTIONS):
@@ -121,6 +125,23 @@ with styles.USGSPlot():
                 axc.set_ylabel("cond.\nmult.", fontsize=6.5)
             if i == len(WET_FRACTIONS) - 1:
                 axc.set_xlabel("Time, in days", fontsize=6.5)
+
+    # Direction arrows. The horizontal one is labelled by INTERVAL rather than by
+    # frequency: the columns run 2, 8, 24 hours left to right, so frequency
+    # decreases in the direction the arrow points and labelling it "increasing
+    # frequency" would contradict the column headings.
+    arr = dict(arrowstyle="-|>", color="0.25", lw=1.0,
+               shrinkA=0, shrinkB=0, mutation_scale=11)
+    lab = dict(fontsize=8.5, color="0.2", ha="center", va="center",
+               bbox=dict(facecolor="white", edgecolor="none", pad=2.5))
+
+    fig.patches.append(FancyArrowPatch((0.022, 0.945), (0.022, 0.075),
+                                       transform=fig.transFigure, **arr))
+    fig.text(0.022, 0.51, "Increasing bed elevation", rotation=90, **lab)
+
+    fig.patches.append(FancyArrowPatch((0.075, 0.976), (0.985, 0.976),
+                                       transform=fig.transFigure, **arr))
+    fig.text(0.53, 0.976, "Increasing coupling interval", **lab)
 
     handles = [plt.Line2D([], [], color=C_STAGE, lw=1.2, label="D-Flow FM stage"),
                plt.Line2D([], [], color=C_INST, lw=1.4,
