@@ -59,7 +59,11 @@ network models using library interfaces}
 % declaration order, so any other arrangement prints the superscripts out of
 % sequence: with Prigiobbe added at inst5 in third position they read a, b, e, c, d,
 % b. Inserting an author means renumbering from that author onward.
-\author[inst1]{Joseph D. Hughes\,\orcidlink{0000-0003-1311-2354}}
+% The guide requires a corresponding author to be marked. The address below is a
+% PLACEHOLDER and must be replaced before submission -- it is the only detail here
+% not taken from an ORCID record.
+\author[inst1]{Joseph D. Hughes\corref{cor1}\,\orcidlink{0000-0003-1311-2354}}
+\cortext[cor1]{Corresponding author. \textit{Email address:} jdhughes@intera.com}
 \author[inst2]{Liv Herdman\,\orcidlink{0000-0002-5444-6441}}
 \author[inst3]{Valentina Prigiobbe\,\orcidlink{0000-0001-6603-4295}}
 \author[inst4]{Martijn J. Russcher\,\orcidlink{0000-0001-8799-6514}}
@@ -76,27 +80,44 @@ network models using library interfaces}
 
 \affiliation[inst5]{organization={U.S. Geological Survey, New York Water Science Center}, addressline={2045 Route 112, Building 4}, city={Coram}, state={NY}, postcode={11727}, country={USA}}
 
-% SUBMISSION LIMITS -- Environmental Modelling & Software (Elsevier, ISSN 1364-8152)
+% SUBMISSION REQUIREMENTS -- Environmental Modelling & Software (ISSN 1364-8152).
+% All of the following was read off the guide for authors, 2026-08-06, superseding
+% the earlier notes here that came from search summaries.
 %
-%   Abstract   150 words maximum. CONFIRMED against the guide, 2026-08-06.
-%   Highlights 3 to 5 bullets, 85 characters maximum EACH, including spaces.
-%              Unconfirmed. Not yet drafted; they are a separate submission item,
-%              not part of this file.
+% IN THIS FILE
+%   Abstract     150 words maximum. Currently 309, so it needs roughly halving.
+%                Deferred until Results exists, because what survives the cut should
+%                be decided by what the findings turn out to be. Must stand alone,
+%                avoid references, and define any uncommon abbreviation.
+%   Keywords     1 to 7; seven here. Avoid keywords joined by "and" or "of".
+%   Sections     NUMBERED, and cross-referenced by number. This overrides the
+%                unnumbered house style for this submission; back matter below is
+%                excluded from the sequence.
+%   Equations    Numbered in the order they are first referred to in the text.
+%   Corresponding author must be marked. See \cortext below.
 %
-% This abstract currently runs to 309 words and so needs roughly halving. Cutting it
-% is deferred until Results is written, because what survives the cut should be
-% decided by what the findings turn out to be, not before.
+% SEPARATE FILES AT SUBMISSION -- none of these are part of this .tex
+%   Highlights         REQUIRED. 3 to 5 bullets, 85 characters maximum each,
+%                      including spaces. Filename must contain "highlights".
+%   Graphical abstract REQUIRED. 531 x 1328 px (h x w) or proportionally more,
+%                      legible at 5 x 13 cm. TIFF, EPS, PDF or MS Office.
+%   Figures            Separate files named Figure_1, Figure_2, ... Vector art as
+%                      EPS or PDF with fonts embedded, which is what the scripts in
+%                      scripts/ already produce.
+%   Declarations       Competing interests, via Elsevier's declarations tool, as a
+%                      .doc/.docx upload.
 %
-% Page charges: none found. No page limit and no excess-page fee appears in any
-% reachable source, which matches Elsevier's usual practice for a hybrid
-% subscription title -- publication free to the author, colour free online. The only
-% fee located is the OPTIONAL open-access APC, USD 3,620 excluding tax, which is a
-% choice rather than a length penalty. Treat this as unconfirmed: it rests on not
-% finding a policy, which is weaker evidence than reading one.
+% STILL OUTSTANDING -- see the back matter for the sections themselves
+%   Software and data availability, CRediT, and the generative-AI declaration are
+%   drafted below but need author input before submission.
+%   Research data: this journal is Option C, so data must be deposited in a
+%   repository and cited, or a statement given explaining why it cannot be shared.
+%   "Contact the author" is explicitly not acceptable for software or data access.
 %
-% The abstract limit aside, the items above come from search summaries rather than
-% from the guide -- ScienceDirect returns HTTP 403 to automated fetches. Confirm the
-% highlights format and the absence of page charges before submitting:
+% NO PAGE CHARGES. The guide sets no page limit and no excess-page fee; the only
+% fee is the optional open-access APC. Read in full, so this is now a confirmed
+% absence rather than a failure to find one.
+%
 %   https://www.sciencedirect.com/journal/environmental-modelling-and-software/publish/guide-for-authors
 \begin{abstract}
 Hydrodynamic and hydrologic processes that span the coast, the subsurface, and engineered infrastructure are simulated by codes developed independently of one another, each with its own numerical formulation, grid, model time step, and control interface. An approach is described in which three such codes---a coastal hydrodynamic model, a groundwater flow model, and a sewer network model---are loaded as libraries into a single process and exchange state in memory at a fixed interval throughout a simulation, so that a self-consistent coupled solution is obtained from one simulation. None of the codes is modified: each is used as distributed and driven through its published interface, so the coupling does not fork a source tree or reimplement one process inside another, and it survives a new release of any component. Two of the three implement the Basic Model Interface and the third does not, which is shown to be immaterial: what a simulator must supply is the ability to be initialized, advanced and finalized as a shared library, and to have named state read and written, whatever those calls are named. Exchange formulations are given for each pair of models. Particular attention is given to returning the sewer model outfall discharge to the hydrodynamic model as a sewer discharge tracer source, which places the strongest requirement on the interface: the transfer has to occur between the external forcing update and the flow computation, a window the combined time-stepping entry point does not expose, and the value applied over a model time step is formed from the cumulative outfall volume so that mass is conserved exactly rather than sampled. The approach is demonstrated on a combined sewer network on eastern Long Island, New York, where groundwater infiltration to the sewer is modulated by the tide, and the sensitivity of the coupled solution to the exchange interval is evaluated across three hydrodynamic grid resolutions.
@@ -114,7 +135,7 @@ SWMM
 
 \end{frontmatter}
 
-\section*{Introduction}
+\section{Introduction}
 
 Processes that cross the boundary between the coastal ocean, the subsurface, and engineered infrastructure are rarely represented by a single code. Each domain has a mature simulator of its own, developed independently, with its own governing equations, spatial discretization, model time step, and means of external control. Representing the coupled process therefore means making those codes exchange state while they run.
 
@@ -134,7 +155,7 @@ The approach is demonstrated on a problem that exercises all three couplings at 
 
 The demonstration uses the sewer network at Greenport, New York, on the north fork of eastern Long Island, which discharges to Greenport Harbor and the surrounding waters of Long Island Sound and Peconic Bay. The network is a combined system carrying both stormwater runoff and dry weather flow. It is used here to evaluate the coupling rather than to characterize the site, and in particular to establish how frequently the exchange must occur for the coupled solution to be insensitive to the exchange interval.
 
-\section*{Model components}
+\section{Model components}
 
 % TODO: the D-Flow FM Long Island Sound grid has no citable reference. Searches of
 % Herdman's published works, USGS publications and Crossref turned up nothing that
@@ -151,7 +172,7 @@ The three simulators are advanced within a single process and exchange state thr
 % configured now. Reconcile before submission.
 The versions used are D-Flow FM kernel 1.2.184, MODFLOW~6 version 6.7.0, and SWMM version 5.2.4 accessed through PySWMM 2.0.1.
 
-\section*{Coupling framework}
+\section{Coupling framework}
 
 The coupled simulation is driven by the D-Flow FM model time. D-Flow FM advances in increments of its user time step, $\Delta t_u$, and MODFLOW~6 is advanced at a coupling interval, $\Delta t_c$, that is an integer multiple of $\Delta t_u$. The order of execution and the state passed between the models are shown in Figure~\ref{fig:sequence}.
 
@@ -172,7 +193,7 @@ The disparity in time step compounds the difficulty. The hydrodynamic model adva
 
 The coupling interval is the principal numerical control on the approach. The coastal boundary of the groundwater model is forced by a semidiurnal tide with a period of approximately \SI{12.42}{\hour}, so a coupling interval that is a substantial fraction of that period samples the tidal signal sparsely and aliases it. Coupling intervals of 15 minutes, 30 minutes, and 1, 2, 4, 8, and 24 hours were simulated on each of three D-Flow FM grids to bound this effect.
 
-\section*{Coastal exchange}
+\section{Coastal exchange}
 
 Water levels simulated by D-Flow FM are applied to the MODFLOW~6 coastal boundary, which is represented by a General-Head Boundary (GHB) package covering the inner bays and a Constant-Head (CHD) package covering the open coast and the lateral perimeter. The D-Flow FM grid and the MODFLOW~6 grid are not coincident, so the exchange is mediated by area-weighted mapping matrices computed once, before simulation, from the intersection of the two grids.
 
@@ -228,7 +249,7 @@ Boundary flows simulated by MODFLOW~6 are returned to D-Flow FM as an external v
 
 \noindent where $Q_{j}^{\mathrm{ext}}$ is the volumetric source applied to D-Flow FM cell $j$ (L$^{3}$T$^{-1}$), $a_{ji}$ is the area-weighted contribution of MODFLOW~6 boundary $i$ to D-Flow FM cell $j$ (dimensionless), $Q_{i}$ is the boundary flow simulated by MODFLOW~6 (L$^{3}$T$^{-1}$), and $\beta$ is the unit conversion from cubic feet per day to cubic meters per second (dimensionless). The sign convention of MODFLOW~6 reports boundary flow as positive into the groundwater model, so the leading negative sign renders $Q_{j}^{\mathrm{ext}}$ positive into the surface water. Dry cells receive no source.
 
-\subsection*{Choice of temporal reduction}
+\subsection{Choice of temporal reduction}
 
 Averaging is one of two reductions in common use. The other is to sample the D-Flow FM state at the end of the coupling interval and apply it unchanged, which is the simpler implementation and is consistent in the sense that it converges as the interval is shortened. The two are not better and worse versions of one approximation. They fail by different mechanisms, and which mechanism is active is set by the tide rather than by the model. Sampling preserves the amplitude of the boundary signal but aliases it once the coupling interval exceeds the Nyquist limit of the dominant tidal constituent. Averaging cannot alias, but damps the amplitude by an amount that grows with the interval.
 
@@ -254,7 +275,7 @@ The abruptness of the transition, rather than its location, is what distinguishe
 \label{fig:averaging}
 \end{figure}
 
-\section*{Sewer exchange}
+\section{Sewer exchange}
 
 Exchange between the aquifer and the sewer is computed at a set of junctions that fall within the active area of the groundwater model. Each junction is associated with the MODFLOW~6 cell containing it, and a well is added to the groundwater model at that cell.
 
@@ -289,7 +310,7 @@ The exchange at junction $j$ is
 
 \noindent where $Q_{j}$ is the exchange (L$^{3}$T$^{-1}$), and $\eta_{j}$ is unity for infiltration and an exfiltration ratio less than unity for exfiltration (dimensionless). Exfiltration into saturated material is more difficult than infiltration from it, and the asymmetry is retained. The exchange is applied to SWMM as a generated inflow at the junction and to MODFLOW~6 as an equal and opposite well flux, so that mass is conserved between the two models. Cells that are dry or inactive return a head of $-10^{30}$ in MODFLOW~6 and are assigned zero exchange rather than being used unguarded.
 
-\section*{Sewer discharge tracer transport}
+\section{Sewer discharge tracer transport}
 
 Flow reaching the outfall is introduced to D-Flow FM as a point source carrying a conservative tracer of sewer discharge, which is then advected and dispersed by the hydrodynamic model. The source discharge is the total inflow simulated by SWMM at the outfall, and the tracer concentration assigned to that discharge is constant, so the tracer mass flux follows the simulated SWMM outfall discharge directly.
 
@@ -303,7 +324,7 @@ The SWMM outfall discharge is written into the D-Flow FM source term at each use
 
 \noindent where $\bar{Q}_{s}$ is the mean SWMM outfall discharge over the user time step (L$^{3}$T$^{-1}$), $V$ is the cumulative volume conveyed through the SWMM outfall (L$^{3}$), and $\Delta t_{u}$ is the D-Flow FM user time step (T). Forming the mean from the cumulative volume conserves mass exactly over the step, whereas sampling the SWMM outfall discharge instantaneously once per coupling interval and holding it would introduce the same aliasing that the coupling interval itself is being tested for. Advancing SWMM at the user time step rather than at the coupling interval does not alter the sewer solution, because SWMM routes internally at its own routing step in either case and the exchange computed from equation~\ref{eq:swmmq} is still refreshed only once per coupling interval; it raises the resolution at which the outfall is observed.
 
-\section*{Implementation}
+\section{Implementation}
 
 The coupled simulation is implemented in Python. The three simulators are loaded as shared libraries into a single process, so that state is passed between them as arrays in memory.
 
@@ -311,7 +332,7 @@ D-Flow FM applies its external forcings at the start of a user time step and the
 
 This is the sub-time-step access described earlier, and the two simulators reach it differently. MODFLOW~6 extends the Basic Model Interface with functions that expose the time step and the solution within it \citep{hughes2022modflowapi}, and those functions are what the groundwater exchange is written through. D-Flow FM instead publishes its user time step as three separate entry points alongside the combined one. Neither route is part of the Basic Model Interface itself, so a coupling of this kind is portable only to the extent that each simulator provides some equivalent.
 
-\section*{Demonstration}
+\section{Demonstration}
 
 The coupling is exercised on the Greenport sewer network described above. The groundwater model is a cutout of the regional Long Island aquifer system model \citep{walter2024longisland}, which simulates the period 1900 to 2019 with MODFLOW~6 including the position of the saltwater interface. Three D-Flow FM grids of increasing resolution were used, spanning the same domain and driven by the same tidal and atmospheric forcing. The groundwater and sewer models are identical across all simulations, so differences among grids reflect the resolution of the coastal water level alone, and differences among exchange intervals reflect the coupling alone. The configurations simulated are summarized in Table~\ref{tab:scenarios}.
 
@@ -330,7 +351,7 @@ Fine    & 41,091 & 300 & 89 \\
 \end{tabular}
 \end{table}
 
-\section*{Results}
+\section{Results}
 
 % Placeholder. Added here, with the supporting figures:
 %   - sensitivity of the coupled solution to the exchange interval, which is the
@@ -340,7 +361,7 @@ Fine    & 41,091 & 300 & 89 \\
 %     weighed against it
 % Site-specific interpretation belongs only insofar as it bounds the coupling.
 
-\section*{Summary and conclusions}
+\section{Summary and conclusions}
 
 % Placeholder. Prose paragraphs, not bullets, once the analysis is complete:
 % the coupling approach and what it costs; the character and bounds of the error
@@ -358,6 +379,53 @@ Fine    & 41,091 & 300 & 89 \\
 %     of the simulators, not a limitation of the approach.
 %   - applying the same pattern to other simulator combinations, which requires
 %     only that each expose an equivalent sub-time-step entry point
+
+% Journal-specific and expected of most EMS papers: name of software or dataset,
+% developer and contact, year first available, hardware and software required,
+% availability and cost, program language and size for software, and repository
+% form, archive size and access form for data. "Contact the author" is explicitly
+% not acceptable. Sizes, the coupling-code archive DOI, and the data deposit are
+% still to be supplied.
+\section*{Software and data availability}
+
+The three simulators are used as distributed and are not modified by this work.
+MODFLOW~6 is developed by the U.S. Geological Survey, is written in Fortran, and is
+available at no cost from \url{https://github.com/MODFLOW-ORG/modflow6}; version
+6.7.0 was used, with the API and the \texttt{modflowapi} Python interface. D-Flow FM
+is developed by Deltares, is written in Fortran, and is available from
+\url{https://oss.deltares.nl/web/delft3dfm}. SWMM is developed by the
+U.S. Environmental Protection Agency, is written in C, and is available at no cost
+from \url{https://github.com/USEPA/Stormwater-Management-Model}; version 5.2.4 was
+used, driven through the \texttt{PySWMM} Python interface, version 2.0.1. All three
+are used as shared libraries on 64-bit Windows and Linux; no special hardware is
+required.
+
+The coupling itself is Python and is the only software new to this work. % TODO: archive the coupling code and cite the DOI here rather than a bare repository URL.
+
+% TODO: EMS is Option C for research data -- the model input and the simulation
+% output must be deposited in a repository and cited, or a statement given
+% explaining why they cannot be shared. Neither is done yet.
+
+\section*{CRediT authorship contribution statement}
+
+% TODO: required by the guide, and only the co-authors can supply it. Roles are
+% drawn from the CRediT taxonomy: conceptualization, data curation, formal analysis,
+% funding acquisition, investigation, methodology, project administration,
+% resources, software, supervision, validation, visualization, writing -- original
+% draft, writing -- review and editing.
+
+\section*{Declaration of generative AI and AI-assisted technologies in the manuscript preparation process}
+
+% TODO: an author decision, not a drafting one. The guide requires this section
+% when generative AI tools were used in preparing the manuscript, placed before the
+% reference list, and it is omitted entirely only if there is nothing to disclose.
+% Elsevier's wording is: "During the preparation of this work the author(s) used
+% [NAME OF TOOL] in order to [REASON]. After using this tool/service, the author(s)
+% reviewed and edited the content as needed and take(s) full responsibility for the
+% content of the published article." The guide separately notes that AI tools may be
+% used for conceptual diagrams and for data visualizations derived from underlying
+% data by reproducible methods, and that such use should be disclosed in the image
+% caption as well as here.
 
 \section*{Acknowledgments}
 
