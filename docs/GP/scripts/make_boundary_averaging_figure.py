@@ -1,4 +1,4 @@
-"""Error in the coupled solution against a 30-minute reference, for both reductions.
+﻿"""Error in the coupled solution against a 15-minute reference, for both reductions.
 
 Drawn from ../../data/GP/boundary_averaging.nc, which boundary_averaging_data.py
 recomputes when the simulation output is present and reads as-is when it is not.
@@ -20,10 +20,10 @@ OUT = pl.Path(__file__).resolve().parent.parent / "figures" / "boundary_averagin
 NYQUIST_H = bad.NYQUIST_H
 C_I, C_M = "#d62728", "#1f77b4"
 
-# The instantaneous 30-minute simulation is the incumbent formulation, so it is the
+# The instantaneous 15-minute simulation is the incumbent formulation, so it is the
 # reference plotted. The archive also carries the averaged reference and the two
 # agree; that check belongs in the notebook, not in the figure.
-REF = "30M instant"
+REF = "15M instant"
 
 ds, source = bad.load_or_refresh()
 print("statistics recomputed from results/" if source == "results"
@@ -36,10 +36,13 @@ s = {v: sub[v].values[order] for v in sub.data_vars}
 peak_ref = float(ds.attrs["peak_reference_concentration"])
 
 # Ticks are the intervals actually simulated, so they follow the archive rather than
-# a hard-coded list that would silently drop a point when one is added.
+# a hard-coded list that would silently drop a point when one is added. The sub-hour
+# case is handled because the finest interval is 15 minutes and "%.0f h" renders it
+# as "0 h".
 TICK_H = list(h)
-TICK_LAB = [f"{v:.0f} h" if v < 24 else "1 d" if v == 24
-            else f"{v/24:.0f} d" for v in h]
+TICK_LAB = [f"{v * 60:.0f} min" if v < 1 else f"{v:.0f} h" if v < 24
+            else f"{v / 24:.0f} d" for v in h]
+
 
 PANELS = {"head": ("head_inst", "head_mean", "Aquifer head RMSE, in millimeters"),
           "seep": ("seep_inst", "seep_mean",

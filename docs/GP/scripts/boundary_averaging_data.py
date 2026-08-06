@@ -1,4 +1,4 @@
-"""Statistics behind the boundary-averaging figure, and their archive file.
+﻿"""Statistics behind the boundary-averaging figure, and their archive file.
 
 The archive ../../data/GP/boundary_averaging.nc is committed so the figure rebuilds
 without the simulation output, which is tens of gigabytes and is not in version
@@ -19,14 +19,19 @@ RESULTS = HERE.parents[2] / "results" / "gp"
 SPINUP_D = 5.0          # cold start; not a fair test of the model
 M2_HOURS = 12.4206
 NYQUIST_H = M2_HOURS / 2
-DT_REF = 0.5 / 24
+DT_REF = 0.25 / 24
 FT2MM = 304.8
 
-REFS = {"30M instant": "gp_coarse_30.00M_n244",
-        "30M mean": "gp_coarse_30.00M_n244_meanbnd"}
+# The 15-minute simulation is the finest run available and is the reference. A
+# coarser one cannot serve: scoring the 30-minute simulation against it would judge
+# a run by a standard it out-resolves.
+REFS = {"15M instant": "gp_coarse_15.00M_n244",
+        "15M mean": "gp_coarse_15.00M_n244_meanbnd"}
 # 02 and 04 use the _instbnd runs, which were verified bit-identical to the
 # pre-refactor results on every array.
 RUNS = {
+    "30.00M": (0.5 / 24, "gp_coarse_30.00M_n244", "gp_coarse_30.00M_n244_meanbnd"),
+    "01.00H": (1 / 24, "gp_coarse_01.00H_n244", "gp_coarse_01.00H_n244_meanbnd"),
     "02.00H": (2 / 24, "gp_coarse_02.00H_n244_instbnd", "gp_coarse_02.00H_n244_meanbnd"),
     "04.00H": (4 / 24, "gp_coarse_04.00H_n244_instbnd", "gp_coarse_04.00H_n244_meanbnd"),
     "08.00H": (8 / 24, "gp_coarse_08.00H_n244", "gp_coarse_08.00H_n244_meanbnd"),
@@ -73,7 +78,7 @@ def _tracer(results, run):
 
 def _rmse(rt, rv, t, v):
     """Reference interpolated onto the test times; the step counts differ by a
-    factor of 48 between the 30-minute reference and the daily run."""
+    factor of 96 between the 15-minute reference and the daily run."""
     m = t >= SPINUP_D
     t, v = t[m], v[m]
     ri = np.column_stack([np.interp(t, rt, rv[:, j]) for j in range(v.shape[1])])
@@ -114,9 +119,9 @@ def compute(results=RESULTS):
         if v in ds:
             ds[v].attrs["units"] = u
     ds.attrs = {
-        "title": "Coupled-solution error against a 30-minute reference, by boundary "
+        "title": "Coupled-solution error against a 15-minute reference, by boundary "
                  "reduction and coupling interval",
-        "summary": "RMSE of the coarse-grid coupled solution relative to a 30-minute "
+        "summary": "RMSE of the coarse-grid coupled solution relative to a 15-minute "
                    "reference, for an end-of-interval (inst) and a wetted-fraction "
                    "time-averaged (mean) reduction of the D-Flow FM coastal "
                    "boundary. Both a sampled and an averaged reference are scored; "
@@ -126,7 +131,7 @@ def compute(results=RESULTS):
         "spinup_days_excluded": SPINUP_D,
         "m2_period_hours": M2_HOURS,
         "m2_nyquist_hours": NYQUIST_H,
-        "peak_reference_concentration": float(np.nanmax(tr["30M instant"])),
+        "peak_reference_concentration": float(np.nanmax(tr["15M instant"])),
     }
     return ds
 
