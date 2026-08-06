@@ -1,9 +1,9 @@
-"""Schematic of the coupling sequence over two coupling intervals.
+﻿"""Schematic of the coupling sequence over two coupling intervals.
 
 Bar width is the model time step each simulator integrates, and lanes are ordered by
-execution rather than by physical position. Every connector runs from the end of the
-step that produces a value to the start of the step that consumes it, so its
-horizontal run is the lag.
+execution rather than by physical position. Every connector enters the start of the
+step that consumes it, and leaves the producing step where the value is formed: its
+end for an instantaneous value, its middle or its whole span for a mean.
 """
 import pathlib as pl
 
@@ -49,17 +49,16 @@ DF_T = LANE_Y["D-Flow FM"] + H         # 1.24
 DF_B = LANE_Y["D-Flow FM"] - H         # 0.76
 MF_T = LANE_Y["MODFLOW 6"] + H         # 0.24
 
-# Routing channels, chosen so no two runs are ever collinear -- every horizontal
-# has its span to itself at that height, and the verticals that share an x have
-# disjoint extents. Connectors do cross, which is legible; what is not legible is
-# two lines lying on top of each other, where the upper one simply hides the other.
-# The band between MODFLOW 6 and D-Flow FM carries two horizontals: s1,hs runs left
-# of the gutter and q^ext runs right of it, so they never meet.
-# Ordering in the band between MODFLOW 6 and D-Flow FM is forced, not chosen. At the
-# start of an interval three connectors land on the same edge: s1,hs comes down to
-# the MODFLOW 6 bar, the seepage comes down to it as well, and q^ext goes up to the
-# D-Flow FM bar. Stacking them s1,hs < seepage < q^ext is the only order in which
-# the seepage shows above the water level and q^ext stays clear of both.
+# Routing channels, chosen so no two runs are ever collinear -- every horizontal has
+# its span to itself at that height, and verticals sharing an x have disjoint
+# extents. Connectors do cross, which is legible; two lines lying on top of each
+# other are not, because the upper one simply hides the other.
+#
+# Ordering in the band between MODFLOW 6 and D-Flow FM is forced rather than chosen.
+# Three connectors land on the same edge at the start of an interval: the mean water
+# level and the seepage both come down to the MODFLOW 6 bar, and Q^ext goes up to the
+# D-Flow FM bar. Level < seepage < Q^ext is the only order in which the seepage shows
+# above the water level and Q^ext stays clear of both.
 Y_QS = 1.50
 # Spacing is set by what each landing needs, working outward from the MODFLOW 6 bar
 # at 0.24 and the D-Flow FM bar at 0.76: s1,hs and q^ext each need enough run below
@@ -128,16 +127,16 @@ with styles.USGSPlot():
             al = 1.0 if s == 0 else FADE
             bar(ax, "SWMM", a, b, al)
             bar(ax, "D-Flow FM", a, b, al)
-            # Backward by one user step: SWMM finishes the step, and D-Flow FM then
-            # integrates that same step from its start. Drawn on every step, and
-            # faded with its own bars, because this handoff really does happen every
-            # user time step -- showing it once made it look like a per-interval
-            # event, which is the same mistake as drawing the sub-steps unfaded.
-            # Only the leading step carries the label; repeating it six times would
-            # add nothing.
-            poly(ax, [(b, SW_B), (b, Y_QS), (a, Y_QS), (a, DF_T)],
-                 LANE_C["SWMM"], r"$\bar{q}_s$" if s == 0 else None,
-                 lxy=((a + b) / 2.0, Y_QS + 0.11), ha="center", alpha=al)
+            # Leaves the MIDDLE of the SWMM bar, not its end: the value handed over
+            # is the mean across the step, formed from the cumulative outfall volume,
+            # so the step's midpoint is where it belongs. It enters the start of the
+            # D-Flow FM bar covering that same interval. Drawn on every step and
+            # faded with its own bars, because this handoff happens every user time
+            # step; only the leading one carries the label.
+            xm = (a + b) / 2.0
+            poly(ax, [(xm, SW_B), (xm, Y_QS), (a, Y_QS), (a, DF_T)],
+                 LANE_C["SWMM"], r"$\bar{Q}_s$" if s == 0 else None,
+                 lxy=((a + xm) / 2.0, Y_QS + 0.11), ha="center", alpha=al)
 
         # The gutter is a break in the time axis, so it is marked as one: a light
         # rule on each edge rather than a box. A box around a gutter this narrow
@@ -164,13 +163,13 @@ with styles.USGSPlot():
             poly(ax, [(xt, DF_B), (xt, Y_S1)], LANE_C["D-Flow FM"], head=False,
                  lw=0.75, alpha=1.0 if s == 0 else FADE)
         poly(ax, [(x0 + (N_SUB - 0.5) * W_SUB, Y_S1), (x0 + PAD, Y_S1), (x0 + PAD, MF_T)],
-             LANE_C["D-Flow FM"], r"$\overline{s_1},\,\overline{h_s}$",
+             LANE_C["D-Flow FM"], r"$\bar{s}_1,\,\bar{h}_s$",
              lxy=((x0 + xe) / 2.0, Y_S1 + 0.13), ha="center", zorder=8)
         # FORWARD into the start of the next D-Flow FM step, leaving through the
         # right edge of the MODFLOW 6 bar.
         poly(ax, [(xe - PAD, Y_QE_EXIT), (xr, Y_QE_EXIT), (xr, Y_QE),
                   (xn + PAD, Y_QE), (xn + PAD, DF_B)],
-             LANE_C["MODFLOW 6"], r"$q^{\mathrm{ext}}$",
+             LANE_C["MODFLOW 6"], r"$Q^{\mathrm{ext}}$",
              lxy=(xc + 0.10, Y_QE + 0.13), ha="left")
         # Q_j is the seepage between the aquifer and the sewer: the groundwater head
         # against the water surface in the pipe, or against the pipe invert once the
@@ -252,11 +251,11 @@ with styles.USGSPlot():
                      label=f"{n} time step") for n, _, c in LANES]
     handles += [
         Line2D([], [], color=LANE_C["SWMM"], lw=1.4,
-               label=r"$\bar{q}_s$, mean outfall discharge"),
+               label=r"$\bar{Q}_s$, mean outfall discharge"),
         Line2D([], [], color=LANE_C["D-Flow FM"], lw=1.4,
-               label=r"$\overline{s_1}$, $\overline{h_s}$, mean level and depth"),
+               label=r"$\bar{s}_1$, $\bar{h}_s$, mean level and depth"),
         Line2D([], [], color=LANE_C["MODFLOW 6"], lw=1.4,
-               label=r"$q^{\mathrm{ext}}$, boundary flow"),
+               label=r"$Q^{\mathrm{ext}}$, boundary flow"),
         # Neutral, not a lane color: the seepage is a property of neither model.
         Line2D([], [], color="0.25", lw=1.4,
                label=r"$Q_j$, aquifer-sewer seepage"),
