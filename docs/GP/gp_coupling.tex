@@ -1,4 +1,4 @@
-% Environmental Modelling & Software submission.
+﻿% Environmental Modelling & Software submission.
 %
 % elsarticle option notes:
 %   preprint    single column, single spaced  <- used here
@@ -31,9 +31,25 @@
 \setcitestyle{aysep={}}          % (Author year), no comma
 \usepackage{xcolor}
 \usepackage{hyperref}
+% Long repository URLs in the software statement cannot break in a 5 in measure and
+% overflow the margin; xurl allows a break at any character.
+\usepackage{xurl}
 \hypersetup{colorlinks=true, linkcolor={red!50!black},
   citecolor={blue!50!black}, urlcolor={blue!80!black}}
 \newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+% Full-width figures are drawn at 190 mm, which is the journal's full-page artwork
+% width and the width the figure scripts author to. The preprint text block is only
+% 360 pt (5.0 in), so \includegraphics[width=\textwidth] would scale them to 67% and
+% render 6.5 pt annotations at 4.3 pt -- artwork "where text is disproportionately
+% small", which the guide lists among the things not to submit. Prose keeps the
+% narrower measure, which is easier to read, and the figures overhang it
+% symmetrically; on letter paper that still leaves 0.51 in of margin each side.
+% The box is declared zero width so the overhang raises no overfull warning.
+\newlength{\figfull}
+\setlength{\figfull}{190mm}
+\newcommand{\widefig}[1]{\centerline{\makebox[0pt][c]{%
+  \includegraphics[width=\figfull]{#1}}}}
 
 \journal{Environmental Modelling \& Software}
 
@@ -182,7 +198,7 @@ The two directions of this exchange carry different lags. The water levels are a
 
 \begin{figure}[ht]
 \centering
-\includegraphics[width=\textwidth]{figures/coupling_sequence.pdf}
+\widefig{figures/coupling_sequence.pdf}
 \caption{Model time steps, order of execution, and state exchanged among the three simulators over two coupling intervals. Bar width is the model time step each simulator integrates: MODFLOW~6 advances the whole coupling interval, $\Delta t_c$, in one step, while SWMM and D-Flow FM tile that span with one bar per user time step, $\Delta t_u$. Lanes are ordered by execution rather than by physical position. Each connector leaves the producing step at the point where the exchanged value is formed and enters the start of the step that consumes it. Repeated user time steps are drawn faded, connector included, and only the leading one is labelled. The exchange break carries no model time---both of its edges have the same tick---and the faded stub at the right is the interval that follows. $Q_j$ is drawn in a neutral color because it is a property of neither model.}
 \label{fig:sequence}
 \end{figure}
@@ -258,7 +274,7 @@ Figure~\ref{fig:reduction} shows what each reduction does to cells of differing 
 
 \begin{figure}[ht]
 \centering
-\includegraphics[width=\textwidth]{figures/boundary_reduction.pdf}
+\widefig{figures/boundary_reduction.pdf}
 \caption{Reduction of a tidal boundary to one value per coupling interval, for cells wet 100, 75, 50, and 25 percent of the time, at coupling intervals of 2, 8, and 24 hours. Each pair of panels shows the water level and, beneath it, the multiplier applied to the base conductance. Bed elevations are placed at quantiles of the water level to give the stated wetted fractions. Crosses mark coupling intervals for which instantaneous sampling reports the cell dry, so that no boundary is applied at all. The 2-hour interval is below the $M_2$ Nyquist limit of \SI{6.21}{\hour} and the other two are above it.}
 \label{fig:reduction}
 \end{figure}
@@ -271,7 +287,7 @@ The abruptness of the transition, rather than its location, is what distinguishe
 
 \begin{figure}[ht]
 \centering
-\includegraphics[width=\textwidth]{figures/boundary_averaging.pdf}
+\widefig{figures/boundary_averaging.pdf}
 \caption{Error in the coupled solution relative to a 15-minute reference simulation, for the two reductions of the D-Flow FM boundary, on the coarse grid. (A) simulated groundwater head, (B) aquifer--sewer seepage, (C) sewer discharge tracer, and (D) peak simulated tracer concentration, with the reference value shown dashed. The first five days are excluded as model spin-up. The vertical rule is the Nyquist limit for the $M_2$ constituent, \SI{6.21}{\hour}. Below the limit the two reductions differ by amounts too small to matter---head error stays below \SI{0.7}{\milli\meter}---while above it the sampled solution departs from the reference abruptly, which is characteristic of aliasing rather than of truncation.}
 \label{fig:averaging}
 \end{figure}

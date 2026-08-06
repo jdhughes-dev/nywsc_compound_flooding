@@ -76,7 +76,11 @@ with styles.USGSPlot():
     # strip as far from its own panel as from the next row's, so it read as belonging
     # to neither. A subfigure is laid out as a unit, which welds the pair together
     # and still lets constrained layout take up the slack around them.
-    fig = plt.figure(figsize=(7.5, 7.9), layout="constrained")
+    # 7.48 in is the journal's full-page artwork width, so the figure is placed 1:1
+    # and its font sizes survive into the page. Height is bounded by what is left of
+    # the text block after the caption: at 7.9 in the figure alone exceeded the
+    # 7.52 in text height and pushed the caption into the bottom margin.
+    fig = plt.figure(figsize=(7.48, 6.15), layout="constrained")
     # Reserve a margin at the left and top for the two direction arrows; constrained
     # layout will not make room for figure-level artists on its own.
     fig.get_layout_engine().set(rect=(0.052, 0.0, 0.948, 0.952))
