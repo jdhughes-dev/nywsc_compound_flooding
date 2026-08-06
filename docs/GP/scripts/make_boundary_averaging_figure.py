@@ -47,9 +47,14 @@ PANELS = {"head": ("head_inst", "head_mean", "Aquifer head RMSE, in millimeters"
           "trac": ("trac_inst", "trac_mean", "Sewer tracer RMSE, dimensionless"),
           "peak": ("peak_inst", "peak_mean", "Peak sewer tracer concentration")}
 
+MOSAIC = [["head", "seep"], ["trac", "peak"]]
+BOTTOM = set(MOSAIC[-1])
+
 with styles.USGSPlot():
-    fig, axd = plt.subplot_mosaic([["head", "seep"], ["trac", "peak"]],
-                                  figsize=(7.5, 5.2), layout="constrained")
+    # sharex only: the four panels carry different quantities, so the y axes stay
+    # independent and label_outer() would wrongly strip the right column's y labels.
+    fig, axd = plt.subplot_mosaic(MOSAIC, figsize=(7.5, 4.5), layout="constrained",
+                                  sharex=True)
     for letter, (key, (ci, cm, lab)) in zip("ABCD", PANELS.items()):
         ax = axd[key]
         ax.plot(h, s[ci], "o-", color=C_I, lw=1.2, ms=4, label="instantaneous")
@@ -71,6 +76,12 @@ with styles.USGSPlot():
         ax.set_xticks(TICK_H)
         ax.set_xticklabels(TICK_LAB, fontsize=7)
         ax.tick_params(labelsize=7, top=False)
+        # The x axis is the same in all four, so only the bottom row carries its
+        # labels and title; repeating them cost a band of white across the middle.
+        if key in BOTTOM:
+            styles.xlabel(ax=ax, label="Coupling interval")
+        else:
+            ax.tick_params(labelbottom=False)
         # Anchored in axes fraction, not to get_ylim()[1]: the data top IS the top
         # spine, so the label sat on it.
         ax.annotate(r"$M_2$ Nyquist", xy=(NYQUIST_H, 0.96),
@@ -78,11 +89,15 @@ with styles.USGSPlot():
                     xytext=(3, 0), textcoords="offset points",
                     fontsize=6.5, color="0.35", va="top", ha="left")
         styles.heading(ax=ax, letter=letter, heading=lab, fontsize=7.5)
-        styles.xlabel(ax=ax, label="Coupling interval")
 
+    # A FIGURE legend placed "outside", not an axes legend anchored beyond its axes.
+    # styles.graph_legend calls ax.legend, and constrained layout reserves no space
+    # for a legend hanging outside an axes -- bbox_inches="tight" then grew the
+    # canvas around it after the fact, which was the white space. graph_legend_title
+    # applies the same EXPLANATION heading to any legend object, so nothing is lost.
     hs, ls = axd["head"].get_legend_handles_labels()
-    styles.graph_legend(ax=axd["trac"], handles=hs, labels=ls, loc="lower center",
-                        bbox_to_anchor=(1.05, -0.42), ncol=2, frameon=False,
-                        fontsize=7.5)
-    fig.savefig(OUT, bbox_inches="tight")
+    leg = fig.legend(hs, ls, loc="outside lower center", ncol=2, frameon=False,
+                     prop={"weight": "bold", "size": 7.5})
+    styles.graph_legend_title(leg, fontsize=7.5)
+    fig.savefig(OUT)
 print("wrote", OUT)
