@@ -1,6 +1,6 @@
 """Statistics behind the boundary-averaging figure, and their archive file.
 
-The archive ../../data/boundary_averaging.nc is committed so the figure rebuilds
+The archive ../../data/GP/boundary_averaging.nc is committed so the figure rebuilds
 without the simulation output, which is tens of gigabytes and is not in version
 control. When that output is present the archive is recomputed rather than trusted.
 """
@@ -11,7 +11,9 @@ import pandas as pd
 import xarray as xr
 
 HERE = pl.Path(__file__).resolve().parent
-NC = HERE.parents[1] / "data" / "boundary_averaging.nc"
+# docs/data/GP mirrors docs/GP, so a second manuscript brings its own data directory
+# rather than sharing a flat one.
+NC = HERE.parents[1] / "data" / "GP" / "boundary_averaging.nc"
 RESULTS = HERE.parents[2] / "results" / "gp"
 
 SPINUP_D = 5.0          # cold start; not a fair test of the model

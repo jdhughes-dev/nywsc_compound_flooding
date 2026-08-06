@@ -1,6 +1,6 @@
 """Error in the coupled solution against a 30-minute reference, for both reductions.
 
-Drawn from ../../data/boundary_averaging.nc, which boundary_averaging_data.py
+Drawn from ../../data/GP/boundary_averaging.nc, which boundary_averaging_data.py
 recomputes when the simulation output is present and reads as-is when it is not.
 """
 import pathlib as pl
