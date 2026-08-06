@@ -229,3 +229,7 @@ hd_obs.csv
 # Re-fetched automatically from the public archives, which are stable for 2010, so
 # the ~9 MB is not carried in the repository. Drop this rule to freeze a snapshot.
 data/GP/observations/
+
+# Editor settings. The only file here selects the conda environment manager, which
+# is a local preference rather than a property of the project.
+.vscode/
