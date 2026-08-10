@@ -65,6 +65,16 @@ CONFIG = {
             "01.00D": (1.0, "gp_coarse_01.00D_n244", "gp_coarse_01.00D_n244_meanbnd"),
         },
     ),
+    # The midres sweep also predates the --scenario-suffix convention, so its
+    # instantaneous runs are the unsuffixed ones, uniformly -- unlike coarse, which
+    # was partly re-run under the suffix while the reduction was being refactored.
+    "medium": dict(
+        archive="boundary_averaging_medium.nc",
+        refs={"15M instant": "gp_medium_15.00M_n244",
+              "15M mean": "gp_medium_15.00M_n244_meanbnd"},
+        runs={t: (h, f"gp_medium_{t}_n244", f"gp_medium_{t}_n244_meanbnd")
+              for t, h in TAGS.items()},
+    ),
     "high": dict(
         archive="boundary_averaging_high.nc",
         refs={"15M instant": "gp_high_15.00M_n244_instbnd",
