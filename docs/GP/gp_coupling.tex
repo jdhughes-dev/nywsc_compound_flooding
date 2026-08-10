@@ -365,7 +365,7 @@ The coupling is exercised on the Greenport sewer network described above. The gr
 
 \begin{table}[ht]
 \centering
-\caption{Simulated configurations. Each grid was simulated at every coupling interval, giving 21 simulations in total.}
+\caption{Simulated configurations. Each grid was simulated at seven coupling intervals---15 and 30 minutes and 1, 2, 4, 8, and 24 hours---under both reductions of the coastal boundary, with two further intervals, 6 and 12 hours, added on the coarse grid, giving 46 simulations in total. Every interval divides a day, so that coupling steps coincide with the boundaries of the daily stress periods. The MODFLOW~6 and SWMM models are identical in all of them.}
 \label{tab:scenarios}
 \begin{tabular}{lrrr}
 \toprule
@@ -380,13 +380,20 @@ Fine    & 41,091 & 300 & 89 \\
 
 \section{Results}
 
-% Placeholder. Added here, with the supporting figures:
-%   - sensitivity of the coupled solution to the exchange interval, which is the
-%     numerical result the demonstration exists to produce
-%   - whether that sensitivity is grid-independent
-%   - what the exchange interval costs in run time, so the requirement can be
-%     weighed against it
-% Site-specific interpretation belongs only insofar as it bounds the coupling.
+The sensitivity of the coupled solution to the exchange interval is reported in Section~\ref{sec:reduction} and is not repeated here. Two of its features bear on the requirements a coupled model imposes, and both survive a change of grid. The first is that the penalty for sampling the coastal boundary rather than averaging it over the interval is a factor of 12.0, 11.4, and 10.4 in aquifer head at daily coupling on the coarse, medium, and fine grids, with the aquifer--sewer seepage agreeing at 1.4, 2.9, and 2.7; three independently discretized solutions place the same requirement on the coupling. The second is that the sewer discharge tracer does not resolve the difference at all. Its upper-tail concentration stays within 1 percent of the reference at every interval on the coarse grid and within a third of a percent on the medium grid, and departs materially only at daily coupling on the fine grid. It is the aquifer response, not the transported quantity, that the exchange interval is felt in.
+
+What the exchange interval costs is shown in Figure~\ref{fig:cost}. The marginal cost of one coupling step is \SI{0.25}{\second} and does not depend on the grid, which is what should be expected: the MODFLOW~6 and SWMM models are identical across the three D-Flow FM discretizations, so a shorter interval buys additional solves of the same two models. The hydrodynamic cost it is set against is not constant. D-Flow FM alone accounts for approximately 36, 94, and \SI{239}{\minute} of the 89-day simulation on the coarse, medium, and fine grids, which is very nearly linear in cell count at 5.5 to $5.9\times10^{-3}$ minutes per cell. The consequence is that the penalty for frequent coupling falls as the hydrodynamic model is refined: increasing the number of exchanges ninety-six-fold, from daily to 15-minute coupling, costs of order 100 percent of the run on the coarse grid but between 13 and 39 percent on the medium and fine grids.
+
+That asymmetry is the practical result of this work. The error incurred by a long exchange interval is not monotonic in the interval, so it cannot be bounded by shortening the interval a little; the cost of a short one is modest, and becomes more modest as the hydrodynamic grid approaches the resolution at which such models are actually run. There is correspondingly little to recommend a long exchange interval on a production-scale grid, and the coupling interval is better chosen from the tidal constituents than from the run-time budget.
+
+Run times were measured on a single workstation with the simulations executed sequentially. Run-to-run variation is a few percent, which is the reason several medium-grid points in Figure~\ref{fig:cost}A fall marginally below their own daily-coupling baseline, and the reason the spread between the two reductions at a given grid should be read as scatter rather than as a property of the reduction.
+
+\begin{figure}[ht]
+\centering
+\widefig{figures/coupling_cost.pdf}
+\caption{Cost of the exchange interval, for both reductions of the D-Flow FM boundary on the three grids. (A) run time relative to that series' own daily-coupling simulation. (B) additional run time against additional coupling steps, each series referred to its own daily-coupling simulation rather than to a fitted intercept, so that the collapse shown is a property of the measurements; the line is the pooled marginal cost through the origin. The vertical rule in (A) is the Nyquist limit for the $M_2$ constituent, \SI{6.21}{\hour}. Coupling more frequently costs approximately the same number of seconds per exchange on every grid, because the MODFLOW~6 and SWMM models being solved are identical; what differs is the hydrodynamic cost that expense is measured against.}
+\label{fig:cost}
+\end{figure}
 
 \section{Summary and conclusions}
 
