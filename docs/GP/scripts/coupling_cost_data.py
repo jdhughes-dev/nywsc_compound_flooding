@@ -83,8 +83,27 @@ def fits(df):
     return pd.DataFrame(out)
 
 
+# The series the figure is drawn from. Named explicitly so that a partial logs/
+# directory is detected as partial: without this the module would recompute from
+# whatever it happened to find and overwrite the archive with fewer series, which
+# is the one failure mode an archive exists to prevent.
+EXPECTED = {
+    ("coarse", "instbnd"): 9, ("coarse", "meanbnd"): 9,
+    ("medium", "instbnd"): 7, ("medium", "meanbnd"): 7,
+    ("high", "instbnd"): 7, ("high", "meanbnd"): 7,
+}
+
+
 def missing(logs=LOGS):
-    return [] if logs.is_dir() and any(logs.glob("*.log")) else ["logs/"]
+    """Series that are absent or short in logs/, as (grid, reduction) labels."""
+    if not logs.is_dir():
+        return ["logs/"]
+    df = scan(logs)
+    if df.empty:
+        return ["logs/"]
+    have = df.groupby(["grid", "reduction"]).size().to_dict()
+    return [f"{g}/{r} ({have.get((g, r), 0)} of {n})"
+            for (g, r), n in sorted(EXPECTED.items()) if have.get((g, r), 0) < n]
 
 
 def compute(logs=LOGS):
