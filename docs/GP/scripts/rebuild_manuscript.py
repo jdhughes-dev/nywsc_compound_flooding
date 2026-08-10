@@ -4,8 +4,8 @@ There are three places a rebuild can start, and which one is possible depends on
 what the person running it has:
 
   document   typeset the PDF from the figures already in figures/
-  figures    redraw all six figures, then typeset
-  archives   recompute the five archives from results/ and logs/, then the above
+  figures    redraw all seven figures, then typeset
+  archives   recompute the six archives from results/ and logs/, then the above
   everything run the 46 coupled simulations first, then the above
 
 The default is `figures`, because that is what someone who has cloned the
@@ -43,6 +43,7 @@ ARCHIVES = [
     ("boundary_averaging_data.py", ["medium"], "boundary_averaging_medium.nc"),
     ("boundary_averaging_data.py", ["high"], "boundary_averaging_high.nc"),
     ("sewer_exchange_data.py", [], "sewer_exchange.nc"),
+    ("coastal_exchange_data.py", [], "coastal_exchange.nc"),
     ("coupling_cost_data.py", [], "coupling_cost.nc"),
 ]
 
@@ -54,6 +55,7 @@ FIGURES = [
     ("make_boundary_averaging_figure.py", ["coarse", "--no-refresh"],
      "boundary_averaging.pdf"),
     ("make_sewer_exchange_figure.py", ["--no-refresh"], "sewer_exchange.pdf"),
+    ("make_coastal_exchange_figure.py", ["--no-refresh"], "coastal_exchange.pdf"),
     ("make_coupling_cost_figure.py", ["--no-refresh"], "coupling_cost.pdf"),
 ]
 
@@ -97,6 +99,7 @@ def check():
     sys.path.insert(0, str(HERE))
     for mod, label in (("boundary_averaging_data", "boundary averaging"),
                        ("sewer_exchange_data", "sewer exchange"),
+                       ("coastal_exchange_data", "coastal exchange"),
                        ("coupling_cost_data", "coupling cost")):
         m = __import__(mod)
         try:

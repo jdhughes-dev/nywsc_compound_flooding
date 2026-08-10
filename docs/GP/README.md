@@ -1,6 +1,6 @@
 # Reproducing the manuscript
 
-`Hughesetal_ESM_LISSCoupling.tex` is built from six figures, five archived summaries,
+`Hughesetal_ESM_LISSCoupling.tex` is built from seven figures, six archived summaries,
 and 46 coupled simulations. Each of those is a layer, and a rebuild can start at any
 of them:
 
@@ -105,7 +105,7 @@ reopen as UGRID, so only one exists at a time. Retaining every scenario needs ab
 
 ```
 Hughesetal_ESM_LISSCoupling.tex   the manuscript
-figures/                          the six figures it includes, as PDF
+figures/                          the seven figures it includes, as PDF
 ../data/GP/*.nc                   the archived summaries the figures are drawn from
 scripts/
   rebuild_manuscript.py           the driver described above
