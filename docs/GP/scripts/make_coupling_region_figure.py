@@ -111,6 +111,10 @@ def make():
             # Basemap first, so it sits under everything, and tolerated if absent:
             # the tiles are fetched over the network and a co-author rebuilding the
             # document offline should still get the figure, just without context.
+            # attribution=False by intent, not oversight: the credit belongs in the
+            # figure caption, where a reader of the typeset document will find it,
+            # rather than burned into the image at tile-label size. The caption
+            # carries the provider's own string, cx_provider["attribution"].
             try:
                 cx.add_basemap(ax, crs=CRS, source=cx_provider, attribution=False)
             except Exception as exc:

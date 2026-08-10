@@ -369,7 +369,7 @@ The coupling is exercised on the Greenport sewer network described above. The gr
 \begin{figure}[ht]
 \centering
 \widefig{figures/coupling_region.pdf}
-\caption{The coupling region at the three hydrodynamic resolutions: (A) coarse, (B) medium, and (C) fine D-Flow FM meshes. The MODFLOW~6 coastal boundary cells and the Greenport sewer network are drawn in every panel because they are identical in every simulation; the groundwater model occupies the area those boundary cells enclose. Only the hydrodynamic mesh differs among the three. The meshes extend well beyond the area shown, spanning Long Island Sound, of which the coupling region is a corner. Base map from the U.S. Geological Survey National Map.}
+\caption{The coupling region at the three hydrodynamic resolutions: (A) coarse, (B) medium, and (C) fine D-Flow FM meshes. The MODFLOW~6 coastal boundary cells and the Greenport sewer network are drawn in every panel because they are identical in every simulation; the groundwater model occupies the area those boundary cells enclose. Only the hydrodynamic mesh differs among the three. The meshes extend well beyond the area shown, spanning Long Island Sound, of which the coupling region is a corner. Base map tiles courtesy of the U.S. Geological Survey.}
 \label{fig:region}
 \end{figure}
 
@@ -411,22 +411,21 @@ Run times were measured on a single workstation with the simulations executed se
 
 \section{Summary and conclusions}
 
-% Placeholder. Prose paragraphs, not bullets, once the analysis is complete:
-% the coupling approach and what it costs; the character and bounds of the error
-% introduced by the exchange interval, and how frequently the exchange must occur;
-% and what the demonstration establishes about the requirements a library
-% interface must meet for this kind of coupling -- that sub-time-step access is
-% needed, that the Basic Model Interface does not define it, and that both
-% simulators here supply it by different and non-portable routes.
-%
-% Forward-looking paragraphs close the section:
-%   - what an implicit coupling would require that is not available today: the
-%     hydrodynamic and sewer interfaces advance a time step but cannot re-solve
-%     one, so two of the three legs have nothing to iterate on, and the models
-%     step at rates differing by up to two orders of magnitude. This is a request
-%     of the simulators, not a limitation of the approach.
-%   - applying the same pattern to other simulator combinations, which requires
-%     only that each expose an equivalent sub-time-step entry point
+An approach has been described for coupling a coastal hydrodynamic model, a groundwater flow model, and a sewer network model in memory through their library interfaces, together with the exchange formulation between each pair. None of the three simulators is modified. Each is loaded as a shared library, advanced through its published entry points, and passed state as arrays by a controlling program in which the whole of the coupling resides. The coupling itself is inexpensive, and its cost does not depend on the hydrodynamic discretization: one exchange costs \SI{0.25}{\second} on all three grids simulated, because the groundwater and sewer models being solved are identical in each. What differs is the hydrodynamic cost that expense is set against, which is close to linear in cell count.
+
+The exchange interval introduces an error whose character is set by the tide rather than by the numerics. Because MODFLOW~6 integrates a whole coupling interval in one step, the coastal boundary value must represent the interval and not the instant at its end, and the two reductions of it fail by opposite mechanisms: sampling preserves amplitude but aliases, averaging cannot alias but damps. At intervals of 8 hours and shorter the difference is immaterial, root-mean-square head error remaining below \SI{2.2}{\milli\meter} on every grid. At daily coupling sampling carries 12.0, 11.4, and 10.4 times the error of averaging on the coarse, medium, and fine grids. That the same factor is recovered on three independent discretizations is the strongest evidence available here that the requirement belongs to the coupling rather than to the model.
+
+The error does not grow monotonically with the interval, and that is what separates the two mechanisms. The averaged solution deteriorates smoothly, from \SI{0.05}{\milli\meter} at 30 minutes to \SI{2.7}{\milli\meter} at daily coupling, as a truncation error does. The sampled solution does not: it carries \SI{1.3}{\milli\meter} of head error at 8 hours, \SI{36.9}{\milli\meter} at 12 hours, and \SI{32.9}{\milli\meter} at 24, so shortening the interval from one day to twelve hours makes the solution worse rather than better. Sampling every 12 and every 24 hours folds the $M_2$ constituent onto the same 14.8-day beat and the two carry comparable error, whereas 8-hour sampling folds it onto a 22.5-hour beat that the aquifer damps and that costs almost nothing, although 8 hours already exceeds the Nyquist limit. It is the period onto which the dominant constituent is aliased, rather than the length of the interval or the crossing of the limit in itself, that sets the penalty. An exchange interval is therefore better chosen from the tidal constituents present than from the run-time budget, and a shorter interval cannot be assumed to be a safer one.
+
+Set against that, exchanging often is affordable, and becomes more so as the hydrodynamic model is refined. Increasing the number of exchanges ninety-six-fold costs of order 100 percent of the run on the coarse grid but between 13 and 39 percent on the medium and fine grids, because the fixed hydrodynamic cost grows with resolution while the marginal cost of an exchange does not. At the resolutions such models are ordinarily run at there is accordingly little to recommend a long exchange interval, and the averaged reduction is used throughout this work.
+
+What the demonstration establishes about the sewer problem is more equivocal, and the distinction is worth drawing. The requirement the coupling places on the exchange interval is grid-independent; the quantity of interest is not. Net infiltration is 180, 79, and 87 gallons per day per inch of pipe diameter per mile on the three grids, so the hydrodynamic discretization moves it by more than a factor of two and does so without settling, and the bulk pipe-wall leakance is correspondingly not transferable between grids. Against that, the number of junctions at which the exchange is computed proves nearly immaterial once the total leakage area is held fixed: halving them changes net infiltration by 4 percent and simulated head by \SI{0.014}{\milli\meter}. An infiltration rate obtained from a coupled model of this kind should therefore be reported together with the hydrodynamic grid that produced it, and the discretization of the sewer is the lesser concern.
+
+The coupling depends on one capability the Basic Model Interface does not define. Initializing a simulation, advancing it by a time step, finalizing it, and getting and setting named state are sufficient for the coastal and sewer exchanges, and where a simulator implements the standard the coupling is written directly against it. Returning the sewer outfall discharge to the hydrodynamic model is not covered by those four: the source term must be written after the external forcing update and before the flow computation, and writing it around the combined time-stepping call delivers none of the volume. Both simulators written to within a time step here expose the entry points required, by different and non-standard routes---MODFLOW~6 through an interface that extends the standard, and D-Flow FM by publishing the phases of its user time step separately. A simulator offering only the standard interface could not participate in a coupling of this class at all.
+
+Two directions follow. An implicit coupling, in which the exchange is iterated to convergence within a step rather than applied once, is unavailable today for reasons that lie with the simulators and not with the approach: the hydrodynamic and sewer interfaces advance a time step but cannot re-solve one, so two of the three legs offer nothing to iterate upon, and the three codes step at rates differing by up to two orders of magnitude, which leaves the definition of a converged coupled state unsettled. Establishing how the explicit solution depends on the exchange interval, as is done here, is what can be established without it.
+
+The second is that nothing in the approach is particular to these three codes. The coupling resides in the driver, the simulators are used as distributed, and a different combination requires only that each expose the four capabilities and, for an exchange that must occur within a time step, an equivalent sub-time-step entry point. Standardizing that entry point would make this class of coupling portable rather than bespoke, and is the single change to the interfaces that would most extend what can be coupled in memory.
 
 % Journal-specific and expected of most EMS papers: name of software or dataset,
 % developer and contact, year first available, hardware and software required,
