@@ -22,8 +22,17 @@ GRIDS = [("coarse", "#1f77b4", "Coarse, 6,491 cells"),
          ("high", "#d62728", "Fine, 41,091")]
 
 
-def make():
-    ds, source = sed.load_or_refresh()
+def make(refresh=True):
+    """Draw the figure; with refresh=False, read the archive as committed.
+
+    The stage boundary in rebuild_manuscript.py depends on this: redrawing a
+    figure should not quietly recompute its summary just because the
+    simulation output happens to be present.
+    """
+    if refresh:
+        ds, source = sed.load_or_refresh()
+    else:
+        ds, source = xr.open_dataset(sed.NC, decode_timedelta=False), 'archive'
     print("exchange recomputed from results/" if source == "results"
           else "exchange read from archive")
     t = ds["time"].values

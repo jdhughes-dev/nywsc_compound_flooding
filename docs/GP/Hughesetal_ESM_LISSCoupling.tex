@@ -196,7 +196,7 @@ Two cadences operate. On every user time step SWMM is advanced first, so that it
 
 The two directions of this exchange carry different lags. The water levels are averaged over the coupling interval, by equation~\ref{eq:tmean} below, and are the boundary condition for the MODFLOW~6 step spanning that same interval, so they introduce no lag. The boundary flows, in contrast, can only be recovered after MODFLOW~6 has finalized that step, so they are held constant over the \emph{following} coupling interval and lag the hydrodynamics by $\Delta t_c$. That lag is the principal coupling error, and it is what the sweep over coupling intervals reported below is designed to bound. A single MODFLOW~6 step therefore takes its coastal boundary from its own span and its sewer flux from the span before it. The aquifer--sewer seepage is returned on the same schedule as the boundary flows, and so carries the same lag. It is two-way: it is computed from the simulated heads and the water surface in the pipe together, and the same flux is applied to both models with opposite sign, as an inflow to the SWMM junction and an equal withdrawal from the MODFLOW~6 cell, so that mass leaving one model enters the other exactly. Because each exchange uses the state at the end of the preceding operation, the coupling is fully explicit and no iteration is performed within a coupling interval.
 
-\begin{figure}[ht]
+\begin{figure}[htbp]
 \centering
 \widefig{figures/coupling_sequence.pdf}
 \caption{Model time steps, order of execution, and state exchanged among the three simulators over two coupling intervals. Bar width is the model time step each simulator integrates: MODFLOW~6 advances the whole coupling interval, $\Delta t_c$, in one step, while SWMM and D-Flow FM tile that span with one bar per user time step, $\Delta t_u$. Lanes are ordered by execution rather than by physical position. Each connector leaves the producing step at the point where the exchanged value is formed and enters the start of the step that consumes it. Repeated user time steps are drawn faded, connector included, and only the leading one is labelled. The exchange break carries no model time---both of its edges have the same tick---and the faded stub at the right is the interval that follows. $Q_j$ is drawn in a neutral color because it is a property of neither model.}
@@ -272,7 +272,7 @@ Averaging is one of two reductions in common use. The other is to sample the D-F
 
 Figure~\ref{fig:reduction} shows what each reduction does to cells of differing wetness. The water level used there is the sum of the three semidiurnal constituents fitted by least squares to the National Oceanic and Atmospheric Administration record at Kings Point, New York (station 8516945, referenced to NAVD 1988), in mid Long Island Sound: \SI{1.110}{\meter} for $M_2$, \SI{0.225}{\meter} for $S_2$, and \SI{0.287}{\meter} for $N_2$. The spring--neap and perigean beat are therefore those of the measured record rather than of a single sinusoid, which matters because it is the beat between that record and the coupling interval that produces the behavior described below. For a cell that is never dry, the conductance is fixed and only the head is at issue, and the trade between aliasing and damping is the whole of it. For an intertidal cell the conductance carries the more consequential difference. Sampled instantaneously, such a cell is reported as either fully connected or entirely disconnected depending on where the sampling instant happens to fall in the tide, so the boundary switches on and off at the beat frequency between the coupling interval and the tide while nothing physical about the cell has changed. The wetted fraction of equation~\ref{eq:tmean} instead reports the partial connection the interval actually contained.
 
-\begin{figure}[ht]
+\begin{figure}[htbp]
 \centering
 \widefig{figures/boundary_reduction.pdf}
 \caption{Reduction of a tidal boundary to one value per coupling interval, for cells wet 100, 75, 50, and 25 percent of the time, at coupling intervals of 2, 8, and 24 hours. Each pair of panels shows the water level and, beneath it, the multiplier applied to the base conductance. Bed elevations are placed at quantiles of the water level to give the stated wetted fractions. Crosses mark coupling intervals for which instantaneous sampling reports the cell dry, so that no boundary is applied at all. The 2-hour interval is below the $M_2$ Nyquist limit of \SI{6.21}{\hour} and the other two are above it.}
@@ -285,7 +285,7 @@ Results are summarized in Figure~\ref{fig:averaging}. At daily coupling, where t
 
 What distinguishes the two error mechanisms is that only one of them is monotonic in the coupling interval. A truncation error grows smoothly as the step is lengthened, and the averaged solution does exactly that, from \SI{0.05}{\milli\meter} at 30 minutes to \SI{2.7}{\milli\meter} at daily coupling. The sampled solution does not: its head error is \SI{1.3}{\milli\meter} at 8 hours, \SI{36.9}{\milli\meter} at 12 hours, and \SI{32.9}{\milli\meter} at 24 hours, so halving the coupling interval from one day to twelve hours makes the solution worse rather than better. Sampling every 12 and every 24 hours folds $M_2$ onto the same 14.8-day beat, and the two carry comparable error; sampling every 8 hours folds it onto a 22.5-hour beat, which the aquifer damps and which costs almost nothing even though 8 hours is already above the Nyquist limit. It is the period onto which the constituent is aliased, rather than the length of the interval or the crossing of the limit in itself, that sets the error. Because a coupling interval is normally chosen for computational cost rather than for its relation to the tide, and because the penalty cannot be relied upon to fall as the interval is shortened, averaging is used throughout this work.
 
-\begin{figure}[ht]
+\begin{figure}[htbp]
 \centering
 \widefig{figures/boundary_averaging.pdf}
 \caption{Error in the coupled solution relative to a 15-minute reference simulation, for the two reductions of the D-Flow FM boundary, on the coarse grid. (A) simulated groundwater head, (B) aquifer--sewer seepage, (C) sewer discharge tracer, and (D) the 99.99th percentile of the sewer tracer, as a percent departure from the reference shown dashed. The first five days are excluded as model spin-up. The vertical rule is the Nyquist limit for the $M_2$ constituent, \SI{6.21}{\hour}. The sampled head error in (A) is not monotonic in the coupling interval: it is larger at 12 hours than at 24, because both intervals alias $M_2$ onto the same 14.8-day beat, whereas the 8-hour interval aliases it onto a 22.5-hour beat that the aquifer damps. The averaged error grows smoothly throughout, as a truncation error does. Panel (D) is an upper-tail percentile rather than the maximum of the field, which falls in a single cell and is not a domain-wide measure.}
@@ -366,7 +366,7 @@ The coupling is exercised on the Greenport sewer network described above. The gr
 
 
 
-\begin{figure}[ht]
+\begin{figure}[htbp]
 \centering
 \widefig{figures/coupling_region.pdf}
 \caption{The coupling region at the three hydrodynamic resolutions: (A) coarse, (B) medium, and (C) fine D-Flow FM meshes. The MODFLOW~6 coastal boundary cells and the Greenport sewer network are drawn in every panel because they are identical in every simulation; the groundwater model occupies the area those boundary cells enclose. Only the hydrodynamic mesh differs among the three. The meshes extend well beyond the area shown, spanning Long Island Sound, of which the coupling region is a corner. Base map tiles courtesy of the U.S. Geological Survey.}
@@ -395,14 +395,14 @@ That asymmetry is the practical result of this work. The error incurred by a lon
 
 Run times were measured on a single workstation with the simulations executed sequentially. Run-to-run variation is a few percent, which is the reason several medium-grid points in Figure~\ref{fig:cost}A fall marginally below their own daily-coupling baseline, and the reason the spread between the two reductions at a given grid should be read as scatter rather than as a property of the reduction.
 
-\begin{figure}[ht]
+\begin{figure}[htbp]
 \centering
 \widefig{figures/sewer_exchange.pdf}
 \caption{Aquifer--sewer exchange simulated by the three D-Flow FM grids at a 15-minute coupling interval under the averaged coastal boundary. (A) cumulative net exchange into the sewer, annotated with the infiltration rate each grid settles at, in gallons per day per inch of pipe diameter per mile; positive is infiltration. (B) percentage of the 244 coupled junctions standing below the water table and therefore exchanging, plotted at every coupling step so that the tidal swing is visible. The first five days, shaded, are excluded from the reported rates as model spin-up. The MODFLOW~6 and SWMM models are identical in the three simulations and the bulk pipe-wall leakance is the same, so the differences are those of hydrodynamic resolution alone.}
 \label{fig:sewer}
 \end{figure}
 
-\begin{figure}[ht]
+\begin{figure}[htbp]
 \centering
 \widefig{figures/coupling_cost.pdf}
 \caption{Cost of the exchange interval, for both reductions of the D-Flow FM boundary on the three grids. (A) run time relative to that series' own daily-coupling simulation. (B) additional run time against additional coupling steps, each series referred to its own daily-coupling simulation rather than to a fitted intercept, so that the collapse shown is a property of the measurements; the line is the pooled marginal cost through the origin. The vertical rule in (A) is the Nyquist limit for the $M_2$ constituent, \SI{6.21}{\hour}. Coupling more frequently costs approximately the same number of seconds per exchange on every grid, because the MODFLOW~6 and SWMM models being solved are identical; what differs is the hydrodynamic cost that expense is measured against.}

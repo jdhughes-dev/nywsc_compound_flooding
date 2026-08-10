@@ -52,6 +52,12 @@ COUPLING_HOURS = [24.0, 8.0, 4.0, 2.0, 1.0, 0.5, 0.25]
 
 PRESERVE_SUFFIX = "_mf650bc"
 
+# For the progress display only. Cells identify the grid at a glance; the typical
+# minutes are measured medians from this study's own logs and are used solely to
+# estimate what is left, rescaled by how the runs actually go.
+CELLS = {"coarse": 6491, "medium": 16666, "high": 41091}
+TYPICAL_MIN = {"coarse": 45.0, "medium": 102.0, "high": 253.0}
+
 
 def modflow_version_of(results_ws):
     """MODFLOW version string recorded in a finished scenario, or None."""
@@ -147,21 +153,46 @@ def main():
                 todo.append((res, hours, ws, have))
 
     for res, hours, ws, have in done:
-        print(f"  skip  {ws.name:<26} already at {have}")
+        print(f"  skip  {ws.name:<30} already at {have}")
     print()
     for res, hours, ws, have in todo:
-        print(f"  RUN   {ws.name:<26} currently {have or 'not run'}")
-    print(f"\n{len(todo)} to run, {len(done)} already current")
+        print(f"  RUN   {ws.name:<30} {CELLS.get(res, 0):>6,} cells  "
+              f"{n_conn:>3} junctions  {24.0 / hours:>5.1f} exchanges/day  "
+              f"currently {have or 'not run'}")
+    by_res = {}
+    for res, *_ in todo:
+        by_res[res] = by_res.get(res, 0) + 1
+    plan = ", ".join(f"{n} on {r}" for r, n in by_res.items())
+    print(f"\n{len(todo)} to run ({plan}), {len(done)} already current")
+    if todo:
+        est = sum(TYPICAL_MIN.get(r, 60.0) for r, *_ in todo)
+        print(f"rough estimate {est / 60.0:.1f} h at "
+              + ", ".join(f"{TYPICAL_MIN.get(r, 60):.0f} min/{r}" for r in by_res))
 
     if args.dry_run or not todo:
         return 0
 
     t_sweep = time.perf_counter()
     failed = []
+    done_min = []
     for i, (res, hours, ws, _) in enumerate(todo, 1):
         tag = get_modflow_coupling_tag(hours)
+        # Enough on one screen to answer "what is running and how long is left"
+        # without going back to the plan: which grid and how fine, how many sewer
+        # connections, how often they exchange, and where in the sweep this is.
+        remaining = sum(TYPICAL_MIN.get(r, 60.0) for r, *_ in todo[i - 1:])
+        if done_min:
+            scale = sum(done_min) / sum(TYPICAL_MIN.get(r, 60.0)
+                                        for r, *_ in todo[:i - 1])
+            remaining *= scale
         print("\n" + "=" * 74)
-        print(f"[{i}/{len(todo)}] {ws.name}   {datetime.datetime.now():%Y-%m-%d %H:%M:%S}")
+        print(f"[{i}/{len(todo)}]  {res} grid, {CELLS.get(res, 0):,} cells  |  "
+              f"{n_conn} junctions  |  {tag} coupling, "
+              f"{24.0 / hours:.1f} exchanges/day")
+        print(f"         {ws.name}")
+        print(f"         start {datetime.datetime.now():%Y-%m-%d %H:%M:%S}  |  "
+              f"elapsed {(time.perf_counter() - t_sweep) / 3600.0:4.1f} h  |  "
+              f"est. remaining {remaining / 60.0:4.1f} h")
         print("=" * 74, flush=True)
 
         # 1. preserve any prior result -- results/ is not version controlled
@@ -185,6 +216,7 @@ def main():
             cwd=str(HERE),
         ).returncode
         mins = (time.perf_counter() - t0) / 60.0
+        done_min.append(mins)
         if rc != 0:
             print(f"  FAILED after {mins:.1f} min (exit {rc}) - continuing", flush=True)
             failed.append(ws.name)

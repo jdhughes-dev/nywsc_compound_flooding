@@ -13,6 +13,7 @@ import sys
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
+import xarray as xr
 import flopy.plot.styles as styles
 
 sys.path.insert(0, str(pl.Path(__file__).resolve().parent))
@@ -41,8 +42,17 @@ def series(df, grid, reduction):
     return sub if len(sub) >= 4 else None
 
 
-def make():
-    ds, source = ccd.load_or_refresh()
+def make(refresh=True):
+    """Draw the figure; with refresh=False, read the archive as committed.
+
+    The stage boundary in rebuild_manuscript.py depends on this: redrawing a
+    figure should not quietly recompute its summary just because the
+    simulation output happens to be present.
+    """
+    if refresh:
+        ds, source = ccd.load_or_refresh()
+    else:
+        ds, source = xr.open_dataset(ccd.NC, decode_timedelta=False), 'archive'
     print("timings recomputed from logs/" if source == "logs"
           else "timings read from archive")
     df = ds.to_dataframe().reset_index().dropna(subset=["minutes"])
@@ -126,4 +136,4 @@ def make():
 
 
 if __name__ == "__main__":
-    make()
+    make(refresh="--no-refresh" not in sys.argv)
