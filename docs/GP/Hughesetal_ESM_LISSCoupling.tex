@@ -136,7 +136,18 @@ network models using library interfaces}
 %
 %   https://www.sciencedirect.com/journal/environmental-modelling-and-software/publish/guide-for-authors
 \begin{abstract}
-Hydrodynamic and hydrologic processes that span the coast, the subsurface, and engineered infrastructure are simulated by codes developed independently of one another, each with its own numerical formulation, grid, model time step, and control interface. An approach is described in which three such codes---a coastal hydrodynamic model, a groundwater flow model, and a sewer network model---are loaded as libraries into a single process and exchange state in memory at a fixed interval throughout a simulation, so that a self-consistent coupled solution is obtained from one simulation. None of the codes is modified: each is used as distributed and driven through its published interface, so the coupling does not fork a source tree or reimplement one process inside another, and it survives a new release of any component. Two of the three implement the Basic Model Interface and the third does not, which is shown to be immaterial: what a simulator must supply is the ability to be initialized, advanced and finalized as a shared library, and to have named state read and written, whatever those calls are named. Exchange formulations are given for each pair of models. Particular attention is given to returning the sewer model outfall discharge to the hydrodynamic model as a sewer discharge tracer source, which places the strongest requirement on the interface: the transfer has to occur between the external forcing update and the flow computation, a window the combined time-stepping entry point does not expose, and the value applied over a model time step is formed from the cumulative outfall volume so that mass is conserved exactly rather than sampled. The approach is demonstrated on a combined sewer network on eastern Long Island, New York, where groundwater infiltration to the sewer is modulated by the tide, and the sensitivity of the coupled solution to the exchange interval is evaluated across three hydrodynamic grid resolutions.
+Coastal, subsurface, and infrastructure processes are simulated by independently
+developed codes. Three unmodified codes---a coastal hydrodynamic model, a groundwater
+flow model, and a sewer network model---are loaded as libraries into one process and
+exchange state in memory. Returning sewer discharge to the hydrodynamic model demands
+most of the interface: a transfer within a model time step, undefined by the Basic
+Model Interface. It is demonstrated where a tidally modulated water table
+infiltrates a combined sewer, across three grids and intervals from 15 minutes to one
+day. The coastal boundary must represent the interval, not the
+instant: sampling it costs an order of magnitude in head at daily exchange.
+The error is not monotonic, being larger at 12 hours than at 24, following the period
+the dominant tidal constituent aliases onto. Exchanging often is inexpensive, so the
+interval is better chosen from the tide than from run time.
 \end{abstract}
 
 \begin{keyword}
@@ -449,9 +460,14 @@ required.
 
 The coupling itself is Python and is the only software new to this work. % TODO: archive the coupling code and cite the DOI here rather than a bare repository URL.
 
-% TODO: EMS is Option C for research data -- the model input and the simulation
-% output must be deposited in a repository and cited, or a statement given
-% explaining why they cannot be shared. Neither is done yet.
+The model input and the simulation output are published by the U.S. Geological Survey as a data release on ScienceBase, and are cited there rather than reproduced here. % TODO: replace with the ScienceBase DOI and a \citep of the data release once it is published. EMS is Option C for research data, so the deposit must be cited; "contact the author" is not accepted.
+
+% Sizes, for the data release description: the simulation output is approximately
+% 240 GB retained across 46 scenarios, of which the D-Flow FM map files are excluded
+% -- they are deleted after each run once the tracer has been verified, and are
+% reproducible from the model input. The archived summaries the figures are drawn
+% from are five netCDF files totalling under 1 MB and are included in the coupling
+% code repository rather than the data release.
 
 \section*{CRediT authorship contribution statement}
 
