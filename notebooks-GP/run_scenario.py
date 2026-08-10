@@ -53,6 +53,7 @@ OVERRIDES = {
     "resolution": "resolution",
     "mf_couple_freq_hours": "coupling_hours",
     "n_junctions": "junctions",
+    "junction_seed": "junction_seed",
     "pipe_leakance": "leakance",
     "smoke_test_days": "smoke_days",
     "scenario_suffix": "scenario_suffix",
@@ -161,6 +162,15 @@ def main():
              "'_smoke<N>d'; omit for the full run",
     )
     p.add_argument(
+        "--junction-seed",
+        type=int,
+        default=0,
+        help="seed for the SWMM junction draw; only has an effect when --junctions "
+             "is below the number available. A non-zero seed tags the scenario "
+             "'_s<seed>' automatically, so ensemble members cannot overwrite each "
+             "other. 0 is the value that was hard-coded before this existed",
+    )
+    p.add_argument(
         "--scenario-suffix",
         default="",
         help="append to the scenario id so a variant run lands beside an existing "
@@ -211,11 +221,16 @@ def main():
     # n_connections is resolved by the spatial join, not by --junctions, and the
     # scenario name / tracer bc / results path all key on it.  Resolve it here so
     # the guards below check the real scenario rather than an assumed count.
-    n_connections = intersect_points_grid(
+    n_connections, _, _, _, possible = intersect_points_grid(
         domain=args.domain,
         boundary_condition=args.boundary_condition,
         n_junctions=args.junctions,
-    )[0]
+        seed=args.junction_seed,
+    )
+    # The seed only selects anything when the draw is a subsample. Asking for the
+    # whole set returns every junction whatever the seed, so a seed tag there would
+    # invent a distinct scenario for an identical model.
+    subsampled = n_connections < len(possible)
 
     tag = get_modflow_coupling_tag(args.coupling_hours)
     results_ws = get_results_path(
@@ -227,6 +242,13 @@ def main():
         results_ws = results_ws.parent / scenario
     if args.scenario_suffix:
         scenario += args.scenario_suffix
+        results_ws = results_ws.parent / scenario
+    # Applied here rather than left to --scenario-suffix, because an ensemble whose
+    # members are distinguished by hand is an ensemble whose members eventually
+    # overwrite one another. Seed 0 is unlabelled so that every scenario produced
+    # before the seed existed keeps its name.
+    if subsampled and args.junction_seed != 0:
+        scenario += f"_s{args.junction_seed}"
         results_ws = results_ws.parent / scenario
 
     # The sewer forcing is written through the API every user time step, so no

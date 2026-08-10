@@ -16,6 +16,8 @@ def intersect_points_grid(
     n_junctions=1000,
     set_layers=True,
     crs="epsg:4456",
+    seed=0,
+    junction_names=None,
 ):
     """
     Intersects specified points with a grid polygon and retrieves information about junctions.
@@ -40,6 +42,14 @@ def intersect_points_grid(
         The file path to the shapefile containing point data. If None, a default path is used.
     n_junctions : int
         The desired number of junctions to sample from the point data. Default is 12.
+    seed : int
+        Random seed for the junction draw. Default is 0, the value that used to be
+        hard-coded. Only matters when n_junctions is below the number available;
+        drawing the whole set returns every junction regardless.
+    junction_names : sequence of str, optional
+        Use exactly these junctions instead of drawing. Takes precedence over
+        n_junctions and seed, and is the reproducible way to restate a selection,
+        since pandas does not guarantee .sample() is stable across versions.
     set_layers : bool
         Flag for setting junction layers based model layers and elevations, 
         otherwise just add to layer 1. Default is True.
@@ -113,14 +123,33 @@ def intersect_points_grid(
     )
 
     # select junctions randomly, or take all if n_junctions is large enough
-    if n_junctions > len(possible_junctions):
+    if junction_names is None and n_junctions > len(possible_junctions):
         print("# of junctions selected greater than # of point features")
         n_junctions = len(possible_junctions)
         print(f"new n_junctions == {n_junctions}")
 
-    selected_junctions = possible_junctions.sample(
-        n_junctions, random_state=0
-    )
+    # seed defaults to 0, which is the value that was hard-coded here, so every
+    # result produced before the argument existed reproduces unchanged. It only has
+    # an effect below the full set: sampling all 244 of 244 returns every junction
+    # whatever the seed, differing at most in row order.
+    if junction_names is not None:
+        # An explicit list beats re-deriving the draw. pandas does not promise that
+        # .sample() is stable across versions, so random_state alone reproduces a
+        # selection on this install and not necessarily on a co-author's in a year;
+        # the names do.
+        missing = sorted(set(junction_names) - set(possible_junctions[pts_name_col]))
+        assert not missing, f"junctions not present in the shapefile/SWMM join: {missing}"
+        selected_junctions = possible_junctions.set_index(
+            pts_name_col, drop=False
+        ).loc[list(junction_names)].reset_index(drop=True)
+        n_junctions = len(selected_junctions)
+        print(f"junction selection taken from an explicit list of {n_junctions}")
+    else:
+        selected_junctions = possible_junctions.sample(
+            n_junctions, random_state=seed
+        )
+        print(f"junction selection: {n_junctions} of {len(possible_junctions)}, "
+              f"seed {seed}")
 
     # join desired junctions with model grid
     mf6_swmm_connect = (
