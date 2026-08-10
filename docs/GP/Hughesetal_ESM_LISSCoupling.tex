@@ -458,7 +458,7 @@ used, driven through the \texttt{PySWMM} Python interface, version 2.0.1. All th
 are used as shared libraries on 64-bit Windows and Linux; no special hardware is
 required.
 
-The coupling itself is Python and is the only software new to this work. % TODO: archive the coupling code and cite the DOI here rather than a bare repository URL.
+The coupling itself is Python and is the only software new to this work. It comprises the driver that advances the three simulators and moves state between them, and the analysis and figure-generation code from which every figure in this paper is drawn; the latter rebuilds each figure from archived summaries without the simulation output, so the figures can be reproduced from the software release alone. Initial drafts of that code were produced with a generative artificial intelligence tool and were subsequently reviewed and tested by the authors, as described below. % TODO: archive the coupling code and cite the DOI here rather than a bare repository URL.
 
 The model input and the simulation output are published by the U.S. Geological Survey as a data release on ScienceBase, and are cited there rather than reproduced here. % TODO: replace with the ScienceBase DOI and a \citep of the data release once it is published. EMS is Option C for research data, so the deposit must be cited; "contact the author" is not accepted.
 
@@ -479,16 +479,30 @@ The model input and the simulation output are published by the U.S. Geological S
 
 \section*{Declaration of generative AI and AI-assisted technologies in the manuscript preparation process}
 
-% TODO: an author decision, not a drafting one. The guide requires this section
-% when generative AI tools were used in preparing the manuscript, placed before the
-% reference list, and it is omitted entirely only if there is nothing to disclose.
-% Elsevier's wording is: "During the preparation of this work the author(s) used
-% [NAME OF TOOL] in order to [REASON]. After using this tool/service, the author(s)
-% reviewed and edited the content as needed and take(s) full responsibility for the
-% content of the published article." The guide separately notes that AI tools may be
-% used for conceptual diagrams and for data visualizations derived from underlying
-% data by reproducible methods, and that such use should be disclosed in the image
-% caption as well as here.
+During the preparation of this work the authors used Claude (Anthropic) to produce initial drafts of the manuscript text and of the analysis and figure-generation code in the accompanying software release, and to perform initial analysis of the simulation output. All simulation results were produced by MODFLOW~6, D-Flow FM, and SWMM. After using this tool, the authors reviewed, tested, and edited the content as needed and take full responsibility for the content of the published article.
+
+% Scope is deliberately broader than Elsevier's template, which is written for a tool
+% used to improve readability and language. USGS Fundamental Science Practices
+% additionally require that the use of generative AI in producing CODE be disclosed,
+% and that AI use be described in the information product; the software statement
+% above carries the matching sentence. See the FSP FAQ on restrictions on using
+% generative AI, and SM 502.10, which reserves authorship to human researchers -- no
+% AI tool is or could be listed as an author here.
+%
+% The sentence naming the three simulators is not filler. It states that no quantity
+% reported in this paper originated in a language model: every number comes from the
+% physics codes, through analysis code that is archived and re-runnable, and every
+% figure rebuilds from committed archives.
+%
+% NOT disclosed in figure captions, deliberately. The guide asks for caption-level
+% disclosure of AI-assisted imagery, but distinguishes visualizations derived from
+% underlying data by reproducible methods. All six figures are the latter: scripts in
+% the software release, drawing archived summaries. A caption note would imply
+% generated imagery, which would be false.
+%
+% STILL TO CONFIRM, and not a drafting matter: that the tool used is approved for use
+% through the USGS Associate Chief Information Officer and Department of the Interior
+% process, which FSP requires before deployment rather than at disclosure.
 
 \section*{Acknowledgments}
 
