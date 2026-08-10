@@ -9,6 +9,7 @@ import sys
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
+import xarray as xr
 import flopy.plot.styles as styles
 
 sys.path.insert(0, str(pl.Path(__file__).resolve().parent))
@@ -38,6 +39,14 @@ PANELS = {"head": ("head_inst", "head_mean", "Aquifer head RMSE, in millimeters"
           "amp": ("p9999_inst", "p9999_mean",
                   "Sewer tracer 99.99th percentile, percent from reference")}
 
+# Coastal exchange is computed and archived as coast_inst/coast_mean but is NOT
+# plotted here, and should not be. qext is the flux formed directly from the reduced
+# boundary value, so scoring it against a reference built under one reduction mostly
+# measures which reduction the run used rather than how accurate it is: against the
+# sampled reference the sampled runs score 0.0017 to 0.43 and the averaged ones 0.66
+# to 6.5, and merely changing to the averaged reference moves the sampled column to a
+# nearly constant 0.25 to 0.39. Head and seepage do not behave that way because they
+# are the aquifer's response rather than the boundary condition restated.
 MOSAIC = [["head", "seep"], ["trac", "amp"]]
 BOTTOM = set(MOSAIC[-1])
 
@@ -49,12 +58,22 @@ def output_path(grid):
     return FIGURES / f"{stem}.pdf"
 
 
-def make(grid=bad.DEFAULT_GRID):
+def make(grid=bad.DEFAULT_GRID, refresh=True):
+    """Draw the figure; with refresh=False, read the archive without recomputing.
+
+    Recomputing reads every tracer and every qext series, tens of gigabytes per
+    grid, which is the right default when the simulation output has changed and an
+    absurd price for adjusting a label. --no-refresh is for the latter.
+    """
     out = output_path(grid)
-    ds, source = bad.load_or_refresh(grid=grid)
-    print("statistics recomputed from results/" if source == "results"
-          else f"statistics read from archive "
-               f"({len(bad.missing(grid=grid))} runs absent)")
+    if refresh:
+        ds, source = bad.load_or_refresh(grid=grid)
+        print("statistics recomputed from results/" if source == "results"
+              else f"statistics read from archive "
+                   f"({len(bad.missing(grid=grid))} runs absent)")
+    else:
+        ds = xr.open_dataset(bad.archive_path(grid), decode_timedelta=False)
+        print(f"statistics read from {bad.archive_path(grid).name} without recomputing")
 
     sub = ds.sel(ref=REF)
     order = np.argsort(ds["hours"].values)
@@ -138,4 +157,6 @@ def make(grid=bad.DEFAULT_GRID):
 
 
 if __name__ == "__main__":
-    make(sys.argv[1] if len(sys.argv) > 1 else bad.DEFAULT_GRID)
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    make(args[0] if args else bad.DEFAULT_GRID,
+         refresh="--no-refresh" not in sys.argv)

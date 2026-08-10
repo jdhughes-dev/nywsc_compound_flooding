@@ -94,7 +94,8 @@ CONFIG = {
 DEFAULT_GRID = "coarse"
 
 UNITS = {"head_inst": "mm", "head_mean": "mm", "seep_inst": "ft3/d",
-         "seep_mean": "ft3/d", "trac_inst": "1", "trac_mean": "1",
+         "seep_mean": "ft3/d", "coast_inst": "ft3/d", "coast_mean": "ft3/d",
+         "coast_ratio": "1", "trac_inst": "1", "trac_mean": "1",
          "peak_inst": "1", "peak_mean": "1", "head_ratio": "1",
          "seep_ratio": "1", "trac_ratio": "1", "p9999_inst": "1",
          "p9999_mean": "1", "p999_inst": "1", "p999_mean": "1"}
@@ -138,6 +139,26 @@ def _seep(results, run, dt):
     z = np.load(results / run / "swmm_q.npz")
     ks = sorted(z.files, key=int)
     return (np.arange(len(ks)) + 1) * dt, np.array([z[k] for k in ks])
+
+
+def _coastal(results, run, dt):
+    """Total coastal exchange at each coupling step, shaped like _seep's return.
+
+    qext.npz holds the flux returned to every D-Flow FM cell, so a whole run is
+    8,544 by 41,091 on the fine grid -- 2.8 GB, the size of a tracer field. It is
+    summed to a domain total as it is read, which is both the quantity meant by
+    "coastal exchange" and the only form of it that fits alongside everything else
+    this module holds.
+
+    The total is used rather than the time-integrated net: the net is a small
+    residual of opposing tidal fluxes, about half the gross, so ratios taken
+    against it are unstable. The per-step total oscillates with the tide and does
+    not cancel.
+    """
+    with np.load(results / run / "qext.npz") as z:
+        keys = sorted(z.files, key=int)
+        total = np.array([z[k].sum() for k in keys])
+    return (np.arange(len(keys)) + 1) * dt, total[:, None]
 
 
 def _tracer(results, run):
@@ -216,6 +237,7 @@ def compute(results=RESULTS, grid=DEFAULT_GRID):
     for rlabel, rrun in refs.items():
         rht, rhv = _heads(results, rrun)
         rst, rsv = _seep(results, rrun, DT_REF)
+        rct, rcv = _coastal(results, rrun, DT_REF)
         for iv, (dt, r_i, r_m) in runs.items():
             rows.append(dict(
                 ref=rlabel, interval=iv, hours=dt * 24,
@@ -223,6 +245,8 @@ def compute(results=RESULTS, grid=DEFAULT_GRID):
                 head_mean=_rmse(rht, rhv, *_heads(results, r_m)) * FT2MM,
                 seep_inst=_rmse(rst, rsv, *_seep(results, r_i, dt)),
                 seep_mean=_rmse(rst, rsv, *_seep(results, r_m, dt)),
+                coast_inst=_rmse(rct, rcv, *_coastal(results, r_i, dt)),
+                coast_mean=_rmse(rct, rcv, *_coastal(results, r_m, dt)),
                 trac_inst=trac[iv, "inst", rlabel],
                 trac_mean=trac[iv, "mean", rlabel],
                 peak_inst=trac[iv, "inst", "peak"],
@@ -233,7 +257,7 @@ def compute(results=RESULTS, grid=DEFAULT_GRID):
                 p999_mean=trac[iv, "mean", "p999"],
             ))
     stats = pd.DataFrame(rows)
-    for q in ("head", "seep", "trac"):
+    for q in ("head", "seep", "coast", "trac"):
         stats[f"{q}_ratio"] = stats[f"{q}_inst"] / stats[f"{q}_mean"]
 
     ds = stats.set_index(["ref", "interval"]).to_xarray()
