@@ -61,7 +61,16 @@ CONFIG = {
             "01.00H": (1 / 24, "gp_coarse_01.00H_n244", "gp_coarse_01.00H_n244_meanbnd"),
             "02.00H": (2 / 24, "gp_coarse_02.00H_n244_instbnd", "gp_coarse_02.00H_n244_meanbnd"),
             "04.00H": (4 / 24, "gp_coarse_04.00H_n244_instbnd", "gp_coarse_04.00H_n244_meanbnd"),
+            # 6 h and 12 h are the two divisors of a day the sweep skipped, run later
+            # to place the transition. 6 h still resolves M2, just; 12 h aliases it
+            # onto the same 14.77-day beat as daily coupling, with the same averaging
+            # gain, so 12 h against 24 h separates an error that grows with the
+            # interval from one set by the alias. They are coarse-only -- neither the
+            # midres nor the highres sweep has them, which is why TAGS, shared by
+            # those two grids, is not where they belong.
+            "06.00H": (6 / 24, "gp_coarse_06.00H_n244_instbnd", "gp_coarse_06.00H_n244_meanbnd"),
             "08.00H": (8 / 24, "gp_coarse_08.00H_n244", "gp_coarse_08.00H_n244_meanbnd"),
+            "12.00H": (12 / 24, "gp_coarse_12.00H_n244_instbnd", "gp_coarse_12.00H_n244_meanbnd"),
             "01.00D": (1.0, "gp_coarse_01.00D_n244", "gp_coarse_01.00D_n244_meanbnd"),
         },
     ),

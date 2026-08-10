@@ -26,13 +26,19 @@ C_I, C_M = "#d62728", "#1f77b4"
 REF = "15M instant"
 
 
+# Panel D was the maximum over the whole space-time field until it was found to be a
+# single cell -- 1669 on the coarse grid in every run, at 7.9 times the 99.99th
+# percentile, and moving by tens of percent while the field around it did not move at
+# all. It is now the 99.99th percentile, which no single cell can carry, so the panel
+# and the text say the same thing about the tracer.
 PANELS = {"head": ("head_inst", "head_mean", "Aquifer head RMSE, in millimeters"),
           "seep": ("seep_inst", "seep_mean",
                    "Sewer seepage RMSE, in cubic feet per day"),
           "trac": ("trac_inst", "trac_mean", "Sewer tracer RMSE, dimensionless"),
-          "peak": ("peak_inst", "peak_mean", "Peak sewer tracer concentration")}
+          "amp": ("p9999_inst", "p9999_mean",
+                  "Sewer tracer 99.99th percentile, percent from reference")}
 
-MOSAIC = [["head", "seep"], ["trac", "peak"]]
+MOSAIC = [["head", "seep"], ["trac", "amp"]]
 BOTTOM = set(MOSAIC[-1])
 
 
@@ -54,7 +60,7 @@ def make(grid=bad.DEFAULT_GRID):
     order = np.argsort(ds["hours"].values)
     h = ds["hours"].values[order]
     s = {v: sub[v].values[order] for v in sub.data_vars}
-    peak_ref = float(ds.attrs["peak_reference_concentration"])
+    amp_ref = float(ds.attrs["p9999_reference_concentration"])
 
     # Ticks are the intervals actually simulated, so they follow the archive rather
     # than a hard-coded list that would silently drop a point when one is added. The
@@ -71,21 +77,35 @@ def make(grid=bad.DEFAULT_GRID):
                                       sharex=True)
         for letter, (key, (ci, cm, lab)) in zip("ABCD", PANELS.items()):
             ax = axd[key]
-            ax.plot(h, s[ci], "o-", color=C_I, lw=1.2, ms=4, label="instantaneous")
-            ax.plot(h, s[cm], "s-", color=C_M, lw=1.2, ms=4, label="time-averaged")
+            yi, ym = s[ci], s[cm]
+            if key == "amp":
+                # Plotted as a percent departure, because the absolute values differ
+                # by a factor of four between grids and the panel has to be read the
+                # same way on each.
+                yi = 100.0 * (yi - amp_ref) / amp_ref
+                ym = 100.0 * (ym - amp_ref) / amp_ref
+            ax.plot(h, yi, "o-", color=C_I, lw=1.2, ms=4, label="instantaneous")
+            ax.plot(h, ym, "s-", color=C_M, lw=1.2, ms=4, label="time-averaged")
             ax.set_xscale("log")
-            if key != "peak":
-                # The peak panel is a concentration against a reference value, not an
-                # error that spans decades, so a log scale would flatten the departure
-                # that is the whole point of it.
+            if key != "amp":
+                # The amplitude panel is a concentration against a reference value,
+                # not an error that spans decades, so a log scale would flatten the
+                # departure that is the whole point of it.
                 ax.set_yscale("log")
             else:
-                ax.axhline(peak_ref, color="0.35", lw=0.9, linestyle=(0, (3, 2)),
-                           zorder=1)
-                ax.annotate("reference", xy=(0.02, peak_ref),
+                ax.axhline(0.0, color="0.35", lw=0.9, linestyle=(0, (3, 2)), zorder=1)
+                ax.annotate("reference", xy=(0.02, 0.0),
                             xycoords=("axes fraction", "data"),
                             xytext=(0, 3), textcoords="offset points",
                             fontsize=6.5, color="0.35")
+                # A floor on the span, so that a tracer which does not respond reads
+                # as flat instead of being magnified to fill the panel. On the coarse
+                # grid the entire spread is 1.3 percent, which autoscaling turns into
+                # a picture of structure that is not there.
+                lo = float(min(yi.min(), ym.min()))
+                hi = float(max(yi.max(), ym.max()))
+                mid, half = 0.5 * (lo + hi), max(2.5, 0.65 * (hi - lo))
+                ax.set_ylim(mid - half, mid + half)
             ax.axvline(NYQUIST_H, color="0.35", lw=0.9, linestyle=(0, (3, 2)), zorder=1)
             ax.set_xticks(TICK_H)
             ax.set_xticklabels(TICK_LAB, fontsize=7)
