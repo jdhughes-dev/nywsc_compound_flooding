@@ -44,19 +44,23 @@ def make():
         for ax in (axA, axB):
             ax.axvspan(0, spin, color="0.85", zorder=0, lw=0)
             ax.tick_params(labelsize=7, top=False)
-        # Top of the panel: the curves all leave the origin, so the bottom-left is
-        # the one place this label cannot go.
-        axA.annotate("spin-up", xy=(spin, 0.94), xycoords=("data", "axes fraction"),
-                     xytext=(3, 0), textcoords="offset points", fontsize=6.5,
-                     color="0.35", va="top")
+        # Turned into the shaded band rather than set beside it, which keeps it off
+        # the curves entirely.
+        axA.annotate("spin-up", xy=(spin / 2.0, 0.5),
+                     xycoords=("data", "axes fraction"), rotation=90,
+                     ha="center", va="center", fontsize=6.5, color="black")
 
-        # The rate each grid settles at, placed against its own curve.
-        for grid, color, _ in GRIDS:
+        # Gathered in the upper left instead of tagged onto the curve ends: the
+        # medium and fine curves finish within 8 percent of each other, so labels
+        # placed there sat on top of one another and on the lines.
+        axA.annotate("net infiltration, gallons per day\nper inch-diameter per mile",
+                     xy=(0.03, 0.95), xycoords="axes fraction", va="top",
+                     fontsize=6.5, color="0.35")
+        for i, (grid, color, label) in enumerate(GRIDS):
             r = float(ds["rate_gpd_in_mi"].sel(grid=grid))
-            cum = ds["cum_net_ft3"].sel(grid=grid).values
-            axA.annotate(f"{r:.0f} gpd/in-dia/mi", xy=(t[-1], cum[-1] / 1000.0),
-                         xytext=(-4, 3), textcoords="offset points",
-                         fontsize=6.5, color=color, ha="right")
+            axA.annotate(f"{label.split(',')[0]}  {r:.0f}",
+                         xy=(0.03, 0.80 - 0.085 * i), xycoords="axes fraction",
+                         va="top", fontsize=6.5, color=color)
 
         styles.heading(ax=axA, letter="A", fontsize=7.5,
                        heading="Cumulative net exchange into the sewer, "

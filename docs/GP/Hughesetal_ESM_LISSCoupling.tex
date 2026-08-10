@@ -361,22 +361,10 @@ The freedom is bounded by what the interfaces expose, as the preceding paragraph
 
 \section{Demonstration}
 
-The coupling is exercised on the Greenport sewer network described above. The groundwater model is a cutout of the regional Long Island aquifer system model \citep{walter2024longisland}, which simulates the period 1900 to 2019 with MODFLOW~6 including the position of the saltwater interface. Three D-Flow FM grids of increasing resolution were used, spanning the same domain and driven by the same tidal and atmospheric forcing. The groundwater and sewer models are identical across all simulations, so differences among grids reflect the resolution of the coastal water level alone, and differences among exchange intervals reflect the coupling alone. The configurations simulated are summarized in Table~\ref{tab:scenarios}.
+The coupling is exercised on the Greenport sewer network described above. The groundwater model is a cutout of the regional Long Island aquifer system model \citep{walter2024longisland}, which simulates the period 1900 to 2019 with MODFLOW~6 including the position of the saltwater interface. Three D-Flow FM grids of increasing resolution were used---6,491, 16,666, and 41,091 cells---spanning the same domain, sharing a user time step of \SI{300}{\second}, and driven by the same tidal and atmospheric forcing over the same 89-day period. The groundwater and sewer models are identical across all simulations, so differences among grids reflect the resolution of the coastal water level alone, and differences among exchange intervals reflect the coupling alone. Each grid was simulated at seven coupling intervals---15 and 30 minutes and 1, 2, 4, 8, and 24 hours---under both reductions of the coastal boundary, with two further intervals, 6 and 12 hours, added on the coarse grid, giving 46 simulations in total. Every interval divides a day, so that coupling steps coincide with the boundaries of the daily stress periods.
 
-\begin{table}[ht]
-\centering
-\caption{Simulated configurations. Each grid was simulated at seven coupling intervals---15 and 30 minutes and 1, 2, 4, 8, and 24 hours---under both reductions of the coastal boundary, with two further intervals, 6 and 12 hours, added on the coarse grid, giving 46 simulations in total. Every interval divides a day, so that coupling steps coincide with the boundaries of the daily stress periods. The MODFLOW~6 and SWMM models are identical in all of them.}
-\label{tab:scenarios}
-\begin{tabular}{lrrr}
-\toprule
-D-Flow FM grid & Cells & User time step (s) & Simulation period (d) \\
-\midrule
-Coarse  &  6,491 & 300 & 89 \\
-Medium  & 16,666 & 300 & 89 \\
-Fine    & 41,091 & 300 & 89 \\
-\bottomrule
-\end{tabular}
-\end{table}
+
+
 
 \section{Results}
 
