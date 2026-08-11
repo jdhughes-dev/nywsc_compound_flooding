@@ -1,3 +1,27 @@
+"""RETAINED FOR THE RETIRED PJ NOTEBOOKS. Do not use in new work.
+
+This is the earlier version of `swmm_mf_connect`, kept only so that
+
+    notebooks-PJ/_RETIRED_step2_run_dflow-modflow_variable_dt_withswmm.ipynb
+    notebooks-PJ/_RETIRED_step2_run_dflow-modflow_variable_dt_withswmm1min.ipynb
+
+still open and run. Those two are the only importers left in the repository; the
+GP pipeline and every live notebook use `swmm_mf_connect`. Confirm that with
+
+    grep -rl swmm_mf_connect_1 --include=*.ipynb --include=*.py .
+
+before concluding this file is dead and deleting it. It looks unreferenced from
+the GP side alone, and it is not.
+
+The two are NOT interchangeable. `intersect_points_grid` here takes
+`swmm_pts_pth` and no domain, so it cannot address the per-domain, per-boundary
+condition grids; it has no `n_junctions`, `seed` or `junction_names`, so it
+cannot reproduce a junction subset; and its fifth return value is a junction
+DataFrame where the current one returns the full set of possible junctions.
+Anything written against one will not work against the other.
+
+Retire this file when the PJ manuscript is out and its notebooks go, not before.
+"""
 import itertools
 import geopandas as gpd
 import pandas as pd
