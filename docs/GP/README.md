@@ -34,6 +34,13 @@ seven. Font embedding is verified with `pdffonts`, since a figure that fails
 that is rejected at submission rather than at build time. `submission/` is
 derived and is not version controlled.
 
+It also writes `Graphical_Abstract.pdf`, which the journal requires and the
+document does not include. That one is copied after the numbering check rather
+than through it: it is not cited in the `.tex`, so it has no number to be given.
+It is drawn at 13.28 by 5.31 cm, the journal's 1328 by 531 px at 254 dpi and
+just over the 13 by 5 cm it must stay legible at, so it is drawn at the size it
+will be read at rather than at one it will be reduced from.
+
 `--check` reports what is present and whether each archive's inputs are complete.
 Where they are not, the data modules fall back to the committed archive rather than
 overwriting it with a partial recomputation, so `--stage archives` on an incomplete
@@ -115,13 +122,19 @@ reopen as UGRID, so only one exists at a time. Retaining every scenario needs ab
 
 ```
 Hughesetal_ESM_LISSCoupling.tex   the manuscript
-figures/                          the seven figures it includes, as PDF
+figures/                          the seven figures it includes, as PDF, plus
+                                  graphical_abstract.pdf, which it does not
 ../data/GP/*.nc                   the archived summaries the figures are drawn from
 scripts/
   rebuild_manuscript.py           the driver described above
   *_data.py                       compute an archive from results/ or logs/
   make_*_figure.py                draw one figure from an archive
+  make_graphical_abstract.py      draw the graphical abstract from two of them
 ```
+
+The graphical abstract reads the same archives as Figures 3 and 7, and reduces
+them rather than restating them, so it cannot come to disagree with the
+document. It is redrawn whenever the figures are.
 
 Each `*_data.py` writes exactly one archive and each `make_*_figure.py` draws exactly
 one figure, so a single figure can be redrawn on its own. The figure scripts that

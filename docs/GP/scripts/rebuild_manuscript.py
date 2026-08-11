@@ -4,7 +4,7 @@ There are three places a rebuild can start, and which one is possible depends on
 what the person running it has:
 
   document   typeset the PDF from the figures already in figures/
-  figures    redraw all seven figures, then typeset
+  figures    redraw all seven figures and the graphical abstract, then typeset
   archives   recompute the six archives from results/ and logs/, then the above
   everything run the 46 coupled simulations first, then the above
 
@@ -59,6 +59,15 @@ FIGURES = [
     ("make_coupling_cost_figure.py", ["--no-refresh"], "coupling_cost.pdf"),
 ]
 
+# Artwork the journal wants as a separate file and the document does not include.
+# Kept out of FIGURES deliberately: export_submission() numbers FIGURES from the .aux,
+# and anything not cited in the .tex has no number to be given. Drawn every time the
+# figures stage runs, because it reads the same archives as Figures 3 and 7 and would
+# otherwise be the one piece of artwork that could silently fall behind them.
+SUBMISSION_ARTWORK = [
+    ("make_graphical_abstract.py", ["--no-refresh"], "graphical_abstract.pdf"),
+]
+
 # Drawn for the medium and fine grids too. They support statements in the text but
 # are not included in the document, so they are off by default.
 EXTRA_FIGURES = [
@@ -95,6 +104,9 @@ def check():
           f" of {len(ARCHIVES)} present")
     print(f"figures           {sum((DOCS / 'figures' / f[2]).is_file() for f in FIGURES)}"
           f" of {len(FIGURES)} present")
+    print(f"submission art    "
+          f"{sum((DOCS / 'figures' / f[2]).is_file() for f in SUBMISSION_ARTWORK)}"
+          f" of {len(SUBMISSION_ARTWORK)} present")
 
     sys.path.insert(0, str(HERE))
     for mod, label in (("boundary_averaging_data", "boundary averaging"),
@@ -164,17 +176,31 @@ def export_submission():
     for n in sorted(seen):
         print(f"  ok   Figure_{n}.pdf{'':<21} from {seen[n]}")
 
+    # The graphical abstract is required and is not a numbered figure, so it is copied
+    # after the numbering check rather than through it. The name carries the words the
+    # journal uses, because the upload form identifies items by filename.
+    shipped = [out_dir / f"Figure_{n}.pdf" for n in sorted(seen)]
+    ga_src = DOCS / "figures" / "graphical_abstract.pdf"
+    if ga_src.is_file():
+        ga_dst = out_dir / "Graphical_Abstract.pdf"
+        shutil.copy2(ga_src, ga_dst)
+        shipped.append(ga_dst)
+        print(f"  ok   Graphical_Abstract.pdf{'':<11} from {ga_src.name}")
+    else:
+        print("  FAIL  graphical_abstract.pdf is missing -- run the figures stage")
+        ok = False
+
     # The journal requires vector art with fonts embedded. The scripts set
     # pdf.fonttype 42 through flopy's style, so this should always pass; it is
     # checked rather than assumed because a figure that fails is rejected at
     # submission rather than at build time.
     try:
-        for n in sorted(seen):
-            out = subprocess.run(["pdffonts", str(out_dir / f"Figure_{n}.pdf")],
+        for path in shipped:
+            out = subprocess.run(["pdffonts", str(path)],
                                  capture_output=True, text=True)
             rows = out.stdout.strip().splitlines()[2:]
             if any(r.split()[-4] != "yes" for r in rows if r.split()):
-                print(f"  FAIL  Figure_{n}.pdf has a font that is not embedded")
+                print(f"  FAIL  {path.name} has a font that is not embedded")
                 ok = False
     except FileNotFoundError:
         print("  (pdffonts not available; embedding not verified)")
@@ -241,7 +267,7 @@ def main():
 
     if args.stage in ("archives", "figures"):
         print("figures")
-        todo = FIGURES + (EXTRA_FIGURES if args.all_grids else [])
+        todo = FIGURES + SUBMISSION_ARTWORK + (EXTRA_FIGURES if args.all_grids else [])
         for script, a, out in todo:
             ok &= run(script, a, out)
         print()
