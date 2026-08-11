@@ -22,7 +22,17 @@ python rebuild_manuscript.py --check      # what can this machine rebuild from?
 python rebuild_manuscript.py              # figures + document  (the usual case)
 python rebuild_manuscript.py --stage archives   # also recompute the summaries
 python rebuild_manuscript.py --all-grids  # plus the medium/fine supporting figures
+python rebuild_manuscript.py --submission # also write submission/Figure_N.pdf
 ```
+
+`--submission` writes the figures as separate files named the way the journal
+asks for them. The numbering is read from the `.aux` the run just wrote and the
+label-to-file mapping from the `.tex`, not from any list in the driver: LaTeX
+numbers by the order captions appear in the source, which is not the order the
+figures are built in, and numbering by build order would mislabel four of the
+seven. Font embedding is verified with `pdffonts`, since a figure that fails
+that is rejected at submission rather than at build time. `submission/` is
+derived and is not version controlled.
 
 `--check` reports what is present and whether each archive's inputs are complete.
 Where they are not, the data modules fall back to the committed archive rather than

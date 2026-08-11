@@ -114,6 +114,75 @@ def check():
           "and the figures are unchanged.")
 
 
+def export_submission():
+    """Copy each figure to submission/Figure_N.pdf, numbered as the document does.
+
+    The numbering is read from the .aux and the label-to-file mapping from the .tex,
+    rather than from the order of FIGURES above. Those two orders are not the same
+    and never were: LaTeX numbers by the order captions appear in the source, so
+    boundary_averaging is Figure 3 while it is fourth in the list here, and the
+    sewer and coastal figures are likewise swapped. Numbering by list position would
+    mislabel four of the seven.
+    """
+    import re
+    import shutil
+
+    aux = DOCS / f"{TEX.stem}.aux"
+    if not aux.is_file():
+        print("  no .aux -- typeset the document first")
+        return False
+    numbers = {m.group(1): int(m.group(2)) for m in
+               re.finditer(r"newlabel\{(fig:[^}]+)\}\{\{(\d+)\}",
+                           aux.read_text(errors="replace"))}
+
+    tex = TEX.read_bytes().decode("utf-8-sig")
+    mapping = {}
+    for block in re.findall(r"begin\{figure\}.*?end\{figure\}", tex, re.S):
+        f = re.search(r"widefig\{figures/([^}]+)\}", block)
+        lab = re.search(r"label\{(fig:[^}]+)\}", block)
+        if f and lab:
+            mapping[lab.group(1)] = f.group(1)
+
+    out_dir = DOCS / "submission"
+    out_dir.mkdir(exist_ok=True)
+    seen, ok = {}, True
+    for label, fname in mapping.items():
+        n = numbers.get(label)
+        src = DOCS / "figures" / fname
+        if n is None or not src.is_file():
+            print(f"  FAIL  {label}: number={n} file={src.name} present={src.is_file()}")
+            ok = False
+            continue
+        dst = out_dir / f"Figure_{n}.pdf"
+        shutil.copy2(src, dst)
+        seen[n] = fname
+    # A gap or a duplicate means a figure was renumbered without this noticing.
+    expected = set(range(1, len(mapping) + 1))
+    if set(seen) != expected:
+        print(f"  FAIL  numbering is not 1..{len(mapping)}: got {sorted(seen)}")
+        ok = False
+    for n in sorted(seen):
+        print(f"  ok   Figure_{n}.pdf{'':<21} from {seen[n]}")
+
+    # The journal requires vector art with fonts embedded. The scripts set
+    # pdf.fonttype 42 through flopy's style, so this should always pass; it is
+    # checked rather than assumed because a figure that fails is rejected at
+    # submission rather than at build time.
+    try:
+        for n in sorted(seen):
+            out = subprocess.run(["pdffonts", str(out_dir / f"Figure_{n}.pdf")],
+                                 capture_output=True, text=True)
+            rows = out.stdout.strip().splitlines()[2:]
+            if any(r.split()[-4] != "yes" for r in rows if r.split()):
+                print(f"  FAIL  Figure_{n}.pdf has a font that is not embedded")
+                ok = False
+    except FileNotFoundError:
+        print("  (pdffonts not available; embedding not verified)")
+
+    print(f"  -> {out_dir}")
+    return ok
+
+
 def typeset():
     print("document")
     t0 = time.perf_counter()
@@ -146,6 +215,10 @@ def main():
                         "which support the text but are not included in it")
     p.add_argument("--check", action="store_true",
                    help="report what is available to rebuild from, and stop")
+    p.add_argument("--submission", action="store_true",
+                   help="also write submission/Figure_N.pdf, numbered as the "
+                        "typeset document numbers them, which the journal wants as "
+                        "separate files")
     args = p.parse_args()
 
     if args.check:
@@ -174,6 +247,13 @@ def main():
         print()
 
     ok &= typeset()
+
+    # After typesetting, because the numbering comes out of the .aux the run just
+    # wrote. Exporting from a stale .aux would number against the previous document.
+    if args.submission:
+        print("\nsubmission figures")
+        ok &= export_submission()
+
     print("\n" + ("everything rebuilt" if ok else "SOMETHING FAILED - see above"))
     return 0 if ok else 1
 

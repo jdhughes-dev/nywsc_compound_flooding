@@ -20,3 +20,7 @@ Hughesetal_ESM_LISSCoupling.pdf
 
 # Byte-compiled figure scripts
 __pycache__/
+
+# Submission copies of the figures, numbered as the document numbers them.
+# Derived from figures/ by rebuild_manuscript.py --submission; not source.
+submission/
