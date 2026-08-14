@@ -97,7 +97,7 @@ Three sharp edges, which is why this module exists rather than a bare get_var ca
 3. Worst case, a wrong CATEGORY with a real id returns a non-NULL pointer to
    garbage. ``laterals/AlternateSewer/discharge`` handed back an array whose first
    read access-violated and killed the process -- no exception, no traceback. This
-   is unrecoverable in-process, so the only defence is to not make the call.
+   is unrecoverable in-process, so the only defense is to not make the call.
 
 `structure_ids()` parses the model's .ext files so `get_structure()` can refuse a
 (category, id) pair the model does not actually define, turning what would be a

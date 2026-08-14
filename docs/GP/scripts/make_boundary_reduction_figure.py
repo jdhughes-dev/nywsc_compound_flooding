@@ -130,9 +130,9 @@ with styles.USGSPlot():
             if i == len(WET_FRACTIONS) - 1:
                 axc.set_xlabel("Time, in days", fontsize=6.5)
 
-    # Direction arrows. The horizontal one is labelled by INTERVAL rather than by
+    # Direction arrows. The horizontal one is labeled by INTERVAL rather than by
     # frequency: the columns run 2, 8, 24 hours left to right, so frequency
-    # decreases in the direction the arrow points and labelling it "increasing
+    # decreases in the direction the arrow points and labeling it "increasing
     # frequency" would contradict the column headings.
     arr = dict(arrowstyle="-|>", color="0.25", lw=1.0,
                shrinkA=0, shrinkB=0, mutation_scale=11)

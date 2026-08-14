@@ -245,7 +245,7 @@ def main():
         results_ws = results_ws.parent / scenario
     # Applied here rather than left to --scenario-suffix, because an ensemble whose
     # members are distinguished by hand is an ensemble whose members eventually
-    # overwrite one another. Seed 0 is unlabelled so that every scenario produced
+    # overwrite one another. Seed 0 is unlabeled so that every scenario produced
     # before the seed existed keeps its name.
     if subsampled and args.junction_seed != 0:
         scenario += f"_s{args.junction_seed}"

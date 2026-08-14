@@ -66,7 +66,7 @@ Y_QS = 1.50
 # to clear s1,hs by enough to show above it.
 Y_S1, Y_QJ_DN, Y_QE = 0.42, 0.52, 0.60
 Y_QJ_UP = 1.58                    # Q_j delivery to SWMM
-Y_QJ_IN = 1.00                    # Q_j collector, on the label's centre line
+Y_QJ_IN = 1.00                    # Q_j collector, on the label's center line
 # q^ext leaves through the RIGHT EDGE of the MODFLOW 6 bar rather than its top
 # corner. s1,hs now runs below q^ext, so both would need a vertical on that corner
 # and would lie on top of each other between the two channels. Leaving through the
@@ -188,7 +188,7 @@ with styles.USGSPlot():
         # between them they contribute one value.
         # Same weight as the delivery arms: this is one exchange, and a hairline in
         # against a full-weight line out made the collection look like a lesser
-        # thing than the delivery. The lighter grey still separates the two roles.
+        # thing than the delivery. The lighter gray still separates the two roles.
         poly(ax, [(xe - PAD, SW_B), (xi, SW_B), (xi, MF_T), (xe - PAD, MF_T)],
              "0.45", head=False)
         poly(ax, [(xi, Y_QJ_IN), (xc - 0.17, Y_QJ_IN)], "0.45")
@@ -224,9 +224,9 @@ with styles.USGSPlot():
         ax.text(-0.22, y, name, ha="right", va="center", fontsize=8.5)
 
     # Both edges of a gutter are the SAME instant -- the gutter is zero model
-    # time -- so both carry the tick. Labelling only one edge left the other
-    # unlabelled and, worse, was inconsistent between the two gutters: the first
-    # was labelled on the right, the second on the left.
+    # time -- so both carry the tick. Labeling only one edge left the other
+    # unlabeled and, worse, was inconsistent between the two gutters: the first
+    # was labeled on the right, the second on the left.
     ticks, labels, n = [], [], 0
     for x0 in starts:
         for s in range(N_SUB):
