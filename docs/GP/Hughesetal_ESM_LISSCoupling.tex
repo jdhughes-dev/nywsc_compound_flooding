@@ -15,6 +15,13 @@
 \documentclass[preprint,authoryear,11pt]{elsarticle}
 
 \usepackage[T1]{fontenc}
+% elsarticle's preprint option sets a 360 pt (5.0 in) measure, which leaves 1.75 in
+% of margin each side on letter paper. The journal does not specify a text width --
+% Elsevier applies its own layout at proof stage and the submitted PDF is a reading
+% copy -- so the measure is ours to choose. Widened to 6.5 in. Keep the margin at or
+% above 1 in: \widefig draws at 190 mm (7.48 in), and the overhang it relies on
+% disappears once the text block reaches that width.
+\usepackage[margin=1in]{geometry}
 \usepackage{amsmath}
 \usepackage[strings]{underscore}
 \usepackage{booktabs}
