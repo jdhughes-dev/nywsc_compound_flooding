@@ -207,6 +207,16 @@ The demonstration uses the sewer network at Greenport, New York, on the north fo
 % sentence describing its provenance.
 Three simulators are coupled. Coastal hydrodynamics and the transport of a conservative tracer of sewer discharge are simulated with D-Flow Flexible Mesh (D-Flow FM), which solves the depth-averaged shallow water equations on an unstructured grid using the scheme of \cite{kernkamp2011unstructured} and is documented in \cite{deltares2026dflowfm}. Groundwater flow is simulated with MODFLOW~6 \citep{langevin2017modflow6}, using the Groundwater Flow (GWF) and Groundwater Transport (GWT) models with the Buoyancy (BUY) package so that density effects associated with the saltwater interface are represented. Flow in the combined sewer network is simulated with the Storm Water Management Model (SWMM) \citep{rossman2022swmm}.
 
+% Scope statement. The preceding paragraph gives D-Flow FM a conservative tracer and
+% MODFLOW 6 a saltwater interface in consecutive sentences, which invites the reader
+% to assume salinity crosses the coupling. It does not, and saying so here is
+% cheaper than leaving a reviewer to find it. Verified rather than asserted: all 68
+% FlowFM.mdu files in dflow-fm/ set Salinity = 0 and Temperature = 0. The
+% source-sink field claim is documented at common/dflow_bmi_structures.py:88-93,
+% where change_in_salinity and change_in_temperature return NULL precisely because
+% isalt and itemp are zero.
+Salinity is not simulated by the hydrodynamic model. D-Flow FM is run with salinity and temperature transport disabled, so its solution is barotropic and the conservative sewer discharge tracer is the only constituent it transports. The saltwater interface represented by the MODFLOW~6 Buoyancy package is accordingly driven by concentrations set within the groundwater model rather than by any exchanged with the coastal model. Nothing in the approach precludes coupling the two transport solutions: a concentration would be carried by the same mapping matrices that carry water level, and the D-Flow FM source-sink structure already presents a change in salinity alongside the discharge, a field that resolves once salinity is active. That exchange was not required for the demonstration reported here, which concerns the aquifer head, the aquifer--sewer seepage, and the sewer discharge tracer, and it is left as an extension.
+
 The three simulators are advanced within a single process and exchange state through their respective library interfaces. MODFLOW~6 is controlled through its application programming interface, which extends the Basic Model Interface \citep{hughes2022modflowapi}, and D-Flow FM through its Basic Model Interface implementation \citep{hutton2020bmi}. SWMM implements neither, and is controlled through the SWMM toolkit by way of PySWMM \citep{mcdonnell2020pyswmm}; that interface opens a simulation from a SWMM input file, advances it by a routing step, closes it, and reads and writes node and link state, which are the same capabilities the other two supply under Basic Model Interface names. The MODFLOW~6 model is constructed with FloPy \citep{hughes2023flopy}. All three simulators are used as distributed, without modification.
 
 % VERSION STATEMENT -- must match whichever runs produce the reported results.
