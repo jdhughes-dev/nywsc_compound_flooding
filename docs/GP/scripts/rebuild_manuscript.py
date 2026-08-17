@@ -4,8 +4,8 @@ There are three places a rebuild can start, and which one is possible depends on
 what the person running it has:
 
   document   typeset the PDF from the figures already in figures/
-  figures    redraw all seven figures and the graphical abstract, then typeset
-  archives   recompute the six archives from results/ and logs/, then the above
+  figures    redraw all eight figures and the graphical abstract, then typeset
+  archives   recompute the seven archives from results/ and logs/, then the above
   everything run the 46 coupled simulations first, then the above
 
 The default is `figures`, because that is what someone who has cloned the
@@ -44,6 +44,7 @@ ARCHIVES = [
     ("boundary_averaging_data.py", ["high"], "boundary_averaging_high.nc"),
     ("sewer_exchange_data.py", [], "sewer_exchange.nc"),
     ("coastal_exchange_data.py", [], "coastal_exchange.nc"),
+    ("coastal_reduction_data.py", [], "coastal_reduction.nc"),
     ("coupling_cost_data.py", [], "coupling_cost.nc"),
 ]
 
@@ -54,6 +55,7 @@ FIGURES = [
     ("make_coupling_region_figure.py", [], "coupling_region.pdf"),
     ("make_boundary_averaging_figure.py", ["coarse", "--no-refresh"],
      "boundary_averaging.pdf"),
+    ("make_coastal_reduction_figure.py", ["--no-refresh"], "coastal_reduction.pdf"),
     ("make_sewer_exchange_figure.py", ["--no-refresh"], "sewer_exchange.pdf"),
     ("make_coastal_exchange_figure.py", ["--no-refresh"], "coastal_exchange.pdf"),
     ("make_coupling_cost_figure.py", ["--no-refresh"], "coupling_cost.pdf"),
@@ -62,7 +64,7 @@ FIGURES = [
 # Artwork the journal wants as a separate file and the document does not include.
 # Kept out of FIGURES deliberately: export_submission() numbers FIGURES from the .aux,
 # and anything not cited in the .tex has no number to be given. Drawn every time the
-# figures stage runs, because it reads the same archives as Figures 3 and 7 and would
+# figures stage runs, because it reads the same archives as Figures 3 and 8 and would
 # otherwise be the one piece of artwork that could silently fall behind them.
 SUBMISSION_ARTWORK = [
     ("make_graphical_abstract.py", ["--no-refresh"], "graphical_abstract.pdf"),
@@ -112,6 +114,7 @@ def check():
     for mod, label in (("boundary_averaging_data", "boundary averaging"),
                        ("sewer_exchange_data", "sewer exchange"),
                        ("coastal_exchange_data", "coastal exchange"),
+                       ("coastal_reduction_data", "coastal volume"),
                        ("coupling_cost_data", "coupling cost")):
         m = __import__(mod)
         try:
@@ -134,7 +137,7 @@ def export_submission():
     and never were: LaTeX numbers by the order captions appear in the source, so
     boundary_averaging is Figure 3 while it is fourth in the list here, and the
     sewer and coastal figures are likewise swapped. Numbering by list position would
-    mislabel four of the seven.
+    mislabel five of the eight.
     """
     import re
     import shutil
@@ -150,7 +153,9 @@ def export_submission():
     tex = TEX.read_bytes().decode("utf-8-sig")
     mapping = {}
     for block in re.findall(r"begin\{figure\}.*?end\{figure\}", tex, re.S):
-        f = re.search(r"widefig\{figures/([^}]+)\}", block)
+        # Both placement macros, or a single-column figure would be missing from the
+        # export and the 1..N numbering check below would fail on the gap it left.
+        f = re.search(r"(?:widefig|onecolfig)\{figures/([^}]+)\}", block)
         lab = re.search(r"label\{(fig:[^}]+)\}", block)
         if f and lab:
             mapping[lab.group(1)] = f.group(1)

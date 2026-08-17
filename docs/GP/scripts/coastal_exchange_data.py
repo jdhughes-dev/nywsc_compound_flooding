@@ -1,7 +1,7 @@
 """Coastal exchange by coupling interval on one grid, and its archive file.
 
 The quantity is the boundary flow MODFLOW~6 reports through the GHB "INNER" and CHD
-"COASTAL" observations, normalised to a depth over the boundary cell area, which is
+"COASTAL" observations, normalized to a depth over the boundary cell area, which is
 what step3_plot_compare_coastal_exchange.ipynb plots. The lateral "PERIMETER" term is
 excluded: it is the regional boundary rather than the coast and it dominates the sum.
 

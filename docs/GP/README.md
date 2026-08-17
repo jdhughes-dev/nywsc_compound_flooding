@@ -1,6 +1,6 @@
 # Reproducing the manuscript
 
-`Hughesetal_ESM_LISSCoupling.tex` is built from seven figures, six archived summaries,
+`Hughesetal_ESM_LISSCoupling.tex` is built from eight figures, seven archived summaries,
 and 46 coupled simulations. Each of those is a layer, and a rebuild can start at any
 of them:
 
@@ -122,7 +122,7 @@ reopen as UGRID, so only one exists at a time. Retaining every scenario needs ab
 
 ```
 Hughesetal_ESM_LISSCoupling.tex   the manuscript
-figures/                          the seven figures it includes, as PDF, plus
+figures/                          the eight figures it includes, as PDF, plus
                                   graphical_abstract.pdf, which it does not
 ../data/GP/*.nc                   the archived summaries the figures are drawn from
 scripts/
@@ -132,7 +132,7 @@ scripts/
   make_graphical_abstract.py      draw the graphical abstract from two of them
 ```
 
-The graphical abstract reads the same archives as Figures 3 and 7, and reduces
+The graphical abstract reads the same archives as Figures 3 and 8, and reduces
 them rather than restating them, so it cannot come to disagree with the
 document. It is redrawn whenever the figures are.
 
