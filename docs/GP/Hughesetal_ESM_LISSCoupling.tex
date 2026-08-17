@@ -39,7 +39,13 @@
 % siunitx does not group digits by default, so a four-digit \SI would print "9550"
 % in the same sentence as a hand-typed "6,491". Group at four digits so the two
 % forms agree; the missing comma is invisible in the source.
-\sisetup{group-separator={,}, group-minimum-digits=4}
+%
+% group-digits=integer is not optional here. Grouping applies to BOTH sides of the
+% decimal marker by default, so the four digits of \SI{0.0655}{\per\day} were being
+% grouped as well and the leakance typeset as "0.065,5" -- which reads as two
+% numbers rather than one. Restricting it to the integer part leaves the thousands
+% separator the comment above wants and lets a decimal run as long as it needs to.
+\sisetup{group-separator={,}, group-minimum-digits=4, group-digits=integer}
 \usepackage{graphicx}
 % elsarticle 3.5 has no native ORCID support; orcidlink renders the iD as a
 % hyperlinked icon after the author name.
