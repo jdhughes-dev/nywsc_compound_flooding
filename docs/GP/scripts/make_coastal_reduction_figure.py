@@ -52,12 +52,21 @@ def make(refresh=True):
         print(f"volumes read from {crd.NC.name} without recomputing")
 
     h = ds["hours"].values
-    # Ticks follow the archive, so an interval added later appears without an edit
-    # here. 6 and 12 hours are dropped from the labels only: they are coarse-grid
-    # only, and nine labels do not fit a 90 mm axis.
-    tick_h = [v for v in h if v not in (6.0, 12.0)]
+    # Every interval the manuscript discusses is labeled, which is all nine, and nine
+    # will not fit one row of a 90 mm axis: 6 and 8 hours are 0.125 decades apart,
+    # closer than any other pair, and their labels would touch.
+    #
+    # So 6 and 12 hours are set on a second row, by giving them a leading blank line.
+    # Those two are exactly the intervals simulated on the coarse grid alone, so the
+    # rows carry the same division the figure already makes and the caption states.
+    # Each row is then internally comfortable: 4 to 8 hours and 6 to 12 hours are
+    # both 0.301 decades, about 28 pt here, at a 7 pt label.
+    COARSE_ONLY = (6.0, 12.0)
+    tick_h = list(h)
     tick_lab = [f"{v * 60:.0f} min" if v < 1 else f"{v:.0f} h" if v < 24
                 else f"{v / 24:.0f} d" for v in tick_h]
+    tick_lab = [f"\n{lab}" if v in COARSE_ONLY else lab
+                for v, lab in zip(tick_h, tick_lab)]
 
     with styles.USGSPlot():
         # 3.54 in is 90 mm, the journal's single-column artwork width, so the figure
@@ -78,20 +87,9 @@ def make(refresh=True):
 
         ax.set_xscale("log")
         ax.set_xticks(tick_h)
-        ax.set_xticklabels(tick_lab, fontsize=7)
+        ax.set_xticklabels(tick_lab, fontsize=7, linespacing=0.9)
         ax.tick_params(labelsize=7, top=False)
         ax.set_ylim(-2.5, 40.0)
-
-        # The 12-hour point is the largest departure in the figure and sits at an
-        # interval the axis does not label, so it is named where it is read. It is
-        # also the point that makes the figure worth drawing: a departure that falls
-        # as the interval is LENGTHENED is not a truncation error.
-        peak = ds.sel(grid="coarse")["pct_inst"].sel(interval="12.00H")
-        # To the RIGHT of the point, not above it: above collides with the Nyquist
-        # label, and the space the descending line leaves to the right is empty.
-        ax.annotate("12 h", xy=(12.0, float(peak)), xytext=(5, 0),
-                    textcoords="offset points", fontsize=6.5, color=C_I,
-                    ha="left", va="center")
         styles.xlabel(ax=ax, label="Coupling interval")
         styles.ylabel(ax=ax, label="Cumulative coastal exchange,\nin percent from the "
                                    "15-minute simulation")

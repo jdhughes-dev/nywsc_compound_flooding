@@ -139,7 +139,7 @@ with styles.USGSPlot():
                  lxy=((a + xm) / 2.0, Y_QS + 0.11), ha="center", alpha=al)
 
         # The gutter is a break in the time axis, so it is marked as one: a light
-        # rule on each edge rather than a box. A box around a gutter this narrow
+        # line on each edge rather than a box. A box around a gutter this narrow
         # would crowd the connectors turning inside it, and would also suggest the
         # gutter contains something, when it contains no model time at all.
         for xv in (xe, xn):
