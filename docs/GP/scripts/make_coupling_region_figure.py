@@ -115,8 +115,19 @@ def make():
             # figure caption, where a reader of the typeset document will find it,
             # rather than burned into the image at tile-label size. The caption
             # carries the provider's own string, cx_provider["attribution"].
+            # zoom=14 rather than the level contextily picks for this extent, 13,
+            # for two reasons. At 13 the tiles carry a bold "SUFFOLK COUNTY" that
+            # the top right of the frame cuts through, and the label cannot be
+            # brought inside: it is long enough that containing it would need
+            # several more kilometers of margin, shrinking the coupling region to
+            # make room for a county name. At 14 the county label gives way to
+            # local place names, which are set small enough at this size to read as
+            # map texture. The tiles are also twice the resolution -- 7.2 against
+            # 14.4 m per pixel here -- which is the right side of the 12.6 m a
+            # 2.3 inch panel needs at 300 dpi.
             try:
-                cx.add_basemap(ax, crs=CRS, source=cx_provider, attribution=False)
+                cx.add_basemap(ax, crs=CRS, source=cx_provider, attribution=False,
+                               zoom=14)
             except Exception as exc:
                 print(f"  basemap unavailable for {res} ({type(exc).__name__}); "
                       "drawing without it")
