@@ -100,7 +100,7 @@ def make(refresh=True):
                     fontsize=6.5, color="0.35", va="top", ha="left")
 
         # Two legends, because the figure encodes two things and one combined legend
-        # of six entries would not fit. Colour carries the reduction, which is what
+        # of six entries would not fit. Color carries the reduction, which is what
         # the figure is about, so it is the one named in words; the grid legend is
         # gray, to be read as a qualifier rather than as a third variable.
         # The words Figure 3 uses, not synonyms of them: the two reductions carry the
