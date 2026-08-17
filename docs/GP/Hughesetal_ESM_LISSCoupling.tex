@@ -244,8 +244,12 @@ Salinity is not simulated by the hydrodynamic model. D-Flow FM is run with salin
 The three simulators are advanced within a single process and exchange state through their respective library interfaces. MODFLOW~6 is controlled through its application programming interface, which extends the Basic Model Interface \citep{hughes2022modflowapi}, and D-Flow FM through its Basic Model Interface implementation \citep{hutton2020bmi}. SWMM implements neither, and is controlled through the SWMM toolkit by way of PySWMM \citep{mcdonnell2020pyswmm}; that interface opens a simulation from a SWMM input file, advances it by a routing step, closes it, and reads and writes node and link state, which are the same capabilities the other two supply under Basic Model Interface names. The MODFLOW~6 model is constructed with FloPy \citep{hughes2023flopy}. All three simulators are used as distributed, without modification.
 
 % VERSION STATEMENT -- must match whichever runs produce the reported results.
-% The completed 21-scenario sweep used MODFLOW 6 version 6.5.0; 6.7.0 is what is
-% configured now. Reconcile before submission.
+% Reconciled against the runs rather than against memory: the MODFLOW version is
+% recorded in the first lines of each scenario's mfsim.lst, and all 46 simulations
+% the figures read report 6.7.0. Seven directories under results/gp still record
+% 6.5.0 -- two early tracer experiments (_bcfull, _livefull) and the five
+% unsuffixed fine-grid runs superseded by the _instbnd sweep -- but none of those
+% is read by any figure or statistic in this paper.
 The versions used are D-Flow FM kernel 1.2.184, MODFLOW~6 version 6.7.0, and SWMM version 5.2.4 accessed through PySWMM 2.0.1.
 
 \section{Coupling framework}
