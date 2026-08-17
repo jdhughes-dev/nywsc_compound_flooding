@@ -81,7 +81,7 @@ Three sharp edges, which is why this module exists rather than a bare get_var ca
    ``sourcesinks/<anything>/<anything>`` reports rank=1, type='double'. They tell
    you nothing about whether the field exists.
 
-2. An unrecognised field or id returns a NULL pointer, which bmi-python turns into
+2. An unrecognized field or id returns a NULL pointer, which bmi-python turns into
    ``None``. ``get_compound_field`` in unstruc_bmi.F90 gives a SourceSink exactly
    three fields, matching the ``shape(2) = 3`` it reports::
 
@@ -124,7 +124,7 @@ CATEGORIES = (
 )
 
 # .ext block header -> BMI category. Only the blocks these models actually use are
-# mapped; add to this as needed rather than guessing at a pluralisation rule.
+# mapped; add to this as needed rather than guessing at a pluralization rule.
 _BLOCK_TO_CATEGORY = {
     "sourcesink": "sourcesinks",
     "lateral": "laterals",
