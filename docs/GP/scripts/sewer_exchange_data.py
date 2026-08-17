@@ -26,8 +26,12 @@ RESULTS = HERE.parents[2] / "results" / "gp"
 INP = HERE.parents[2] / "swmm" / "gp" / "gp_sewer.inp"
 
 SPINUP_D = 5.0
-GAL2FT3 = 0.133681
-M2FT = 3.28081
+FT3_TO_M3 = 0.028316846592      # exact; MODFLOW is in feet, the manuscript is in SI
+FT3_TO_L = 28.316846592
+# The customary rate the acceptance band is published in, per liter-based unit:
+# 1 gal/(d in mi) = 0.09260 L/(d mm km). Recorded so a number in either unit can be
+# checked against the other without looking the conversion up again.
+GAL_IN_MI_TO_L_MM_KM = 3.785411784 / (25.4 * 1.609344)
 DT_D = 0.25 / 24.0          # the 15-minute coupling interval, in days
 N_CONN = 244
 
@@ -53,19 +57,22 @@ def _sections(inp, name):
 
 
 def pipe_normalization(inp=INP):
-    """Inch-diameter-miles of sewer, the denominator of the standard rate.
+    """Millimeter-diameter-kilometers of sewer, the denominator of the rate.
 
     Summed as sum(D_j L_j) rather than taken as a median diameter times the total
-    length. Diameters here run 6 to 12 inches, so the two differ by 7 percent, and
-    only the sum is what "per inch-diameter per mile" actually means.
+    length. Diameters here run 0.15 to 0.30 m, so the two differ by 7 percent, and
+    only the sum is what "per millimeter of diameter per kilometer" actually means.
+
+    gp_sewer.inp declares FLOW_UNITS CMS, so its diameters and lengths are already
+    in meters and no conversion is needed: millimeters times kilometers is meters
+    times meters, and the sum is formed directly from what the file records.
     """
     length_m = {r[0]: float(r[3]) for r in _sections(inp, "CONDUITS") if len(r) >= 4}
     diam_m = {r[0]: float(r[2]) for r in _sections(inp, "XSECTIONS")
               if len(r) >= 3 and r[1].lower().startswith("circ")}
-    in_dia_mi = sum((diam_m[k] * M2FT * 12.0) * (length_m[k] * M2FT / 5280.0)
-                    for k in length_m if k in diam_m)
-    total_mi = sum(length_m.values()) * M2FT / 5280.0
-    return in_dia_mi, total_mi, len(length_m)
+    mm_dia_km = sum(diam_m[k] * length_m[k] for k in length_m if k in diam_m)
+    total_km = sum(length_m.values()) / 1000.0
+    return mm_dia_km, total_km, len(length_m)
 
 
 # 89 days at the 15-minute coupling interval. Checked rather than assumed, because
@@ -101,7 +108,7 @@ def missing(results=RESULTS):
 
 
 def compute(results=RESULTS):
-    in_dia_mi, total_mi, n_conduits = pipe_normalization()
+    mm_dia_km, total_km, n_conduits = pipe_normalization()
     series, rows = {}, []
     for grid, run in RUNS.items():
         ws = results / run
@@ -123,11 +130,11 @@ def compute(results=RESULTS):
             st = np.stack([s[k] for k in sorted(s.files, key=int)])
             conn = (N_CONN - st[:, 1]) / N_CONN * 100.0
 
-        series[grid] = (t, np.cumsum(net_rate * DT_D), conn)
+        series[grid] = (t, np.cumsum(net_rate * DT_D) * FT3_TO_M3, conn)
         rows.append({
             "grid": grid, "cells": CELLS[grid],
-            "net_ft3": net, "gross_ft3": gross,
-            "rate_gpd_in_mi": (net / days) / GAL2FT3 / in_dia_mi,
+            "net_m3": net * FT3_TO_M3, "gross_m3": gross * FT3_TO_M3,
+            "rate_L_d_mm_km": (net / days) * FT3_TO_L / mm_dia_km,
             # Distinct from the connected_pct time series: merging the summary into
             # the same Dataset would otherwise silently replace it with this scalar.
             "connected_mean_pct": float(np.nanmean(conn[keep])),
@@ -135,7 +142,7 @@ def compute(results=RESULTS):
 
     t0 = series["coarse"][0]
     ds = xr.Dataset(
-        {"cum_net_ft3": (("grid", "time"), np.array([series[g][1] for g in RUNS])),
+        {"cum_net_m3": (("grid", "time"), np.array([series[g][1] for g in RUNS])),
          "connected_pct": (("grid", "time"), np.array([series[g][2] for g in RUNS]))},
         coords={"grid": list(RUNS), "time": t0},
     )
@@ -143,22 +150,27 @@ def compute(results=RESULTS):
     for v in summary.data_vars:
         ds[v] = summary[v]
     ds["time"].attrs = {"units": "d", "long_name": "days since start of simulation"}
-    ds["cum_net_ft3"].attrs["units"] = "ft3"
+    ds["cum_net_m3"].attrs["units"] = "m3"
     ds["connected_pct"].attrs["units"] = "percent"
-    ds["rate_gpd_in_mi"].attrs["units"] = "gal/d/in/mi"
+    ds["rate_L_d_mm_km"].attrs["units"] = "L/d/mm/km"
     ds.attrs = {
         "title": "Aquifer-sewer exchange by D-Flow FM grid at 15-minute coupling",
         "summary": "Cumulative net exchange, connected-junction fraction, and the "
-                   "infiltration rate in the units sewer standards use, for the "
-                   "three grids. Positive is infiltration into the sewer.",
+                   "infiltration rate per unit of pipe diameter and length, for "
+                   "the three grids. Positive is infiltration into the sewer. The "
+                   "acceptance band sewer standards publish is stated in gallons "
+                   "per day per inch of diameter per mile and is converted here.",
         "source": "docs/GP/scripts/sewer_exchange_data.py",
         "reduction": "averaged coastal boundary; the sampled reduction agrees to "
                      "four significant figures at this coupling interval",
         "spinup_days_excluded": SPINUP_D,
-        "in_diameter_miles": in_dia_mi,
-        "network_miles": total_mi,
+        "mm_diameter_kilometers": mm_dia_km,
+        "network_kilometers": total_km,
         "n_conduits": n_conduits,
-        "acceptance_range_gpd_in_mi": "50-200 for new gravity sanitary sewers",
+        "acceptance_range_L_d_mm_km": "4.6-18.5 for new gravity sanitary sewers, "
+                                      "converted from the published 50-200 gallons "
+                                      "per day per inch of diameter per mile",
+        "gal_in_mi_to_L_mm_km": GAL_IN_MI_TO_L_MM_KM,
     }
     return ds
 
@@ -177,7 +189,9 @@ def load_or_refresh(results=RESULTS, nc=NC, force=False):
 if __name__ == "__main__":
     ds, src = load_or_refresh()
     print(f"{'refreshed from results/' if src == 'results' else 'read archive'}: {NC}")
-    print(f"normalization: {ds.attrs['in_diameter_miles']:.1f} inch-diameter-miles "
-          f"over {ds.attrs['network_miles']:.2f} mi, {ds.attrs['n_conduits']} conduits\n")
-    print(ds[["cells", "net_ft3", "rate_gpd_in_mi", "connected_mean_pct"]]
+    print(f"normalization: {ds.attrs['mm_diameter_kilometers']:.1f} "
+          f"millimeter-diameter-kilometers over "
+          f"{ds.attrs['network_kilometers']:.2f} km, "
+          f"{ds.attrs['n_conduits']} conduits\n")
+    print(ds[["cells", "net_m3", "rate_L_d_mm_km", "connected_mean_pct"]]
           .to_dataframe().to_string())

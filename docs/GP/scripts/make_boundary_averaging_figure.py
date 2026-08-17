@@ -20,6 +20,7 @@ mpl.rcParams["ps.fonttype"] = 42
 FIGURES = pl.Path(__file__).resolve().parent.parent / "figures"
 NYQUIST_H = bad.NYQUIST_H
 C_I, C_M = "#d62728", "#1f77b4"
+FT3_TO_M3 = 0.028316846592
 
 # The instantaneous 15-minute simulation is the incumbent formulation, so it is the
 # reference plotted. The archive also carries the averaged reference and the two
@@ -34,7 +35,7 @@ REF = "15M instant"
 # and the text say the same thing about the tracer.
 PANELS = {"head": ("head_inst", "head_mean", "Aquifer head RMSE, in millimeters"),
           "seep": ("seep_inst", "seep_mean",
-                   "Sewer seepage RMSE, in cubic feet per day"),
+                   "Sewer seepage RMSE, in cubic meters per day"),
           "trac": ("trac_inst", "trac_mean", "Sewer tracer RMSE, dimensionless"),
           "amp": ("p9999_inst", "p9999_mean",
                   "Sewer tracer 99.99th percentile, percent from reference")}
@@ -97,6 +98,12 @@ def make(grid=bad.DEFAULT_GRID, refresh=True):
         for letter, (key, (ci, cm, lab)) in zip("ABCD", PANELS.items()):
             ax = axd[key]
             yi, ym = s[ci], s[cm]
+            if key == "seep":
+                # MODFLOW works in feet and the archive records the seepage RMSE as
+                # it comes out, in cubic feet per day. The manuscript is in SI, so
+                # the conversion is applied here rather than by re-deriving the
+                # archive, whose units attribute states what it holds.
+                yi, ym = yi * FT3_TO_M3, ym * FT3_TO_M3
             if key == "amp":
                 # Plotted as a percent departure, because the absolute values differ
                 # by a factor of four between grids and the panel has to be read the
