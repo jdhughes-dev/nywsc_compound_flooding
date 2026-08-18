@@ -129,6 +129,8 @@ scripts/
   rebuild_manuscript.py           the driver described above
   *_data.py                       compute an archive from results/ or logs/
   make_*_figure.py                draw one figure from an archive
+  start_phase_analysis.py         standalone: whether the simulation start time
+                                  decides which boundary reduction scores better
   make_graphical_abstract.py      draw the graphical abstract from two of them
 ```
 
