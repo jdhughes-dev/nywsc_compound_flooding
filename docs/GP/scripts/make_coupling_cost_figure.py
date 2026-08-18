@@ -3,6 +3,10 @@
 Drawn from ../../data/GP/coupling_cost.nc, which coupling_cost_data.py recomputes
 when the run logs are present and reads as-is when they are not.
 
+Panel A reports run time as a multiple of each series' own daily-coupling run, so
+that the baseline falls at 1.0 where a reader expects a baseline to fall, and the
+coarse grid reading 2.1 says directly that coupling every 15 minutes doubles it.
+
 Panel B uses the daily-coupling run of each series as its own baseline rather than a
 fitted intercept, so the collapse it shows is a property of the measurements and not
 of the line drawn through them.
@@ -72,7 +76,7 @@ def make(refresh=True):
                 base = s.iloc[0]                      # the daily-coupling run
                 baselines.setdefault(grid, []).append(float(base["minutes"]))
                 face = color if filled else "none"
-                axA.plot(s["hours"], 100.0 * (s["minutes"] / base["minutes"] - 1.0),
+                axA.plot(s["hours"], s["minutes"] / base["minutes"],
                          marker=marker, color=color, mfc=face, lw=1.1, ms=4,
                          label=label if reduction == "meanbnd" else None)
                 extra_steps = s["steps"] - base["steps"]
@@ -91,6 +95,9 @@ def make(refresh=True):
                      xycoords="axes fraction", fontsize=7, color="0.35")
 
         axA.set_xscale("log")
+        # A multiple puts the baseline at 1.0 instead of at the axis floor, where it
+        # would otherwise have to be inferred from the daily-coupling point.
+        axA.axhline(1.0, color="0.35", lw=0.7, linestyle=(0, (3, 2)), zorder=0)
         axA.axvline(NYQUIST_H, color="0.35", lw=0.9, linestyle=(0, (3, 2)), zorder=0)
         ticks = sorted(df["hours"].unique())
         axA.set_xticks(ticks)
@@ -104,7 +111,7 @@ def make(refresh=True):
         # The panel is a ratio, so the absolute cost the ratio is taken against is
         # otherwise invisible -- and that cost is the whole reason the three curves
         # separate.
-        # Upper right: every curve descends to zero at daily coupling, so that
+        # Upper right: every curve descends to one at daily coupling, so that
         # corner is the only part of the panel the data never occupies.
         axA.annotate("daily-coupling run time", xy=(0.46, 0.84),
                      xycoords="axes fraction", fontsize=6.5, color="0.35")
@@ -115,7 +122,7 @@ def make(refresh=True):
                              xycoords="axes fraction", fontsize=6.5, color=color)
         styles.xlabel(ax=axA, label="Coupling interval")
         styles.heading(ax=axA, letter="A", fontsize=7.5,
-                       heading="Run time relative to daily coupling, in percent")
+                       heading="Run time as a multiple of the daily-coupling run")
 
         axB.tick_params(labelsize=7, top=False)
         styles.xlabel(ax=axB, label="Additional coupling steps")
