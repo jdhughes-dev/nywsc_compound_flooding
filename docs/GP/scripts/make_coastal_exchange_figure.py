@@ -62,6 +62,10 @@ def make(refresh=True):
 
         axB.axhline(0.0, color="0.35", lw=0.7, linestyle=(0, (3, 2)), zorder=0)
         axB.set_xlim(*WINDOW)
+        # The simulation is the whole of panel A. Matplotlib's default margins put
+        # blank axis on either side of it, which reads as record the run does not
+        # have, so the limits are taken from the record itself.
+        axA.set_xlim(0.0, float(t.max()))
         for ax in (axA, axB):
             ax.tick_params(labelsize=7, top=False)
         styles.xlabel(ax=axA, label="Time, in days")
