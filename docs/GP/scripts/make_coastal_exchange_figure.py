@@ -77,9 +77,11 @@ def make(refresh=True):
         cm = {str(k): float(v) for k, v in
               zip(ds["iv"].values, ds["cum_mm"].values)}
         span = 100.0 * (max(cm.values()) - min(cm.values())) / abs(cm["15.00M"])
+        # Top left. The curve leaves the origin and climbs the whole panel, so the
+        # bottom left it used to sit in is the one corner it is guaranteed to cross.
         axA.annotate(f"cumulative spans {span:.1f} percent across the same intervals",
-                     xy=(0.02, 0.08), xycoords="axes fraction", fontsize=6.5,
-                     color="0.35")
+                     xy=(0.02, 0.95), xycoords="axes fraction", va="top",
+                     fontsize=6.5, color="0.35")
         # Top right. The window opens on the largest flood of the ten days, so the
         # left of the panel is occupied at both the top and the bottom.
         axB.annotate(f"root-mean-square rate falls from {rms['15.00M']:.1f} to "
