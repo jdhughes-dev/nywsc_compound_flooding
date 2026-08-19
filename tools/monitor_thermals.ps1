@@ -39,11 +39,12 @@
     included.
 
 .PARAMETER IntervalSeconds
-    Seconds between samples, 600 by default. Worth knowing what that costs: the row
-    that matters is the last one before the machine goes down, so a ten-minute
-    cadence can leave the crash up to ten minutes past the final sample and miss a
-    ramp entirely. The sampling itself is three CIM queries and is free at any
-    cadence -- pass -IntervalSeconds 15 if the next crash should be caught closely.
+    Seconds between samples, 15 by default, which is about 240 rows an hour. The
+    row that matters is the last one before the machine goes down, so the cadence
+    is the resolution of the only measurement this file exists to make: at ten
+    minutes a crash can land that far past the final sample and a thermal ramp is
+    missed entirely. Sampling is three CIM queries and costs nothing, so there is
+    little to buy by going slower.
 
 .PARAMETER FootprintMinutes
     How often to add up what the start-phase matrix is holding on disk. This one
@@ -61,7 +62,7 @@
 #>
 [CmdletBinding()]
 param(
-    [double]$IntervalSeconds = 600,
+    [double]$IntervalSeconds = 15,
     [double]$FootprintMinutes = 10,
     [string]$Csv,
     [switch]$Summary,
