@@ -138,6 +138,17 @@ The graphical abstract reads the same archives as Figures 3 and 8, and reduces
 them rather than restating them, so it cannot come to disagree with the
 document. It is redrawn whenever the figures are.
 
+**Nothing under `docs/` may depend on `results/`, or on a D-Flow run directory, at
+draw time.** That holds for every figure and every analysis here, whether or not the
+manuscript includes it: the simulation output is hundreds of gigabytes, is not
+version controlled, and the run directories are deleted once their results are
+extracted, so anything that reads them cannot be rebuilt from a clone. The pattern
+is the one the `*_data.py` modules already follow -- recompute from `results/` when
+it is present, write a small `.nc` under `../data/GP`, and read that `.nc` when it
+is not. `pick_start_times.py` is the same shape for the same reason, even though it
+draws nothing: it needs one station of simulated water level, which it archives
+rather than re-reading a run directory that is meant to be deleted.
+
 Each `*_data.py` writes exactly one archive and each `make_*_figure.py` draws exactly
 one figure, so a single figure can be redrawn on its own. The figure scripts that
 read an archive take `--no-refresh`, which draws from the archive as committed rather

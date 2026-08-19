@@ -39,6 +39,8 @@ import xarray as xr
 HERE = pl.Path(__file__).resolve().parent
 ROOT = HERE.parent.parent.parent
 HIS = ROOT / "dflow-fm" / "coarse" / "run_gp_coarse_01.00D_n244" / "output" / "FlowFM_his.nc"
+DATA = HERE.parents[1] / "data" / "GP"
+NC = DATA / "start_phase_waterlevel.nc"
 
 T_M2 = 12.4206                     # hours
 PROD_START = datetime.datetime(2010, 1, 1, 12, 0)
@@ -52,16 +54,59 @@ INTERVALS = (2.0, 4.0, 6.0, 8.0)
 
 
 def water_level(his, station):
-    ds = xr.open_dataset(his, decode_timedelta=False)
-    names = [b.tobytes().decode("utf-8", "ignore").strip()
-             for b in ds["station_name"].values]
-    if station is None:
-        pick = [n for n in names if "greenport" in n.lower()]
-        station = pick[0] if pick else "Kings Point"
-    if station not in names:
-        raise SystemExit(f"station {station!r} not in {his.name}; have {names}")
-    s = ds["waterlevel"].isel(station=names.index(station)).values.astype(float)
-    return station, names, s
+    """The simulated water level, from the run output or from the archive.
+
+    The his file lives in a D-Flow run directory, which is not version controlled
+    and which the experiment plan says to delete once its results are extracted.
+    Nothing under docs/ may depend on something that is meant to be deleted, so the
+    series is archived beside the other summaries the first time it is read and is
+    taken from there afterwards. One station of 5-minute water level for the
+    simulated period is a few hundred kilobytes.
+    """
+    if his.is_file():
+        ds = xr.open_dataset(his, decode_timedelta=False)
+        names = [b.tobytes().decode("utf-8", "ignore").strip()
+                 for b in ds["station_name"].values]
+        if station is None:
+            pick = [n for n in names if "greenport" in n.lower()]
+            station = pick[0] if pick else "Kings Point"
+        if station not in names:
+            raise SystemExit(f"station {station!r} not in {his.name}; have {names}")
+        s = ds["waterlevel"].isel(station=names.index(station)).values.astype(float)
+        out = xr.Dataset(
+            {"waterlevel": ("sample", s)},
+            coords={"sample": np.arange(len(s))},
+            attrs={
+                "title": "Simulated water level for choosing start-phase start times",
+                "summary": "One station of D-Flow FM water level at the his output "
+                           "step, archived so pick_start_times.py runs from a clone. "
+                           "The run directory it came from is not version controlled "
+                           "and is deleted once its results are extracted.",
+                "source": "docs/GP/scripts/pick_start_times.py",
+                "station": station,
+                "stations_available": ", ".join(names),
+                "from_run": his.parent.parent.name,
+                "dt_seconds": DT_OUT,
+            },
+        )
+        NC.parent.mkdir(parents=True, exist_ok=True)
+        out.to_netcdf(NC)
+        return station, names, s, "run output"
+
+    if not NC.is_file():
+        raise SystemExit(
+            f"neither the run output {his} nor the archive {NC} exists; "
+            "run the daily coarse scenario, or fetch the archive"
+        )
+    ds = xr.open_dataset(NC, decode_timedelta=False)
+    names = [n.strip() for n in ds.attrs.get("stations_available", "").split(",")]
+    archived = ds.attrs.get("station", "unknown")
+    if station is not None and station != archived:
+        raise SystemExit(
+            f"the archive holds station {archived!r}, not {station!r}; the his file "
+            "is needed to extract a different one"
+        )
+    return archived, names, ds["waterlevel"].values.astype(float), "archive"
 
 
 def statistic(s, n_hold, n_skip, n_spin):
@@ -104,8 +149,8 @@ def main():
                     help="default: a station matching 'greenport', else Kings Point")
     a = ap.parse_args()
 
-    station, names, s = water_level(a.his, a.station)
-    print(f"{a.his.name}: {len(s)} samples at {DT_OUT:.0f} s, station {station!r}")
+    station, names, s, src = water_level(a.his, a.station)
+    print(f"{src}: {len(s)} samples at {DT_OUT:.0f} s, station {station!r}")
     print(f"stations available: {', '.join(names)}\n")
 
     n_spin = int(SPINUP_D * 86400 / DT_OUT)
