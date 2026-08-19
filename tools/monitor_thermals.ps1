@@ -51,6 +51,14 @@
     walks the run directories, so it is deliberately slower than the counters; the
     number moves in gigabyte steps as runs land, not in seconds. Zero disables it.
 
+    Treat run_gb as indicative and disk_free_gb as authoritative. The walk reads
+    directory entries, and NTFS does not update the entry for an open file until
+    its writer flushes -- so a sample taken between D-Flow's flushes can read the
+    growing FlowFM_map.nc as nearly empty, and the cache then holds that wrong
+    number until the next walk. Seen once: 0.85 GB reported against a true 10.98 GB
+    for a full ten minutes. disk_free_gb comes from the volume and is never wrong,
+    which is the number the question "will the matrix fill the disk" actually wants.
+
 .PARAMETER Summary
     Read the CSV back instead of sampling: temperature, memory and disk extremes,
     time spent throttled, and the last row before the log stops -- which after a
