@@ -49,6 +49,21 @@ worst case is what to simulate.
 **Platform.** D-Flow FM is a Windows executable, so the runs happen on the Windows
 machine. Build the environment from `liss-windows.yml`.
 
+**Every run and every saved result carries a unique start tag.** Nothing from this
+experiment may land on a name an existing scenario could also produce. The tag is
+`_s<HHMM>` in local run time, zero-padded, appended after the representation suffix,
+so a scenario id reads `gp_coarse_06.00H_n244_meanbnd_s1054`. That tag is carried by
+the run directory, by both model run directories, and by every scenario in the
+matrix including each start's own 15-minute reference
+(`gp_coarse_15.00M_n244_meanbnd_s1054`), because a reference without the tag is the
+production reference and comparing against it is the error this experiment is most
+likely to make. The control is the one exception: it is the existing production run
+and keeps its untagged name, so the data module maps the control start to the
+unsuffixed ids explicitly rather than by pattern. The archive is
+`docs/data/GP/start_phase.nc`, distinct from every archive already there, and its
+results are indexed by start tag, interval and representation, so a number in it can
+never be read as belonging to another start.
+
 **Disk.** Each run leaves an 80 MB-plus `FlowFM_his.nc` and a larger `_map.nc`.
 Fifteen runs is tens of gigabytes and it is not to be kept. Follow the existing
 archive pattern: a `*_data.py` module recomputes from `results/` when the output is
@@ -97,14 +112,29 @@ appear exactly once as a top-level assignment in the converted notebook. Add one
 4. Put the start in `scenario_suffix` so run directories and `results/` entries do
    not collide: `gp_coarse_06.00H_n244_meanbnd_s0247`, and so on.
 
-Two things the driver already handles, which the change must not break: SWMM starts
+Two things the driver already handles, which the change must not break. SWMM starts
 at 2010-01-01 00:00 and is fast-forwarded to the D-Flow start, so an earlier start
 shortens that catch-up and an earlier-than-midnight start would trip the existing
-warning; and MODFLOW's `nstp` is set from the coupling frequency, so a start that no
-longer lands on a daily stress-period boundary changes the relationship between
-coupling steps and stress periods. **Check that second one before trusting any
-result** — if it moves, the experiment confounds tidal phase with stress-period
-alignment, and the fix is to report it rather than to hide it.
+warning. And the stress periods, which are the harder of the two.
+
+**The stress-period problem does not exist, and here is why.** It looked as though
+a start away from midnight would break the alignment the study relies on --
+"every interval divides a day, so that coupling steps coincide with the boundaries
+of the daily stress periods" -- because `perlen` comes from the base model rather
+than from the coupling frequency. The base TDIS settles it the other way:
+`modflow/gp_chd/base/modflowsim.tdis` is 365 periods of one day with **no
+START_DATE_TIME**, so MODFLOW's clock is relative and period 1 begins at whatever
+instant the coupled run begins. `nstp` is then set to the number of coupling steps
+in a day, so each period holds exactly one day of them and every period boundary
+falls on a coupling step, at any start instant whatever.
+
+So no TDIS change is needed and the control needs no re-run. What an earlier start
+does move is which wall-clock hours a day of recharge and pumping spans -- period 1
+covering 10:54 to 10:54 rather than 12:00 to 12:00 -- which is a sub-hour shift of
+daily forcing, identical in every run of the matrix, and negligible beside a 3 m
+tide. Confirm it in the smoke-test log rather than assuming it: the coupling step
+count per stress period must be unchanged from a production run at the same
+interval.
 
 ## Directions for the session that runs it
 
@@ -171,6 +201,14 @@ Decide the outcome by this, written down before looking:
   ordering is real for this start and not robust. Report it that way; it is the most
   likely outcome given the numbers above, and it is a more useful sentence than
   either of the other two.
+
+## Report it in prose, not in a figure
+
+Whatever the outcome, it goes into Section 9.1 as text. The manuscript carries eight
+figures already, a ninth earns its place only by showing something prose cannot, and
+this result is a handful of signs and margins — the kind of thing a sentence states
+better than a panel. Two starts, two intervals and two representations is a table at
+best, and the outcome that matters is a single sign and the range of a margin.
 
 ## What this does not test
 
