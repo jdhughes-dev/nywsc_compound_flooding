@@ -58,6 +58,7 @@ OVERRIDES = {
     "smoke_test_days": "smoke_days",
     "scenario_suffix": "scenario_suffix",
     "coastal_boundary_averaging": "coastal_averaging",
+    "dflow_start_override": "start_datetime",
 }
 
 
@@ -177,6 +178,17 @@ def main():
              "scenario instead of overwriting it (e.g. '_bcfull')",
     )
     p.add_argument(
+        "--start-datetime",
+        default=None,
+        help="move the D-Flow FM window to this yyyymmddhhmmss instant, for the "
+             "start-phase experiment (docs/GP/START_PHASE_EXPERIMENT.md). The stop is "
+             "held and the run is shortened. The window can only move LATER, and by at "
+             "most 13 h: the surge boundary series begins at the model start and the "
+             "meteo forcing ends at the model stop, so the forcing envelope is exactly "
+             "the production window. The scenario id gains a _tHHMM tag so a shifted "
+             "run cannot land on a production name.",
+    )
+    p.add_argument(
         "--coastal-averaging",
         default="mean",
         choices=("mean", "instant"),
@@ -249,6 +261,15 @@ def main():
     # before the seed existed keeps its name.
     if subsampled and args.junction_seed != 0:
         scenario += f"_s{args.junction_seed}"
+        results_ws = results_ws.parent / scenario
+
+    # _t, not _s: the junction seed above already owns _s<int>, and _s1054 could be
+    # read as either a seed or a start. Applied here rather than left to
+    # --scenario-suffix for the same reason the seed is -- a start-phase matrix whose
+    # members are distinguished by hand is one whose members eventually collide, and
+    # the run that would be overwritten is a 15-minute reference.
+    if args.start_datetime:
+        scenario += f"_t{str(args.start_datetime)[8:12]}"
         results_ws = results_ws.parent / scenario
 
     # The sewer forcing is written through the API every user time step, so no

@@ -33,11 +33,29 @@ enough to assert without measuring.
 
 ## What constrains the design
 
-**Forcing.** `Q12010_meteo.amp/amu/amv` covers 2010-01-01 00:00 to 2010-03-31 12:00,
-hourly. The production window is the last 89 days of exactly that. So a start can
-only be moved **earlier, by at most 12 h**. That is 0.97 of an M2 period, so nearly
-every tidal phase is reachable — but only by starting earlier, never later. The
-surge series (`WaterLevel2010_surge.bc`) runs to 2010-12-31 and does not bind.
+**Forcing — and this is the reverse of what it first looks like.** The meteo files
+`Q12010_meteo.amp/amu/amv` cover 2010-01-01 00:00 to 2010-03-31 12:00, hourly, which
+appears to leave 12 h of room before the production start. It does not. The surge
+boundary series `WaterLevel2010_surge.bc` **begins at 2010-01-01 12:00, the
+production start itself** — the paragraph this replaces checked its end, which is
+2010-12-31, and not its beginning. An earlier window asks for a water level the
+forcing does not carry, and D-Flow stops:
+
+```
+** WARNING: Requested time preceeds current forcing EC-timelevel by 0.045 days
+**          = 3900.000 seconds ... in file: 'WaterLevel2010_surge.bc'.
+** ERROR  : Error occurs when reading the restart file.
+```
+
+That is a real smoke test, at a start 65 minutes early. The forcing envelope is
+exactly the production window, with no slack in either direction: earlier is blocked
+by the surge series, later-stopping by the meteo.
+
+So a start can only be moved **later, holding the stop**, which shortens the run by
+the shift. A full M2 period costs 12.42 h out of 89 days, half a percent, and every
+phase is reachable. Each start's own 15-minute reference shares its shortened window,
+so the sign test is unaffected; only the absolute errors are not comparable with the
+published ones, which is why the comparison is within a start and never across.
 
 **Do not use 00:00, 06:00, 12:00, 18:00.** Those land at M2 phases of 0°, 174°,
 348°, and 162°. First and third are the same phase to within 12°, and so are second
@@ -51,11 +69,13 @@ machine. Build the environment from `liss-windows.yml`.
 
 **Every run and every saved result carries a unique start tag.** Nothing from this
 experiment may land on a name an existing scenario could also produce. The tag is
-`_s<HHMM>` in local run time, zero-padded, appended after the representation suffix,
-so a scenario id reads `gp_coarse_06.00H_n244_meanbnd_s1054`. That tag is carried by
+`_t<HHMM>` in local run time, zero-padded, appended after the representation suffix,
+so a scenario id reads `gp_coarse_06.00H_n244_meanbnd_t1054`. It is `_t` and not
+`_s` because `run_scenario.py` already appends `_s<int>` for a non-default junction
+seed, and `_s1054` could be read as either a seed or a start. That tag is carried by
 the run directory, by both model run directories, and by every scenario in the
 matrix including each start's own 15-minute reference
-(`gp_coarse_15.00M_n244_meanbnd_s1054`), because a reference without the tag is the
+(`gp_coarse_15.00M_n244_meanbnd_t1054`), because a reference without the tag is the
 production reference and comparing against it is the error this experiment is most
 likely to make. The control is the one exception: it is the existing production run
 and keeps its untagged name, so the data module maps the control start to the
@@ -75,12 +95,15 @@ run directory.
 
 Four starts, of which the production start is the control and already exists:
 
-| start | role |
-|---|---|
-| 2010-01-01 12:00 | production, already run |
-| worst-for-sampling phase | from `pick_start_times.py`, at 6 h |
-| best-for-sampling phase | from `pick_start_times.py`, at 6 h |
-| one intermediate phase | guards against reading two points as a line |
+| start | role | record |
+|---|---|---|
+| 2010-01-01 12:00 | production, already run | 89.00 d |
+| 2010-01-01 23:20 | worst for sampling at 6 h, offset 14.65 mm | 88.53 d |
+| 2010-01-01 15:25 | best for sampling at 6 h, offset 0.08 mm | 88.86 d |
+| 2010-01-01 19:20 | intermediate, guards against reading two points as a line | 88.69 d |
+
+Those come from `pick_start_times.py`, already rounded to the 300 s user time step,
+which the driver requires and which moves the phase by under 2.5 minutes.
 
 Coarse grid only. It is the grid the interval sweep is densest on, and 15 runs on
 midres is roughly 24 h of compute against 12.
@@ -99,8 +122,10 @@ a valid reference for a shifted start. That is why each start carries its own.
 
 ## The code change this needs
 
-`run_scenario.py` has no start-time knob. Its `OVERRIDES` map requires each name to
-appear exactly once as a top-level assignment in the converted notebook. Add one:
+**This is implemented.** `--start-datetime` moves the D-Flow window and holds its
+length, `dflow_start_override` carries it into the notebook, and the scenario id
+gains the `_t<HHMM>` tag automatically. What follows is what was done, kept because
+the reasoning is what a reader needs if it has to change:
 
 1. In `step2_run_coupled_models.ipynb`, a top-level `dflow_start_override = None`
    in the configuration cell.
@@ -152,9 +177,23 @@ a multiple of 300 s, and choose one intermediate phase between them.
 **2. Make the change above**, then prove it on a short run before committing 12 h:
 
 ```
-python -u notebooks-GP/run_scenario.py --resolution coarse --coupling-hours 6 ^
-    --start-datetime 20100101024700 --smoke-days 2 --scenario-suffix s0247
+python -u notebooks-GP/run_scenario.py --resolution coarse --coupling-hours 6     --start-datetime 20100101230000 --coastal-averaging mean     --scenario-suffix _meanbnd --smoke-days 2
 ```
+
+**This has been run.** It completes in 1.3 minutes and reports:
+
+```
+scenario       : gp_coarse_06.00H_n244_smoke2d_meanbnd_t2300
+START OVERRIDE : 2010-01-01 12:00:00 -> 2010-01-01 23:00:00 (11 h later);
+                 stop held at 2010-03-31 12:00:00, window 89 d -> 88.54 d
+advanced SWMM 23.00 h to align with the D-Flow start
+SMOKE TEST     : ... (2 d, 8 coupling steps)
+```
+
+which is the whole of what needed proving: the window opens where it was asked to,
+SWMM's catch-up lengthened from 12 h to 23 h and its record still covers the run,
+and 6-hour coupling still gives 4 steps per one-day stress period, unchanged from a
+production run.
 
 Confirm in the log that the D-Flow window opens at the requested instant, that SWMM
 reports a shorter fast-forward than the production runs, and that the run completes.
