@@ -17,10 +17,16 @@ offsets:
                    sampling displaces it by an amount that depends on which
                    tidal phases the sampling instants happen to occupy.
 
-Neither of those depends on the start time, which is why the ordering below the
-Nyquist limit cannot be reversed by starting six hours later. Where sampling
-aliases, the mean offset is large and start-dependent, and that is where the
-start date does set the size of the penalty.
+Averaging depends on the start in neither respect: its mean is exact, and its
+damping is set by the interval alone. Sampling's mean offset does move with the
+start, but below the Nyquist limit it stays within 3.4 mm of the true mean over a
+full day of start times, which is why the ordering there cannot be reversed by
+starting six hours later. Where sampling aliases the offset reaches 249 mm across
+starts, and that is where the start date does set the size of the penalty.
+
+What is swept here is the boundary water level, not a coupled solution. The step
+from these numbers to the ordering of the error curves is an argument, made in the
+text from the attenuation the aquifer applies to a displaced boundary mean.
 
 Run it directly; it prints the numbers quoted in Section 4.1 and needs nothing
 from results/ or from the archives.
