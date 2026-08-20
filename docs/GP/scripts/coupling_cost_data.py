@@ -36,6 +36,16 @@ RUN_TIME = re.compile(r"^run time:\s*([\d.]+) min \((\d+) coupling steps\)", re.
 # gp_<grid>_<tag>_n<NNN>[_<reduction>]_<date>_<time>.log
 STEM = re.compile(r"^gp_(coarse|medium|high)_(\d\d\.\d\d[MHD])_n(\d+)_?(\w*?)_\d{8}_\d{6}$")
 
+# Runs carrying the _t<HHMM> start tag of docs/GP/START_PHASE_EXPERIMENT.md share
+# logs/ with the production sweeps and would otherwise enter the fit as series of
+# their own -- _instbnd_t1525 and the rest -- on any refresh. EXPECTED below catches
+# a series that has gone missing but says nothing about one that should never have
+# been there, and the figure selects its series by name, so the contamination would
+# sit in the archive unseen. Those runs are a different experiment: they hold three
+# intervals each, at a shifted start, and their run times answer no question this
+# module asks.
+TAGGED = re.compile(r"_t\d{4}$")
+
 
 def scan(logs=LOGS):
     """One row per scenario, taking the most recent log when a run was repeated."""
@@ -45,7 +55,7 @@ def scan(logs=LOGS):
         if not m:
             continue
         grid, tag, n, reduction = m.groups()
-        if int(n) != 244 or "smoke" in f.stem:
+        if int(n) != 244 or "smoke" in f.stem or TAGGED.search(reduction or ""):
             continue
         rt = RUN_TIME.search(f.read_text(errors="replace"))
         if not rt:
