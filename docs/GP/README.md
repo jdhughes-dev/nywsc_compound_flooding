@@ -1,6 +1,6 @@
 # Reproducing the manuscript
 
-`Hughesetal_ESM_LISSCoupling.tex` is built from eight figures, seven archived summaries,
+`Hughesetal_AWR_LISSCoupling.tex` is built from eight figures, eight archived summaries,
 and 46 coupled simulations. Each of those is a layer, and a rebuild can start at any
 of them:
 
@@ -121,7 +121,7 @@ reopen as UGRID, so only one exists at a time. Retaining every scenario needs ab
 ## What is in here
 
 ```
-Hughesetal_ESM_LISSCoupling.tex   the manuscript
+Hughesetal_AWR_LISSCoupling.tex   the manuscript
 figures/                          the eight figures it includes, as PDF, plus
                                   graphical_abstract.pdf, which it does not
 ../data/GP/*.nc                   the archived summaries the figures are drawn from

@@ -10,7 +10,7 @@ boundary_averaging_data.py follows.
 
 Only full n=244 runs are included. Smoke tests are short by construction, and the
 junction-count runs change the SWMM side, so neither belongs in a comparison whose
-point is the cost of the exchange interval alone.
+point is the cost of the coupling interval alone.
 """
 import pathlib as pl
 import re

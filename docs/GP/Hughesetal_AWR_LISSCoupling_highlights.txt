@@ -1,5 +1,5 @@
-Three simulators coupled in memory through their library interfaces; none modified
-Coupling needs sub-time-step access, which the Basic Model Interface does not define
 At daily exchange, sampling the tidal boundary costs 10x the head error of averaging
 Error follows the tidal alias period: 12-hour exchange is worse than 24-hour
 Exchanging 96 times more often costs under 20 percent more run time on the fine grid
+Three simulators coupled in memory through their library interfaces; none modified
+Coupling needs sub-time-step access, which the Basic Model Interface does not define

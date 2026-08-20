@@ -5,7 +5,7 @@ what the person running it has:
 
   document   typeset the PDF from the figures already in figures/
   figures    redraw all eight figures and the graphical abstract, then typeset
-  archives   recompute the seven archives from results/ and logs/, then the above
+  archives   recompute the eight archives from results/ and logs/, then the above
   everything run the 46 coupled simulations first, then the above
 
 The default is `figures`, because that is what someone who has cloned the
@@ -34,7 +34,7 @@ import time
 HERE = pl.Path(__file__).resolve().parent
 DOCS = HERE.parent
 ROOT = DOCS.parents[1]
-TEX = DOCS / "Hughesetal_ESM_LISSCoupling.tex"
+TEX = DOCS / "Hughesetal_AWR_LISSCoupling.tex"
 
 # Recompute order matters only in that the archives must precede the figures that
 # read them; within a stage the entries are independent.
@@ -46,6 +46,10 @@ ARCHIVES = [
     ("coastal_exchange_data.py", [], "coastal_exchange.nc"),
     ("coastal_reduction_data.py", [], "coastal_reduction.nc"),
     ("coupling_cost_data.py", [], "coupling_cost.nc"),
+    # Feeds no figure: the start-phase result is reported in Section 9.1 as prose,
+    # by the plan in START_PHASE_EXPERIMENT.md. Registered anyway, because an
+    # archive outside the rebuild is one nothing recomputes and nothing checks.
+    ("start_phase_data.py", [], "start_phase.nc"),
 ]
 
 # Every figure the manuscript includes, with the arguments that produce it.
@@ -115,7 +119,8 @@ def check():
                        ("sewer_exchange_data", "sewer exchange"),
                        ("coastal_exchange_data", "coastal exchange"),
                        ("coastal_reduction_data", "coastal volume"),
-                       ("coupling_cost_data", "coupling cost")):
+                       ("coupling_cost_data", "coupling cost"),
+                       ("start_phase_data", "start phase")):
         m = __import__(mod)
         try:
             gaps = (m.missing(grid="coarse") if mod == "boundary_averaging_data"
