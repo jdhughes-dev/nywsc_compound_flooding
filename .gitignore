@@ -204,6 +204,15 @@ swmm/gp/*.rpt
 # ~1.3 GB per coarse scenario); regenerate by re-running the scenario
 results/
 
+# Per-scenario run logs and the thermal/memory/disk samples taken alongside them.
+# *.log above already catches the run logs; this adds logs/thermals.csv, which is
+# the only other thing written there. Both are a record of one machine's runs --
+# tens of megabytes per sweep, and meaningless on anyone else's -- so they stay
+# local. run_scenario.py and run_sweep.py write them; the only reader is
+# coupling_cost_data.py, which takes Figure 8's run times from the logs when they
+# are present and from coupling_cost.nc when they are not.
+logs/
+
 # ad-hoc backups made before regenerating an input; git already has the original
 *.bak
 
