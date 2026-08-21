@@ -422,22 +422,25 @@ The SWMM outfall discharge is written into the D-Flow FM source term at each use
 \noindent where $\bar{Q}_{s}$ is the mean SWMM outfall discharge over the user time step (L$^{3}$T$^{-1}$), $V$ is the cumulative volume conveyed through the SWMM outfall (L$^{3}$), and $\Delta t_{u}$ is the D-Flow FM user time step (T). Forming the mean from the cumulative volume, as equation~\ref{eq:blockmean} does, conserves mass exactly over the step, whereas sampling the SWMM outfall discharge instantaneously once per coupling interval and holding it would introduce the same aliasing that the coupling interval itself is being tested for. Advancing SWMM at the user time step rather than at the coupling interval does not alter the sewer solution, because SWMM routes internally at its own routing step in either case and the exchange computed from equation~\ref{eq:swmmq} is still refreshed only once per coupling interval; it raises the resolution at which the outfall is observed.
 
 \section{Implementation}
+\label{sec:implementation}
+
+% Trimmed for Advances in Water Resources, whose scope is the water rather than the
+% program, and on the house rule that software is the instrument and not the subject.
+% What stays here is what changes the water: a source term written in the wrong place
+% delivers no volume, and one setting rather than two compiled simulators is what makes
+% the comparison controlled. The call sequence each simulator provides is Appendix A,
+% where a reader reproducing the work will look for it and a reader following the
+% argument will not trip over it.
 
 The coupled simulation is implemented in Python. The three simulators are loaded as shared libraries into a single process, so that state is passed between them as arrays in memory.
 
-D-Flow FM applies its external forcings at the start of a user time step and then computes the flow solution. A source term written from outside the model between those two operations is used by the solution, whereas one written around the complete time step is overwritten by the forcing update before it is reached. The direct tracer mechanism therefore advances D-Flow FM through the separate initialization, computation, and finalization calls of its interface rather than through the combined update, and writes the source term between the first and the second. This is the transfer drawn as $\bar{Q}_s$ in Figure~\ref{fig:sequence}; the arrow falls within a user time step, not between two of them.
-
-This is the sub-time-step access described earlier, and the two simulators reach it differently. MODFLOW~6 extends the Basic Model Interface with functions that give access to the time step and the solution within it \citep{hughes2022modflowapi}, and those functions are what the groundwater exchange is written through. D-Flow FM instead splits its user time step into three separate calls alongside the combined one. Neither route is part of the Basic Model Interface itself, so a coupling of this kind is portable only to the extent that each simulator provides some equivalent.
+Where the sewer source term is written within the D-Flow FM time step decides whether any of it is delivered. D-Flow FM applies its external forcings at the start of a user time step and then computes the flow solution, so a source term written around the complete time step is overwritten by the forcing update before the flow computation reads it, and none of the outfall discharge reaches the receiving water; written between those two operations, all of it does. This is the transfer drawn as $\bar{Q}_s$ in Figure~\ref{fig:sequence}, and the arrow falls within a user time step rather than between two of them. Neither simulator offers that access through the Basic Model Interface itself, and the calls each provides instead are given in \ref{app:interface}, so a coupling of this kind is portable only to the extent that a simulator supplies some equivalent.
 
 \subsection{Coupling strategy}
 
-Because no simulator is modified, the coupling strategy---what is exchanged, how it is reduced to a single value, and where within a model time step it is written---resides entirely in the driver. An alternative strategy is then a change to a few lines of Python and a re-run, rather than an edit and a recompilation of a hydrodynamic or a groundwater code. Two of the choices reported here were settled that way, and neither would have been convenient to settle otherwise.
+Because no simulator is modified, what is exchanged, how it is reduced to a single value, and where within a model time step it is written reside entirely in the driver. The cost of trying an exchange formulation is then the cost of running the models rather than of editing and recompiling a hydrodynamic or a groundwater simulator, and two of the choices reported here were settled on that evidence rather than by argument: the representation of the coastal boundary, and the placement of the sewer source term above, which was found by simulating both placements and comparing the volume delivered.
 
-The representation of the D-Flow FM boundary as one value per coupling interval (Section~\ref{sec:reduction}) is selected by a single setting, so the instantaneous and the time-averaged forms could both be simulated, at every coupling interval, using the same executables and the same model input. That is what makes the comparison in Figure~\ref{fig:averaging} a controlled one: a single thing differs between the two curves, and the aliasing threshold it exposes is a property of the representation rather than of the program that produced it. Implementing either formulation inside a simulator would have required a separately compiled simulator for each, and would have left the two unavailable simultaneously.
-
-Where in the D-Flow FM time step the sewer source term has to be written was established the same way. Writing it around the combined time-stepping call delivered none of the outfall volume, because the external forcing update overwrites the source term before the flow computation reads it; writing it between the separate initialization and computation calls delivered all of it. That is an experiment performed on the driver, against the distributed library, requiring no knowledge of the internals beyond the names of the calls and no ability to recompile the code.
-
-The freedom is bounded by what the interfaces provide: a strategy that needs state the simulator does not provide, or needs it at a moment the simulator does not permit, cannot be written in the driver at all. Within those bounds, however, the cost of trying a coupling strategy falls to the cost of running the models, which is what allowed the exchange formulations here to be chosen on evidence rather than on argument.
+The representation of the D-Flow FM boundary as one value per coupling interval (Section~\ref{sec:reduction}) is selected without altering any of the three models, so the instantaneous and the time-averaged forms were both simulated, at every coupling interval, from the same executables and the same model input. That is what makes the comparison in Figure~\ref{fig:averaging} a controlled one: a single thing differs between the two curves, and the aliasing threshold it exposes is a property of the representation rather than of the program that produced it. Implementing either formulation inside a simulator would have required a separately compiled simulator for each, and would have left the two unavailable simultaneously.
 
 \section{Demonstration}
 
@@ -571,6 +574,17 @@ The second is that nothing in the approach is particular to these three codes. T
 % declaration below then matches. Versions are here because a coupled result is not
 % reproducible without them. The archive DOI and the data deposit are still to be
 % supplied.
+\appendix
+
+\section{Interface calls the coupling requires}
+\label{app:interface}
+
+The coupling requires each simulator to initialize a simulation from its own input, advance it by a time step, finalize it, and read and write named state. The Basic Model Interface \citep{hutton2020bmi} codifies those four capabilities, and where a simulator implements it the driver calls them by their standard names. MODFLOW~6 and D-Flow FM do; SWMM does not, and is driven through the SWMM toolkit interface, which supplies the same capabilities under different names.
+
+Returning the sewer outfall discharge to the hydrodynamic model requires one capability beyond those four, namely writing model state part way through a time step, and the Basic Model Interface does not define it. The two simulators written to in that way here provide it by different and non-standard routes. MODFLOW~6 extends the Basic Model Interface with functions that give access to the time step and to the solution within it \citep{hughes2022modflowapi}, and the coastal exchange is written through those. D-Flow FM splits its user time step into separate initialization, computation, and finalization calls alongside the combined update, and the tracer source term is written between the first and the second, for the reason given in Section~\ref{sec:implementation}.
+
+Both routes were established against the distributed libraries, requiring no knowledge of the internals beyond the names of the calls and no ability to recompile either simulator. A strategy that needs state a simulator does not expose, or needs it at a moment the simulator does not permit, cannot be written in the driver at all, which is the bound on what this approach can reach.
+
 \section*{Data and code availability}
 
 The three simulators are used as distributed and are not modified by this work. MODFLOW~6 is developed by the U.S. Geological Survey and is available from \url{https://github.com/MODFLOW-ORG/modflow6}; version 6.7.0 was used, with the application programming interface and the \texttt{modflowapi} Python interface. D-Flow FM is developed by Deltares and is available from \url{https://oss.deltares.nl/web/delft3dfm}. SWMM is developed by the U.S. Environmental Protection Agency and is available from \url{https://github.com/USEPA/Stormwater-Management-Model}; version 5.2.4 was used, driven through the \texttt{PySWMM} Python interface, version 2.0.1. All three are loaded as shared libraries by the coupling.
