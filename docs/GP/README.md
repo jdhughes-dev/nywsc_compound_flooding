@@ -50,6 +50,41 @@ Rebuilding the figures needs a network connection for the base map on
 `coupling_region.pdf`. Without one the figure is drawn without it and a warning is
 printed; nothing else changes.
 
+Redrawing leaves every figure showing as modified in `git status`, and that is
+almost never a real change. Matplotlib stamps a creation date into each PDF it
+writes, and because that date shifts every byte offset in the cross-reference table
+after it, comparing bytes tells you nothing, even with the trailer metadata stripped
+out. Compare the drawings instead:
+
+```
+name=boundary_reduction
+git show HEAD:docs/GP/figures/$name.pdf > old.pdf
+pdftoppm -r 120 -png -singlefile old.pdf old
+pdftoppm -r 120 -png -singlefile docs/GP/figures/$name.pdf new
+python - <<'EOF'
+import numpy as np
+from PIL import Image
+a = np.asarray(Image.open("old.png").convert("RGB")).astype(int)
+b = np.asarray(Image.open("new.png").convert("RGB")).astype(int)
+if a.shape != b.shape:
+    print(f"canvas changed: {a.shape} vs {b.shape}")
+else:
+    d = np.abs(a - b).max(axis=2)
+    print(f"{(d > 8).sum()} pixels differ, largest delta {d.max()}")
+EOF
+```
+
+A delta of a few units on scattered pixels is anti-aliasing and means the drawing is
+the same. Checked on 2026-08-21 against the committed set: eight of the nine redraw
+pixel-identically, and `coastal_exchange.pdf` reports a changed canvas, 330.48
+against the nominal 331.2 pt, with every curve, tick and label shifted by that
+hundredth of an inch and the extracted text character-for-character the same. That
+one was committed from an older matplotlib and nothing plotted has moved.
+
+The committed figures are what the manuscript is built from and are deliberately
+left alone, so a redraw that shows no pixel difference should be reverted with
+`git checkout -- docs/GP/figures/` rather than committed.
+
 ## Running the simulations
 
 This is the expensive layer and it is not driven by `rebuild_manuscript.py`. Use
