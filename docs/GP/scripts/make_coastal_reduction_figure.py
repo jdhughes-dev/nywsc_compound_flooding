@@ -107,9 +107,13 @@ def make(refresh=True):
                plt.Line2D([], [], color=C_M, lw=1.4, label="time-averaged")]
         grids = [plt.Line2D([], [], color="0.45", lw=1.0, ls=s, marker=m, ms=3.4,
                             label=lab) for m, s, lab in GRID_STYLE.values()]
+        # Anchored inboard of the left spine. The style draws ticks pointing into
+        # the axes, so a legend flush to the spine puts its handles on top of the
+        # tick marks at 35 and 30.
         leg1 = ax.legend(handles=red, labels=[h.get_label() for h in red],
                          loc="upper left", frameon=False, fontsize=7,
-                         handlelength=2.0, borderaxespad=0.4, labelspacing=0.3)
+                         handlelength=2.0, borderaxespad=0.0, labelspacing=0.3,
+                         bbox_to_anchor=(0.07, 0.98))
         # The USGS EXPLANATION heading, which the other figures carry. It sits over
         # the reduction entries and reads as covering the grid entries below them
         # as well, which is what it should do.
@@ -117,8 +121,8 @@ def make(refresh=True):
         ax.add_artist(leg1)
         ax.legend(handles=grids, labels=[h.get_label() for h in grids],
                   loc="upper left", frameon=False, fontsize=6.5,
-                  handlelength=2.6, borderaxespad=0.4, labelspacing=0.25,
-                  bbox_to_anchor=(0.0, 0.80))
+                  handlelength=2.6, borderaxespad=0.0, labelspacing=0.25,
+                  bbox_to_anchor=(0.07, 0.80))
 
         fig.savefig(OUT)
     print("wrote", OUT)

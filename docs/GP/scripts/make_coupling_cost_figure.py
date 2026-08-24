@@ -105,20 +105,20 @@ def make(refresh=True):
                              else f"{v / 24:.0f} d" for v in ticks], fontsize=7)
         axA.tick_params(labelsize=7, top=False)
         axA.annotate(r"$M_2$ Nyquist", xy=(NYQUIST_H, 0.96),
-                     xycoords=("data", "axes fraction"), xytext=(3, 0),
+                     xycoords=("data", "axes fraction"), xytext=(-3, 0),
                      textcoords="offset points", fontsize=6.5, color="0.35",
-                     va="top", ha="left")
+                     va="top", ha="right")
         # The panel is a ratio, so the absolute cost the ratio is taken against is
         # otherwise invisible -- and that cost is the whole reason the three curves
         # separate.
         # Upper right: every curve descends to one at daily coupling, so that
         # corner is the only part of the panel the data never occupies.
-        axA.annotate("daily-coupling run time", xy=(0.46, 0.84),
+        axA.annotate("daily-coupling run time", xy=(0.30, 0.84),
                      xycoords="axes fraction", fontsize=6.5, color="0.35")
         for i, (grid, color, _) in enumerate(GRIDS):
             if grid in baselines:
                 mean_min = sum(baselines[grid]) / len(baselines[grid])
-                axA.annotate(f"{mean_min:.0f} min", xy=(0.46, 0.76 - 0.075 * i),
+                axA.annotate(f"{mean_min:.0f} min", xy=(0.30, 0.76 - 0.075 * i),
                              xycoords="axes fraction", fontsize=6.5, color=color)
         styles.xlabel(ax=axA, label="Coupling interval")
         styles.heading(ax=axA, letter="A", fontsize=7.5,

@@ -144,10 +144,12 @@ def make(grid=bad.DEFAULT_GRID, refresh=True):
                 ax.tick_params(labelbottom=False)
             # Anchored in axes fraction, not to get_ylim()[1]: the data top IS the top
             # spine, so the label sat on it.
+            # Left of the line: right of it the label ran toward the frame, and in
+            # panel B into the data.
             ax.annotate(r"$M_2$ Nyquist", xy=(NYQUIST_H, 0.96),
                         xycoords=("data", "axes fraction"),
-                        xytext=(3, 0), textcoords="offset points",
-                        fontsize=6.5, color="0.35", va="top", ha="left")
+                        xytext=(-3, 0), textcoords="offset points",
+                        fontsize=6.5, color="0.35", va="top", ha="right")
             styles.heading(ax=ax, letter=letter, heading=lab, fontsize=7.5)
 
         # A FIGURE legend placed "outside", not an axes legend anchored beyond its axes.

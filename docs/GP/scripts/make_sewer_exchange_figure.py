@@ -58,19 +58,24 @@ def make(refresh=True):
         # the curves entirely.
         axA.annotate("spin-up", xy=(spin / 2.0, 0.5),
                      xycoords=("data", "axes fraction"), rotation=90,
-                     ha="center", va="center", fontsize=6.5, color="black")
+                     ha="center", va="center", fontsize=8, color="black")
 
         # Gathered in the upper left instead of tagged onto the curve ends: the
         # medium and fine curves finish within 8 percent of each other, so labels
         # placed there sat on top of one another and on the lines.
-        axA.annotate("net infiltration, liters per day per\nmillimeter of diameter "
+        # Right of the shaded band and on one line. Anchored in days rather than in
+        # axes fraction so it clears the band whatever the axis limits are, and the
+        # rates sit at the same x so the block reads as one label.
+        x0 = spin + 1.5
+        axA.annotate("net infiltration, liters per day per millimeter of diameter "
                      "per kilometer",
-                     xy=(0.03, 0.95), xycoords="axes fraction", va="top",
+                     xy=(x0, 0.95), xycoords=("data", "axes fraction"), va="top",
                      fontsize=6.5, color="0.35")
         for i, (grid, color, label) in enumerate(GRIDS):
             r = float(ds["rate_L_d_mm_km"].sel(grid=grid))
             axA.annotate(f"{label.split(',')[0]}  {r:.1f}",
-                         xy=(0.03, 0.80 - 0.085 * i), xycoords="axes fraction",
+                         xy=(x0, 0.80 - 0.085 * i),
+                         xycoords=("data", "axes fraction"),
                          va="top", fontsize=6.5, color=color)
 
         styles.heading(ax=axA, letter="A", fontsize=7.5,
