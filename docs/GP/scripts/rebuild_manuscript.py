@@ -27,6 +27,8 @@ Usage
 """
 import argparse
 import pathlib as pl
+import re
+import statistics
 import subprocess
 import sys
 import time
@@ -35,6 +37,16 @@ HERE = pl.Path(__file__).resolve().parent
 DOCS = HERE.parent
 ROOT = DOCS.parents[1]
 TEX = DOCS / "Hughesetal_AWR_LISSCoupling.tex"
+
+# A paragraph that runs past this is usually doing more than one job. The body's
+# paragraphs have a median of about 100 words, so this is three times typical, and
+# it is a regression guard rather than a rule: the two that exceed it today are
+# dense results paragraphs that were written that way. What it catches is the
+# paragraph that grew by accretion, which is what happens when successive edits
+# append to one paragraph and none reads it whole afterwards.
+PARA_WARN_WORDS = 300
+SECTION_RE = re.compile(r"\\(sub)?section\*?\{(.+?)\}$")
+STRIP_RE = re.compile(r"\\[a-zA-Z]+|[{}$]")
 
 # Recompute order matters only in that the archives must precede the figures that
 # read them; within a stage the entries are independent.
@@ -98,6 +110,29 @@ def run(script, args, label):
     return ok
 
 
+def body_paragraphs(tex=TEX):
+    """Every prose paragraph of the body, as (words, line number, section).
+
+    The body runs from the introduction to the back matter. A line opening with a
+    backslash or a percent sign is markup rather than prose and is skipped, which
+    leaves captions out too, a caption being an argument to a macro.
+    """
+    lines = tex.read_text(encoding="utf-8").split("\n")
+    out, section, started = [], "(front)", False
+    for n, line in enumerate(lines, 1):
+        t = line.strip()
+        m = SECTION_RE.match(t)
+        if m:
+            if t.startswith("\\section*"):   # back matter begins
+                break
+            section = m.group(2)
+            started = started or section == "Introduction"
+            continue
+        if not started or not t or t[0] in "%\\":
+            continue
+        out.append((len(STRIP_RE.sub(" ", t).split()), n, section))
+    return out
+
 def check():
     """Report what a rebuild could start from, without changing anything."""
     results = ROOT / "results" / "gp"
@@ -113,6 +148,15 @@ def check():
     print(f"submission art    "
           f"{sum((DOCS / 'figures' / f[2]).is_file() for f in SUBMISSION_ARTWORK)}"
           f" of {len(SUBMISSION_ARTWORK)} present")
+
+    paras = body_paragraphs()
+    if paras:
+        median = statistics.median(w for w, _, _ in paras)
+        long = sorted((p for p in paras if p[0] > PARA_WARN_WORDS), reverse=True)
+        print(f"paragraphs        {len(paras)} in the body, median {median:.0f} words, "
+              f"{len(long)} over {PARA_WARN_WORDS}")
+        for words, line, section in long:
+            print(f"  {words:>4} words  line {line:<5} {section}")
 
     sys.path.insert(0, str(HERE))
     for mod, label in (("boundary_averaging_data", "boundary averaging"),
