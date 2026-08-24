@@ -92,10 +92,12 @@ def make(refresh=True):
         styles.ylabel(ax=ax, label="Cumulative coastal exchange,\nin percent from the "
                                    "15-minute simulation")
 
-        ax.annotate(r"$M_2$ Nyquist", xy=(crd.bad.NYQUIST_H, 0.985),
+        # Left of the line, and below the top spine: the log x-axis keeps its minor
+        # ticks on the top spine, which a label flush to the frame ran into.
+        ax.annotate(r"$M_2$ Nyquist", xy=(crd.bad.NYQUIST_H, 0.94),
                     xycoords=("data", "axes fraction"),
-                    xytext=(3, 0), textcoords="offset points",
-                    fontsize=6.5, color="0.35", va="top", ha="left")
+                    xytext=(-3, 0), textcoords="offset points",
+                    fontsize=6.5, color="0.35", va="top", ha="right")
 
         # Two legends, because the figure encodes two things and one combined legend
         # of six entries would not fit. Color carries the reduction, which is what

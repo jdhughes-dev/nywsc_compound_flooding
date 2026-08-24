@@ -120,9 +120,11 @@ def make(grid=bad.DEFAULT_GRID, refresh=True):
                 ax.set_yscale("log")
             else:
                 ax.axhline(0.0, color="0.35", lw=0.9, linestyle=(0, (3, 2)), zorder=1)
+                # Lifted well clear of the line: the 30-minute points sit on it,
+                # and a 3 pt offset put the label on them.
                 ax.annotate("reference", xy=(0.02, 0.0),
                             xycoords=("axes fraction", "data"),
-                            xytext=(0, 3), textcoords="offset points",
+                            xytext=(0, 9), textcoords="offset points",
                             fontsize=6.5, color="0.35")
                 # A floor on the span, so that a tracer which does not respond reads
                 # as flat instead of being magnified to fill the panel. On the coarse

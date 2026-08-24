@@ -56,9 +56,10 @@ def make(refresh=True):
             ax.tick_params(labelsize=7, top=False)
         # Turned into the shaded band rather than set beside it, which keeps it off
         # the curves entirely.
-        axA.annotate("spin-up", xy=(spin / 2.0, 0.5),
-                     xycoords=("data", "axes fraction"), rotation=90,
-                     ha="center", va="center", fontsize=8, color="black")
+        for ax in (axA, axB):
+            ax.annotate("spin-up", xy=(spin / 2.0, 0.5),
+                        xycoords=("data", "axes fraction"), rotation=90,
+                        ha="center", va="center", fontsize=9, color="black")
 
         # Gathered in the upper left instead of tagged onto the curve ends: the
         # medium and fine curves finish within 8 percent of each other, so labels
@@ -74,7 +75,7 @@ def make(refresh=True):
         for i, (grid, color, label) in enumerate(GRIDS):
             r = float(ds["rate_L_d_mm_km"].sel(grid=grid))
             axA.annotate(f"{label.split(',')[0]}  {r:.1f}",
-                         xy=(x0, 0.80 - 0.085 * i),
+                         xy=(x0, 0.87 - 0.065 * i),
                          xycoords=("data", "axes fraction"),
                          va="top", fontsize=6.5, color=color)
 
