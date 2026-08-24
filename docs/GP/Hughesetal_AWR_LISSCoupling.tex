@@ -309,7 +309,7 @@ The coupling interval is the principal numerical control on the approach. The co
 
 \section{Coastal exchange}
 
-Water levels simulated by D-Flow FM are applied to the MODFLOW~6 coastal boundary, which is represented by a General-Head Boundary (GHB) package covering the inner bays and a Constant-Head (CHD) package covering the open coast and the lateral perimeter. The D-Flow FM grid and the MODFLOW~6 grid are not coincident, so the exchange is mediated by area-weighted mapping matrices computed once, before simulation, from the intersection of the two grids.
+Water levels simulated by D-Flow FM are applied to the MODFLOW~6 coastal boundary, which is represented by a General-Head Boundary (GHB) package covering the inner bays and a Constant-Head (CHD) package covering the open coast and the lateral perimeter. The D-Flow FM grid and the MODFLOW~6 grid are not coincident, so the exchange is mediated by area-weighted mapping matrices computed once, before simulation, from the intersection of the two grids with gdptools \citep{usgs2024gdptools}.
 
 D-Flow FM resolves the tide on a time step orders of magnitude shorter than the coupling interval, so a single boundary value has to summarize everything that happened over the interval. MODFLOW~6 advances that interval in one backward-in-time step, and the exchange term of such a step is applied across its whole length: the volume exchanged is the product of the interval, the conductance, and the head difference. The boundary value must therefore represent the interval rather than any instant within it, and the representation used here is a time average weighted by the wetted state,
 
