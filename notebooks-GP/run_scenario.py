@@ -58,6 +58,7 @@ OVERRIDES = {
     "smoke_test_days": "smoke_days",
     "scenario_suffix": "scenario_suffix",
     "coastal_boundary_averaging": "coastal_averaging",
+    "coastal_seepage": "coastal_seepage",
     "dflow_start_override": "start_datetime",
 }
 
@@ -198,6 +199,15 @@ def main():
              "is what every scenario before 2026-08 used",
     )
     p.add_argument(
+        "--coastal-seepage",
+        action="store_true",
+        help="let the aquifer discharge while the hydrodynamic cell is dry, "
+             "through a drain on the coastal cells at the cell top carrying the "
+             "complement of the wetted fraction. Without it the boundary is "
+             "switched off over the dry fraction and groundwater above the bed "
+             "has no outlet at all. The scenario id gains a _seep tag.",
+    )
+    p.add_argument(
         "--force",
         action="store_true",
         help="run even if the results directory already holds a completed scenario",
@@ -255,21 +265,30 @@ def main():
     if args.scenario_suffix:
         scenario += args.scenario_suffix
         results_ws = results_ws.parent / scenario
-    # Applied here rather than left to --scenario-suffix, because an ensemble whose
-    # members are distinguished by hand is an ensemble whose members eventually
-    # overwrite one another. Seed 0 is unlabeled so that every scenario produced
-    # before the seed existed keeps its name.
-    if subsampled and args.junction_seed != 0:
-        scenario += f"_s{args.junction_seed}"
-        results_ws = results_ws.parent / scenario
-
-    # _t, not _s: the junction seed above already owns _s<int>, and _s1054 could be
+    # _t, not _s: the junction seed below already owns _s<int>, and _s1054 could be
     # read as either a seed or a start. Applied here rather than left to
     # --scenario-suffix for the same reason the seed is -- a start-phase matrix whose
     # members are distinguished by hand is one whose members eventually collide, and
     # the run that would be overwritten is a 15-minute reference.
     if args.start_datetime:
         scenario += f"_t{str(args.start_datetime)[8:12]}"
+        results_ws = results_ws.parent / scenario
+
+    # A formulation change, not a forcing change, so it gets its own tag rather than
+    # relying on --scenario-suffix. The notebook applies the same rule; the tags here
+    # are applied in the notebook's order -- smoke, suffix, _t, _seep, _s -- because
+    # the two build this name independently and a disagreement would only surface as
+    # a run silently overwriting another.
+    if args.coastal_seepage:
+        scenario += "_seep"
+        results_ws = results_ws.parent / scenario
+
+    # Applied here rather than left to --scenario-suffix, because an ensemble whose
+    # members are distinguished by hand is an ensemble whose members eventually
+    # overwrite one another. Seed 0 is unlabeled so that every scenario produced
+    # before the seed existed keeps its name.
+    if subsampled and args.junction_seed != 0:
+        scenario += f"_s{args.junction_seed}"
         results_ws = results_ws.parent / scenario
 
     # The sewer forcing is written through the API every user time step, so no

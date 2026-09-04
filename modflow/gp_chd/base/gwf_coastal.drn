@@ -1,0 +1,18 @@
+# Coastal seepage drains, one per GHB cell, written by hand rather than by flopy.
+# Cell order is the GHB package's own file order, which is what lets the GHB mapping
+# serve this package in both directions: SIMVALS comes back in package order, so a
+# different order would send the seepage to the wrong D-Flow FM cells silently.
+# Elevation is the cell top. Conductance is zero, leaving the package inert until the
+# driver writes to it, so a run with coastal seepage switched off is bit-identical to
+# one from before this package existed.
+BEGIN options
+  auxiliary  salinity
+END options
+
+BEGIN dimensions
+  MAXBOUND  72
+END dimensions
+
+BEGIN period  1
+    OPEN/CLOSE  'external/drn_coastal.dat'
+END period  1

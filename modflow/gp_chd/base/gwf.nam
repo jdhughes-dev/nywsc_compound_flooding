@@ -16,6 +16,7 @@ BEGIN packages
   CHD6  gwf_perimeter.chd  chd
   CHD6  gwf_surface.chd  chd_surface
   DRN6  gwf.drn  drn
+  DRN6  gwf_coastal.drn  drn_coastal
   GHB6  gwf.ghb  ghb
   BUY6  gwf.buy  buy
   WEL6  gwf_swmm.wel SWMM
