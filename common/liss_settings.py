@@ -182,6 +182,17 @@ def get_dflow_dtuser(control_path=None):
     return dtuser
 
 
+def get_dflow_epshu(control_path=None, default=1.0e-4):
+    """D-Flow FM's own threshold water depth for a wet cell, from the .mdu."""
+    # The coupling has to decide wetness on the same threshold the hydrodynamic
+    # model uses. Testing depth > 0.0 instead is a thousand times finer than Epshu
+    # and disagrees with D-Flow FM about cells carrying a trace of water: the
+    # coastal drain leaves ~1e-5 m on a face, D-Flow FM reports no water level for
+    # it and keeps treating it as dry, and a > 0.0 test would call it fully wet.
+    epshu = _get_data(control_path, tag="Epshu")
+    return default if epshu is None else float(epshu)
+
+
 def get_sfincs_grid_name(control_path=None):
     grid_file = _get_data(control_path, tag="qtrfile")
     if grid_file is not None:
