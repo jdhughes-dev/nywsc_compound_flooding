@@ -91,6 +91,39 @@ CONFIG = {
         runs=_regular("gp_high"),
     ),
 }
+
+# The coastal-seepage family (e505014, with the wet/dry corrections 5505102 and
+# d76e1d8). Those runs are uniform where the published ones are not -- every one
+# carries its reduction as a --scenario-suffix and then _seep -- so the whole
+# mapping follows from grid and tag, and the per-grid irregularities above do not
+# survive into it.
+#
+# SEEP = False addresses the published runs, which decided a coastal face wet at any
+# depth above exactly 0.0. Keep that available: those runs are what every committed
+# archive in docs/data/GP was built from, and a comparison between the two families
+# is the only way to say what the correction moved.
+#
+# NOTE: as of 2026-09-11 only 15.00M, 08.00H and 01.00D exist under _seep. The other
+# intervals have not been run, so missing() reports 12 absent runs on coarse and 8
+# each on medium and high, and load_or_refresh falls back to the archive and says
+# so through its "archive" source. That is the honest state, not a defect here.
+SEEP = True
+
+
+def _seepify(cfg, grid):
+    """Re-address one grid's config to the coastal-seepage runs."""
+    if not SEEP:
+        return cfg
+    out = dict(cfg)
+    out["refs"] = {"15M instant": f"gp_{grid}_15.00M_n244_instbnd_seep",
+                   "15M mean": f"gp_{grid}_15.00M_n244_meanbnd_seep"}
+    out["runs"] = {t: (h, f"gp_{grid}_{t}_n244_instbnd_seep",
+                       f"gp_{grid}_{t}_n244_meanbnd_seep")
+                   for t, (h, _i, _m) in cfg["runs"].items()}
+    return out
+
+
+CONFIG = {g: _seepify(c, g) for g, c in CONFIG.items()}
 DEFAULT_GRID = "coarse"
 
 UNITS = {"head_inst": "mm", "head_mean": "mm", "seep_inst": "ft3/d",

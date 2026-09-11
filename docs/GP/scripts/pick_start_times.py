@@ -38,7 +38,10 @@ import xarray as xr
 
 HERE = pl.Path(__file__).resolve().parent
 ROOT = HERE.parent.parent.parent
-HIS = ROOT / "dflow-fm" / "coarse" / "run_gp_coarse_01.00D_n244" / "output" / "FlowFM_his.nc"
+# The instantaneous daily coarse run under coastal seepage; its predecessor
+# gp_coarse_01.00D_n244 decided wetness on depth > 0.0 (see 5505102).
+HIS = (ROOT / "dflow-fm" / "coarse" / "run_gp_coarse_01.00D_n244_instbnd_seep"
+       / "output" / "FlowFM_his.nc")
 DATA = HERE.parents[1] / "data" / "GP"
 NC = DATA / "start_phase_waterlevel.nc"
 

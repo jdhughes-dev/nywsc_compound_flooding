@@ -38,9 +38,11 @@ N_CONN = 244
 # Averaged coastal boundary: the reduction adopted in this work. At a 15-minute
 # interval the two reductions agree on this quantity to four significant figures,
 # which is itself worth knowing and is recorded in the attributes.
-RUNS = {"coarse": "gp_coarse_15.00M_n244_meanbnd",
-        "medium": "gp_medium_15.00M_n244_meanbnd",
-        "high": "gp_high_15.00M_n244_meanbnd"}
+# The coastal-seepage family (e505014, corrected by 5505102 and d76e1d8). All three
+# grids have the 15-minute reference under it, so this module needs nothing else.
+RUNS = {"coarse": "gp_coarse_15.00M_n244_meanbnd_seep",
+        "medium": "gp_medium_15.00M_n244_meanbnd_seep",
+        "high": "gp_high_15.00M_n244_meanbnd_seep"}
 CELLS = {"coarse": 6491, "medium": 16666, "high": 41091}
 
 
