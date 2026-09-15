@@ -242,3 +242,7 @@ data/GP/observations/
 # Editor settings. The only file here selects the conda environment manager, which
 # is a local preference rather than a property of the project.
 .vscode/
+
+# Runtime state written by tools/run_manuscript_sweep.py and read by
+# tools/sweep_status.py. Rewritten at every state change; not source.
+tools/.sweep_status.json
