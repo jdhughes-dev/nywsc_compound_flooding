@@ -83,6 +83,21 @@
 \setlength{\figcol}{90mm}
 \newcommand{\onecolfig}[1]{\centerline{\includegraphics[width=\figcol]{#1}}}
 
+% Revision markup. \added, \deleted and \replaced record what changed between
+% drafts so a co-author or reviewer reads the edit rather than diffing two PDFs, and
+% the author list gives each mark an attribution.
+%
+% changes loads ulem, which redefines \emph as underlining; that is invisible here
+% because the prose carries no emphasis, and it is why ulem must not be loaded again
+% elsewhere.
+%
+% SUBMISSION BUILDS MUST USE [final]. It resolves every mark -- additions set as
+% plain text, deletions dropped -- and leaves no trace of the apparatus in the PDF.
+% Leaving the draft option on is how markup reaches a publisher.
+\usepackage[markup=underlined]{changes}
+%\usepackage[final]{changes}   % submission copy
+\definechangesauthor[name={J. D. Hughes}, color=blue]{JDH}
+
 \journal{Advances in Water Resources}
 
 \begin{document}
