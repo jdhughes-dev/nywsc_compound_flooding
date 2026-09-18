@@ -93,7 +93,35 @@ def complete(name):
         return False
 
 
+def load_prior():
+    """The status left by the previous invocation, or an empty dict.
+
+    The sweep is restarted after every stop -- a deadline, a crash, a reboot -- and
+    a fresh state each time would reset the campaign's accumulated run time, which
+    is the one number the calendar cannot supply.
+    """
+    if not STATUS.is_file():
+        return {}
+    try:
+        return json.loads(STATUS.read_text(encoding="utf-8"))
+    except (ValueError, OSError):
+        return {}
+
+
+def allowance(grid, history, safety):
+    """Minutes to allow for a run of this grid before starting it under a deadline.
+
+    The mean under-predicts: coarse 15.00M took 71.8 min against a 50 min nominal,
+    and gp_high_08.00H_n244_instbnd_seep took 8 h 20 m against its sibling's 4 h 33 m.
+    A deadline is a promise that the machine is idle at a stated hour, so this uses
+    the worst time seen for the grid rather than the average, times a safety factor.
+    """
+    seen = [h["minutes"] for h in history if h["grid"] == grid]
+    return max(max(seen, default=0.0), NOMINAL_MIN[grid]) * safety
+
+
 def write_status(state):
+    state["last_update"] = dt.datetime.now().isoformat()
     STATUS.write_text(json.dumps(state, indent=1), encoding="utf-8")
 
 
@@ -104,6 +132,9 @@ def main():
     p.add_argument("--deadline", default=None, metavar="YYYY-MM-DDTHH:MM",
                    help="stop starting new runs once the projected finish passes "
                         "this instant; the run in flight is always allowed to end")
+    p.add_argument("--deadline-safety", type=float, default=1.25, metavar="F",
+                   help="multiply the worst time seen for a grid by this before "
+                        "testing a start against the deadline (default 1.25)")
     p.add_argument("--dry-run", action="store_true")
     a = p.parse_args()
 
@@ -123,17 +154,38 @@ def main():
             print(f"  would run {name:44s} ({g}, {h} h, {red})")
         return 0
 
+    prior = load_prior()
     observed = {}
-    state = {"total": len(runs), "verified": len(done), "started": dt.datetime.now().isoformat(),
-             "current": None, "index": len(done), "history": [], "finished": False,
-             "deadline": deadline.isoformat() if deadline else None}
+    state = {"total": len(runs), "verified": len(done),
+             "campaign_started": (prior.get("campaign_started") or prior.get("started")
+                                  or dt.datetime.now().isoformat()),
+             "started": dt.datetime.now().isoformat(),
+             "current": None, "index": len(done),
+             "history": list(prior.get("history", [])),
+             "interrupted": list(prior.get("interrupted", [])),
+             "finished": False,
+             "deadline": deadline.isoformat() if deadline else None,
+             "deadline_safety": a.deadline_safety}
+
+    # A scenario left in flight in the prior status never finished: the sweep clears
+    # `current` on every path out. Record it, so the campaign shows the interruption
+    # and so its wall time is not counted as work that produced a result.
+    if prior.get("current"):
+        state["interrupted"].append({"name": prior["current"]["name"],
+                                     "started": prior["current"]["started"],
+                                     "noticed": dt.datetime.now().isoformat()})
+        print(f"resuming: {prior['current']['name']} was in flight at the last stop "
+              f"and is being run again")
     write_status(state)
 
     for i, (grid, hours, red, suffix, name) in enumerate(todo, start=1):
         per = observed.get(grid) or NOMINAL_MIN[grid]
-        if deadline and dt.datetime.now() + dt.timedelta(minutes=per) > deadline:
-            print(f"\nstopping before {name}: projected finish passes the deadline")
+        allow = allowance(grid, state["history"], a.deadline_safety)
+        if deadline and dt.datetime.now() + dt.timedelta(minutes=allow) > deadline:
+            print(f"\nstopping before {name}: a {grid} run is allowed "
+                  f"{allow:.0f} min, which passes the deadline {deadline:%a %d %b %H:%M}")
             state["stopped_on_deadline"] = name
+            write_status(state)
             break
 
         idx = len(done) + i

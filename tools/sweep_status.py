@@ -2,12 +2,19 @@
 
 Reads tools/.sweep_status.json, which run_manuscript_sweep.py rewrites at every
 state change, and reports the current scenario, its position in the run list, and
-two estimates: time left on the run in flight and time left on the whole sweep.
+the campaign's time budget.
 
-Estimates use the mean wall time observed for that grid in this sweep once a run of
-it has finished, and the measured figures from the 2026-09 sweeps until then. A
-grid's runs vary by tens of minutes, so treat the whole-sweep figure as a bound to
-plan around rather than a prediction.
+Two clocks are kept apart, because on this machine they diverge badly. Calendar
+time is the span since the campaign began and includes every bugcheck, reboot and
+overnight pause. Run time is the wall time actually spent inside runs, summed
+across restarts, and it is the one that predicts what is left: a sweep that loses
+a night to a crash burns calendar time and no run time at all. Both the elapsed
+figure and the estimate to completion below are run time.
+
+Estimates use the mean wall time observed for a grid across the whole campaign,
+falling back to the measured figures from the 2026-09 sweeps until a grid has run.
+A grid's runs vary by tens of minutes, so treat the totals as bounds to plan
+around rather than predictions.
 """
 import datetime as dt
 import json
@@ -33,11 +40,12 @@ def main():
         print("sweep status: no run has started (tools/.sweep_status.json absent)")
         return 0
     s = json.loads(STATUS.read_text(encoding="utf-8"))
+    history = s.get("history", [])
 
-    # Per-grid mean from this sweep where available, measured defaults otherwise.
+    # Per-grid mean from the campaign where available, measured defaults otherwise.
     per = dict(NOMINAL_MIN)
     for g in GRIDS:
-        got = [h["minutes"] for h in s.get("history", []) if h["grid"] == g]
+        got = [h["minutes"] for h in history if h["grid"] == g]
         if got:
             per[g] = sum(got) / len(got)
 
@@ -57,9 +65,9 @@ def main():
         f = s["failed"]
         print(f"sweep STOPPED on {f['name']} (rc={f['rc']}"
               f"{', ' + f['reason'] if f.get('reason') else ''})")
+
     if cur:
-        started = dt.datetime.fromisoformat(cur["started"])
-        elapsed = (now - started).total_seconds() / 60.0
+        elapsed = (now - dt.datetime.fromisoformat(cur["started"])).total_seconds() / 60.0
         expect = per.get(cur["grid"], cur.get("expected_min", 0.0))
         left_cur = expect - elapsed
         head = (f"run {cur['index']} of {total}: {cur['name']}  "
@@ -67,18 +75,47 @@ def main():
         # The current run is counted once, through left_cur.
         rest = [g for g, name in outstanding if name != cur["name"]]
     else:
-        left_cur = 0.0
+        elapsed = left_cur = 0.0
         head = (f"no run in flight; {len(outstanding)} of {total} scenarios outstanding"
                 if outstanding else f"all {total} scenarios verified")
         rest = [g for g, _name in outstanding]
 
     left_all = max(0.0, left_cur) + sum(per[g] for g in rest)
     done = total - len(outstanding)
+    spent = sum(h["minutes"] for h in history) + elapsed
+
     print(f"{now:%Y-%m-%d %H:%M}  {head}")
-    print(f"    verified {done} of {total}   remaining {len(outstanding)}   "
-          f"whole sweep ~{hhmm(left_all)} (to {now + dt.timedelta(minutes=left_all):%a %d %b %H:%M})")
+    print(f"    verified {done} of {total}   remaining {len(outstanding)}")
+    print(f"    run time {hhmm(spent)} spent, ~{hhmm(left_all)} to go "
+          f"({hhmm(spent + left_all)} for the whole campaign)")
+
+    began = s.get("campaign_started") or s.get("started")
+    if began:
+        began = dt.datetime.fromisoformat(began)
+        span = (now - began).total_seconds() / 60.0
+        print(f"    calendar {hhmm(span)} since {began:%a %d %b %H:%M}, "
+              f"of which {hhmm(span - spent)} was not running")
+
+    print(f"    unbroken from now, finishes "
+          f"{now + dt.timedelta(minutes=left_all):%a %d %b %H:%M}")
+
     if s.get("deadline"):
-        print(f"    deadline {dt.datetime.fromisoformat(s['deadline']):%a %d %b %H:%M}")
+        dl = dt.datetime.fromisoformat(s["deadline"])
+        print(f"    deadline {dl:%a %d %b %H:%M} "
+              f"({hhmm((dl - now).total_seconds() / 60.0)} away)")
+    if s.get("stopped_on_deadline"):
+        print(f"    held at the deadline before {s['stopped_on_deadline']}")
+
+    # The campaign has already lost a finished set once, to a delete rather than to
+    # a crash, so a run whose result has gone is worth saying out loud.
+    gone = sorted({h["name"] for h in history if not complete(h["name"])})
+    if gone:
+        print(f"    NOTE {len(gone)} finished run(s) no longer on disk: "
+              f"{', '.join(gone[:3])}{' ...' if len(gone) > 3 else ''}")
+    if s.get("interrupted"):
+        last = s["interrupted"][-1]
+        print(f"    {len(s['interrupted'])} run(s) interrupted and redone "
+              f"(last {last['name']})")
     return 0
 
 
