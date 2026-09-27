@@ -36,12 +36,18 @@ GRIDS = [("coarse", "#1f77b4", "Coarse, 6,491 cells"),
          ("high", "#d62728", "Fine, 41,091")]
 # Filled is the reduction adopted in this work; open is the incumbent. They cost the
 # same, which is worth showing rather than asserting.
-REDUCTIONS = [("meanbnd", "o", True, "time-averaged"),
-              ("instbnd", "s", False, "instantaneous")]
+#
+# The _seep series, not the bare instbnd/meanbnd ones: those predate the coastal
+# seepage formulation the manuscript describes, and plotting them here would report
+# the run times of simulations the paper no longer presents.
+REDUCTIONS = [("meanbnd_seep", "o", True, "time-averaged"),
+              ("instbnd_seep", "s", False, "instantaneous")]
+LABELLED = REDUCTIONS[0][0]     # one legend entry per grid, not one per series
 
 
 def series(df, grid, reduction):
-    sub = df[(df["grid"] == grid) & (df["reduction"] == reduction)].dropna(
+    sub = ccd.drop_outliers(df)
+    sub = sub[(sub["grid"] == grid) & (sub["reduction"] == reduction)].dropna(
         subset=["minutes"]).sort_values("steps")
     return sub if len(sub) >= 4 else None
 
@@ -78,7 +84,7 @@ def make(refresh=True):
                 face = color if filled else "none"
                 axA.plot(s["hours"], s["minutes"] / base["minutes"],
                          marker=marker, color=color, mfc=face, lw=1.1, ms=4,
-                         label=label if reduction == "meanbnd" else None)
+                         label=label if reduction == LABELLED else None)
                 extra_steps = s["steps"] - base["steps"]
                 extra_min = s["minutes"] - base["minutes"]
                 axB.plot(extra_steps, extra_min, marker=marker, color=color,

@@ -46,6 +46,26 @@ STEM = re.compile(r"^gp_(coarse|medium|high)_(\d\d\.\d\d[MHD])_n(\d+)_?(\w*?)_\d
 # module asks.
 TAGGED = re.compile(r"_t\d{4}$")
 
+# One run's wall time is not a measurement of what a coupling step costs.
+# gp_high_08.00H_n244_instbnd_seep took 487 min against 236 for its averaged sibling at
+# the same interval and 266 for its own daily run -- it cannot cost more to couple 267
+# times than 8544 times, so the excess is not coupling. The mechanism was observed
+# while the sweep ran: D-Flow FM entered a timestep-setback cascade inside a single
+# BMI update() call and produced no output for around three hours at full CPU before
+# recovering normally. The physics of the run is unaffected and its results are used
+# everywhere else; only its clock is discarded, and only here.
+#
+# The row stays in the archive, which is a record of what was measured. The exclusion
+# belongs to the cost analysis, so it is applied by drop_outliers() at fit and plot
+# time where it can be seen, rather than by dropping the measurement on the way in.
+OUTLIERS = {("high", "instbnd_seep", "08.00H")}
+
+
+def drop_outliers(df, outliers=OUTLIERS):
+    """Rows whose wall time does not measure the cost of the coupling interval."""
+    keys = list(zip(df["grid"], df["reduction"], df["interval"]))
+    return df[[k not in outliers for k in keys]].copy()
+
 
 def scan(logs=LOGS):
     """One row per scenario, taking the most recent log when a run was repeated."""
@@ -79,7 +99,7 @@ def fits(df):
     the point, because only the second is what a shorter coupling interval buys.
     """
     out = []
-    for (g, r), sub in df.groupby(["grid", "reduction"]):
+    for (g, r), sub in drop_outliers(df).groupby(["grid", "reduction"]):
         if len(sub) < 4:
             continue
         slope, intercept = np.polyfit(sub["steps"], sub["minutes"], 1)
@@ -97,10 +117,15 @@ def fits(df):
 # directory is detected as partial: without this the module would recompute from
 # whatever it happened to find and overwrite the archive with fewer series, which
 # is the one failure mode an archive exists to prevent.
+# The _seep series are the manuscript's 46 simulations. The pre-seep instbnd/meanbnd
+# runs are superseded -- their results were deleted and the coastal boundary they used
+# is not the one the paper describes -- so they are no longer required to be present,
+# although scan() still picks them up where their logs survive and the archive keeps
+# them. Requiring them here would report a complete logs/ as partial.
 EXPECTED = {
-    ("coarse", "instbnd"): 9, ("coarse", "meanbnd"): 9,
-    ("medium", "instbnd"): 7, ("medium", "meanbnd"): 7,
-    ("high", "instbnd"): 7, ("high", "meanbnd"): 7,
+    ("coarse", "instbnd_seep"): 9, ("coarse", "meanbnd_seep"): 9,
+    ("medium", "instbnd_seep"): 7, ("medium", "meanbnd_seep"): 7,
+    ("high", "instbnd_seep"): 7, ("high", "meanbnd_seep"): 7,
 }
 
 

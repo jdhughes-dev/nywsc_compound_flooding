@@ -25,11 +25,12 @@ of it -- which is what makes this metric trustworthy where the cross-grid qext
 comparison was not.
 """
 import pathlib as pl
-import sys
 
 import numpy as np
 import pandas as pd
 import xarray as xr
+
+import boundary_averaging_data as bad
 
 HERE = pl.Path(__file__).resolve().parent
 DATA = HERE.parents[1] / "data" / "GP"
@@ -43,21 +44,31 @@ NGHB, NCHD = 72, 691
 AREA = (NGHB + NCHD) * CELL_AREA
 SPINUP_D = 5.0
 
+REF_TAG = "15.00M"
 INTERVALS = [("15.00M", 0.25), ("30.00M", 0.5), ("01.00H", 1.0), ("02.00H", 2.0),
              ("04.00H", 4.0), ("08.00H", 8.0), ("01.00D", 24.0)]
 
 
-def scenario(grid, hours, results=RESULTS):
-    sys.path.insert(0, str(HERE.parents[2] / "common"))
-    from liss_settings import get_results_path
-    ws = get_results_path("gp", grid, hours, 244)
-    return ws.parent / (ws.name + "_meanbnd")
+def scenario(grid, tag, results=RESULTS):
+    """The averaged run for one interval, as boundary_averaging_data addresses it.
+
+    The names come from that module's CONFIG rather than being rebuilt here, so the
+    SEEP flag switches this archive between the published and the coastal-seepage
+    families along with every other module. Building them locally is what left this
+    one module addressing the published runs after 78ed080 rewired the others: those
+    runs were deleted on 2026-09-15, so missing() reported all seven absent and
+    load_or_refresh silently fell back to the committed archive.
+    """
+    cfg = bad.CONFIG[grid]
+    if tag == REF_TAG:
+        return results / cfg["refs"]["15M mean"]
+    return results / cfg["runs"][tag][2]
 
 
 def missing(results=RESULTS):
     out = []
-    for tag, h in INTERVALS:
-        ws = scenario(GRID, h, results)
+    for tag, _h in INTERVALS:
+        ws = scenario(GRID, tag, results)
         if not all((ws / f).is_file()
                    for f in ("gwf.ghb.obs.csv", "gwf.chd.obs.csv")):
             out.append(ws.name)
@@ -67,7 +78,7 @@ def missing(results=RESULTS):
 def compute(results=RESULTS):
     rows = []
     for tag, hours in INTERVALS:
-        ws = scenario(GRID, hours, results)
+        ws = scenario(GRID, tag, results)
         ghb = pd.read_csv(ws / "gwf.ghb.obs.csv")
         chd = pd.read_csv(ws / "gwf.chd.obs.csv")
         inner = next(c for c in ghb.columns if c.upper() == "INNER")

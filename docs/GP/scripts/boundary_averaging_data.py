@@ -103,10 +103,12 @@ CONFIG = {
 # archive in docs/data/GP was built from, and a comparison between the two families
 # is the only way to say what the correction moved.
 #
-# NOTE: as of 2026-09-11 only 15.00M, 08.00H and 01.00D exist under _seep. The other
-# intervals have not been run, so missing() reports 12 absent runs on coarse and 8
-# each on medium and high, and load_or_refresh falls back to the archive and says
-# so through its "archive" source. That is the honest state, not a defect here.
+# As of 2026-09-21 the whole coastal-seepage family exists: all 46 runs the manuscript
+# states -- nine intervals on coarse, seven on medium and high, under both reductions --
+# are in results/gp and verified. missing() is empty on every grid and load_or_refresh
+# recomputes rather than falling back, so a figure rebuilt now carries seepage-formulation
+# numbers. The published family it replaces was deleted on 2026-09-15, so SEEP = False
+# no longer resolves to anything on disk and will report every run missing.
 SEEP = True
 
 
