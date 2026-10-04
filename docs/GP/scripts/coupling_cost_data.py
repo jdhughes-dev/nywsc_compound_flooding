@@ -58,7 +58,11 @@ TAGGED = re.compile(r"_t\d{4}$")
 # The row stays in the archive, which is a record of what was measured. The exclusion
 # belongs to the cost analysis, so it is applied by drop_outliers() at fit and plot
 # time where it can be seen, rather than by dropping the measurement on the way in.
-OUTLIERS = {("high", "instbnd_seep", "08.00H")}
+#
+# That run was superseded by the 2026-10 re-run under the withdrawal limiter, which
+# took 282 min, and scan() takes the most recent log, so the 487 min measurement no
+# longer enters the archive at all. Nothing is excluded; the mechanism stays here.
+OUTLIERS = set()
 
 
 def drop_outliers(df, outliers=OUTLIERS):
