@@ -246,3 +246,6 @@ data/GP/observations/
 # Runtime state written by tools/run_manuscript_sweep.py and read by
 # tools/sweep_status.py. Rewritten at every state change; not source.
 tools/.sweep_status.json
+
+# Claude Code local state
+.claude/
