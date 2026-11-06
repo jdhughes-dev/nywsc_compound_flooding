@@ -43,6 +43,8 @@ GRIDS = [("coarse", "#1f77b4", "Coarse, 6,491 cells"),
 REDUCTIONS = [("meanbnd_seep", "o", True, "time-averaged"),
               ("instbnd_seep", "s", False, "instantaneous")]
 LABELLED = REDUCTIONS[0][0]     # one legend entry per grid, not one per series
+# Grids whose series resolve the marginal cost of an exchange; see make().
+POOLED = ("coarse", "medium")
 
 
 def series(df, grid, reduction):
@@ -80,7 +82,12 @@ def make(refresh=True):
                 if s is None:
                     continue
                 base = s.iloc[0]                      # the daily-coupling run
-                baselines.setdefault(grid, []).append(float(base["minutes"]))
+                # The averaged daily run, not a mean over both reductions: on the
+                # fine grid the sampled daily run is the slow one, 337 min against
+                # 262, and a mean would label the grid with neither. It is also
+                # the estimate of D-Flow FM alone that the text quotes.
+                if reduction == LABELLED:
+                    baselines[grid] = float(base["minutes"])
                 face = color if filled else "none"
                 axA.plot(s["hours"], s["minutes"] / base["minutes"],
                          marker=marker, color=color, mfc=face, lw=1.1, ms=4,
@@ -89,7 +96,13 @@ def make(refresh=True):
                 extra_min = s["minutes"] - base["minutes"]
                 axB.plot(extra_steps, extra_min, marker=marker, color=color,
                          mfc=face, lw=0, ms=4)
-                dx.extend(extra_steps[1:]); dy.extend(extra_min[1:])
+                # The fine grid is plotted but not fitted. Its run-to-run spread is
+                # larger than the whole coupling cost there -- the two daily runs
+                # differ by 75 min against about 30 min for 8455 exchanges -- and
+                # its sampled series falls below its own baseline at almost every
+                # interval, which pulled the pooled slope from 0.23 to 0.19 s.
+                if grid in POOLED:
+                    dx.extend(extra_steps[1:]); dy.extend(extra_min[1:])
 
         # Pooled marginal cost through the origin: by construction the baseline run
         # contributes no extra steps and no extra time.
@@ -119,12 +132,11 @@ def make(refresh=True):
         # separate.
         # Upper right: every curve descends to one at daily coupling, so that
         # corner is the only part of the panel the data never occupies.
-        axA.annotate("daily-coupling run time", xy=(0.30, 0.84),
+        axA.annotate("daily-coupling run time,\ntime-averaged", xy=(0.30, 0.84),
                      xycoords="axes fraction", fontsize=6.5, color="0.35")
         for i, (grid, color, _) in enumerate(GRIDS):
             if grid in baselines:
-                mean_min = sum(baselines[grid]) / len(baselines[grid])
-                axA.annotate(f"{mean_min:.0f} min", xy=(0.30, 0.76 - 0.075 * i),
+                axA.annotate(f"{baselines[grid]:.0f} min", xy=(0.30, 0.76 - 0.075 * i),
                              xycoords="axes fraction", fontsize=6.5, color=color)
         styles.xlabel(ax=axA, label="Coupling interval")
         styles.heading(ax=axA, letter="A", fontsize=7.5,
